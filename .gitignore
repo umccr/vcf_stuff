@@ -99,3 +99,14 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Custom
+.snakemake
+.DS_Store
+.idea
+vcf_stuff/panel_of_normals/hg38ToHg19.over.chain.gz
+playground
+.vscode/
+.RData
+.Rhistory
+miniconda/

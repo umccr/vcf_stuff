@@ -1,0 +1,86 @@
+# Snakemake file for filtering of a VCF file against a set of normal samples.
+
+# Usage: 
+# snakemake -p --configfile=config.yaml
+
+import os
+import glob
+import re
+from umccrise.utils import get_loc
+from umccrise.panel_of_normals import get_toml_path
+
+# configfile: 'config.yaml'
+normals_dir = config.get('normals_dir', get_loc().panel_of_normals_dir)
+hits_thresholds = config.get('hits_thresholds', [1, 2, 3])
+samples = config.get('samples')
+if isinstance(samples, str):
+    samples = {'sample': samples}
+
+rule all:
+    input:
+        expand('pon_filter/{sample}-ann-n{ht}.vcf.gz', sample=samples, ht=hits_thresholds)
+
+rule prep_toml:
+    input:
+        toml = get_toml_path()
+    output:
+        'pon_annotate/vcfanno.toml'
+    params:
+        normals_dir = normals_dir
+    shell:
+        'sed s#file=\\\"#file=\\\"{params.normals_dir}/# {input.toml} > {output}'
+
+# rule prep_vcfanno:
+#     input:
+#         normals_dir = config['normals_dir']
+#     output:
+#         toml = 'work/normals/annotate_normals_vcfanno.toml'
+#     run:
+#         fpaths = glob.glob(os.path.join(input.normals_dir, '*.vcf.gz'))
+#         with open(output[0], 'w') as out:
+#             for fp in fpaths:
+#                 out.write(VCFANNO_ANNO.format(
+#                     fname=fp, 
+#                     name=str_to_lua_variable_name(fp)))
+
+#             out.write(VCFANNO_POSTANNO.format(
+#                 fields=', '.join('"' + str_to_lua_variable_name(fp) + '"' for fp in fpaths), 
+#                 vars=', '.join(str_to_lua_variable_name(fp) for fp in fpaths)))
+
+rule prep_vcf:
+    input:
+        lambda wildcards: samples[wildcards.sample]
+    output:
+        'pon_prep_vcf/{sample}.vcf.gz'
+    shell:
+        'bcftools view {input} -f.,PASS -Oz -o {output}'
+
+# rule annotate:
+#     input:
+#         vcf = rules.prep_vcf.output,
+#         toml = rules.prep_vcfanno.output.toml
+#     output:
+#         'work/annotate/{sample}-ann.vcf.gz'
+#     params:
+#         lua = os.path.join(config['normals_dir'], 'code.lua')
+#     shell:
+#         'vcfanno -lua {params.lua} {input.toml} {input.vcf} | bgzip -c > {output}'
+
+rule annotate:
+    input:
+        vcf = rules.prep_vcf.output,
+        toml = rules.prep_toml.output[0]
+    output:
+        'pon_annotate/{sample}-ann.vcf.gz'
+    shell:
+        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output}'
+
+rule filter:
+    input:
+        rules.annotate.output
+    output:
+        'pon_filter/{sample}-ann-n{ht}.vcf.gz'
+    params:
+        ht = lambda wildcards: wildcards.ht
+    shell:
+        'bcftools filter -e "INFO/PoN_CNT>={params.ht}" {input} -Oz -o {output} && tabix -p vcf {output}'

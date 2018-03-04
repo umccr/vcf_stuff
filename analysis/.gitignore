@@ -1,0 +1,9 @@
+minimap2/*
+!*/img
+!*/img/*
+!.gitignore
+!*.py
+!*/*.ipynb
+!*/*.md
+.DS_Store
+!somatic_calling_evaluation

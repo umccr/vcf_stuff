@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+import tempfile
+from os.path import dirname, abspath, join, basename, isfile
+import click
+import os
+
+import sys
+import yaml
+import tempfile
+import subprocess
+
+from ngs_utils.call_process import run
+from ngs_utils.file_utils import splitext_plus
+from ngs_utils.logger import err, critical
+
+from umccrise.panel_of_normals import get_toml_path
+from umccrise.utils import get_loc, find_loc
+from umccrise import panel_of_normals
+
+import locale
+try:
+    if 'UTF-8' not in locale.getlocale(locale.LC_ALL):
+        locale.setlocale(locale.LC_ALL, 'en_AU.UTF-8')
+except TypeError:
+    pass
+
+
+here = dirname(abspath(panel_of_normals.__file__))
+
+
+@click.command()
+@click.argument('vcf', type=click.Path(exists=True))
+@click.option('-g', 'genome', default='GRCh37')
+@click.option('-o', 'output_file', type=click.Path())
+@click.option('-j', 'jobs', type=click.INT, default=1)
+@click.option('-f', 'filter_hits', type=click.INT, default=None)
+def main(vcf, genome, output_file=None, jobs=1, filter_hits=None):
+
+    fixed_toml_f = tempfile.NamedTemporaryFile(delete=False)
+    normals_dir = get_loc().panel_of_normals_dir
+    toml = get_toml_path()
+    run(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {toml}', output_fpath=fixed_toml_f.name)
+
+    cmd = f'vcfanno {fixed_toml_f.name} {vcf} | bgzip -c'
+    if filter_hits:
+        cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + -Oz'
+
+    if output_file:
+        subprocess.call(cmd + f' > {output_file}', shell=True)
+        print('Saved to ' + output_file)
+    else:
+        subprocess.call(cmd, shell=True, stdout=sys.stdout)
+
+    fixed_toml_f.close()
+    os.unlink(fixed_toml_f.name)
+
+
+if __name__ == '__main__':
+    main()

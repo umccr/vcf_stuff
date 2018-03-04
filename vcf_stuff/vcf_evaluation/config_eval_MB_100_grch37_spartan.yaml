@@ -1,0 +1,20 @@
+samples:
+    ensemble:    ../MB_100vs50-ensemble-annotated.vcf.gz
+    ensemble_n1: ../pon/work/filter/ensemble-ann-n1.vcf.gz
+    ensemble_n2: ../pon/work/filter/ensemble-ann-n2.vcf.gz
+    ensemble_n3: ../pon/work/filter/ensemble-ann-n3.vcf.gz
+    mutect2:     ../MB_100vs50-mutect2-annotated.vcf.gz
+    mutect2_n1:  ../pon/work/filter/mutect2-ann-n1.vcf.gz
+    mutect2_n2:  ../pon/work/filter/mutect2-ann-n2.vcf.gz
+    mutect2_n3:  ../pon/work/filter/mutect2-ann-n3.vcf.gz
+    vardict:     ../MB_100vs50-vardict-annotated.vcf.gz
+    vardict_n1:  ../pon/work/filter/vardict-ann-n1.vcf.gz
+    vardict_n2:  ../pon/work/filter/vardict-ann-n2.vcf.gz
+    vardict_n3:  ../pon/work/filter/vardict-ann-n3.vcf.gz
+    strelka2:    ../MB_100vs50-strelka2-annotated.vcf.gz
+    strelka2_n1: ../pon/work/filter/strelka-ann-n1.vcf.gz
+    strelka2_n2: ../pon/work/filter/strelka-ann-n2.vcf.gz
+    strelka2_n3: ../pon/work/filter/strelka-ann-n3.vcf.gz
+
+truth_variants:  /data/cephfs/punim0010/data/External/Reference/ICGC_MB/MB-benchmark.vcf.gz
+reference_fasta: GRCh37/seq/GRCh37.fa

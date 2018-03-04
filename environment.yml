@@ -1,0 +1,28 @@
+name: vcf_stuff
+
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+  - vladsaveliev
+  - anaconda
+
+dependencies:
+  - python>=3.6
+  - bcftools
+  - tabix
+  - bedops
+  - bedtools
+  - vcfanno
+  - vcflib  # for VCF normalization
+  - snakemake
+  - pythonpy
+  - click
+  - cyvcf2
+  - ngs_utils>=1.2.4
+  - pandas
+  #
+  # Visualisation
+  - jupyter
+  - matplotlib
+  - matplotlib-venn

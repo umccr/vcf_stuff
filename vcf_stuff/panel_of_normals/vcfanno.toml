@@ -1,0 +1,5 @@
+[[annotation]]
+file="panel_of_normals.vcf.gz"
+fields=["PoN"]
+ops=["self"]
+names=["PoN_CNT"]

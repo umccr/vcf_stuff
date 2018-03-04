@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+
+import sys
+from cyvcf2 import VCF
+from ngs_utils.file_utils import add_suffix, get_ungz_gz
+import click
+from ngs_utils.vcf_utils import get_tumor_sample_name
+from pprint import pprint
+
+
+@click.group()
+@click.pass_context
+def cli(ctx):
+    # ctx.obj['vcf'] = vcf
+    pass
+
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-f', 'reference_fasta', type=click.Path(exists=True))
+@click.pass_context
+def fix_fields(ctx, input_file, reference_fasta=None):
+    vcf = VCF(input_file)
+    sys.stdout.write(vcf.raw_header)
+    main_sample_name = get_tumor_sample_name(input_file)
+    main_sample_index = vcf.samples.index(main_sample_name)
+    for rec in vcf:
+        for key in 'AF', 'DP', 'VD':
+            rec.INFO[key] = float(rec.format(key)[main_sample_index][0])
+        sys.stdout.write(str(rec))
+
+
+def _find_tags(vcf):
+    tags_options = {
+        'ad': {'AD'},  # contains raw counts for each allele
+        'af': {'AF', 'FREQ', 'FA'},  # contains actual frequencies which can be used directly
+        'dp': {'DP'},
+        'mq': {'MQ', 'MMQ'},
+    }
+
+    formats_by_id = {}
+    infos_by_id = {}
+    for h in vcf.header_iter():
+        i = h.info()
+        if i['HeaderType'] == 'FORMAT':
+            formats_by_id[i['ID']] = i
+        elif i['HeaderType'] == 'INFO':
+            infos_by_id[i['ID']] = i
+
+    tags = {t: None for t in tags_options}
+
+    for headers_by_id in [formats_by_id, infos_by_id]:
+        for tag, header in tags.items():
+            if header is None:
+                header_id_options = tags_options[tag].intersection(headers_by_id)
+                if header_id_options:
+                    tags[tag] = headers_by_id[header_id_options.pop()]
+
+    pprint(tags)
+    return tags
+
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.pass_context
+def test(ctx, input_file):
+    vcf = VCF(input_file)
+    tags = _find_tags(vcf)
+ #   sys.stdout.write(vcf.raw_header)
+    main_sample_name = get_tumor_sample_name(input_file)
+    main_sample_index = vcf.samples.index(main_sample_name)
+
+
+@cli.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-f', 'reference_fasta', type=click.Path(exists=True))
+@click.pass_context
+def filter_low_af_msi(ctx, input_file, reference_fasta=False):
+    vcf = VCF(input_file)
+    vcf.add_filter_to_header({'ID': 'MSI_FAIL', 'Description': 'Possible homopolymer artefact'})
+    sys.stdout.write(vcf.raw_header)
+
+    def msi_fails(ref, alt, af, msi):
+        """ Filter low AF MSI
+        """
+        if msi:
+            change_len = abs(len(ref) - len(alt))
+            if change_len == 1 and msi > 1:
+                msi_fail = any([
+                    msi <=  2 and af < 0.005,
+                    msi <=  4 and af < 0.01,
+                    msi <=  7 and af < 0.03,
+                    msi ==  8 and af < 0.06,
+                    msi ==  9 and af < 0.125,
+                    msi == 10 and af < 0.175,
+                    msi == 11 and af < 0.25,
+                    msi == 12 and af < 0.3,
+                    msi >  12 and af < 0.35])
+                if msi_fail:
+                    return True
+            elif change_len == 3 and msi >= 5 and af < 0.1:  # ignore low AF in 3nt MSI region
+                return True
+        return False
+
+    for rec in vcf:
+        msi_fail = msi_fails(rec.REF, rec.ALT[0], rec.format('AF')[0][0], rec.INFO['MSI'])
+        if msi_fail:
+            filters = rec.FILTER.split(';') if rec.FILTER else []
+            filters.append('MSI_FAIL')
+            rec.FILTER = ';'.join(filters)
+        sys.stdout.write(str(rec))
+
+
+if __name__ == '__main__':
+    cli(obj={})

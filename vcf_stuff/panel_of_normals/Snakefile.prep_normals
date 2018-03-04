@@ -1,0 +1,105 @@
+# Snakemake file for preparing PoN filtering
+
+import os
+import glob
+import re
+from umccrise.utils import get_loc
+
+
+threads_max = 32  # Use up to 32 cores at once, if available
+
+
+if get_loc().name == 'spartan':
+    normal_by_name = dict(l.strip().split() for l in '''
+17MHP002Bld /data/cephfs/punim0010/extras/panel_of_normals/vcfs/17MHP002Bld-CCR170002.vcf.gz
+17MHP031Bld /data/cephfs/punim0010/extras/panel_of_normals/vcfs/17MHP031Bld-CCR170089_S1.vcf.gz
+BriGibBld   /data/cephfs/punim0010/extras/panel_of_normals/vcfs/BriGibBld-PRJ170155_S3.vcf.gz
+COLO829Bld  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/COLO829Bld-CCR170091a.vcf.gz
+MDx150891   /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MDx150891.vcf.gz
+MH17B001P004    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P004.vcf.gz
+MH17B001P010    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P010.vcf.gz
+MH17B001P013    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P013.vcf.gz
+NA12878 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA12878-1VD.vcf.gz
+NA24385 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA24385-1LL.vcf.gz
+NA24631 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA24631-1KC.vcf.gz
+VPH52_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH52_Blood.vcf.gz
+VPH54_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH54_Blood.vcf.gz
+VPH56_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH56_Blood.vcf.gz
+VPH58_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH58_Blood.vcf.gz
+VPH59_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH59_Blood.vcf.gz
+VPH61_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH61_Blood.vcf.gz
+WES003KMBL  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES003KMBL.vcf.gz
+WES012MVBL  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES012MVBL.vcf.gz
+WES013BL    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES013BL.vcf.gz
+'''.split('\n') if l.strip())
+
+if get_loc().name == 'vlad':
+    normal_by_name = {'tmp': '/Users/vsaveliev/Analysis/panel_of_normals/GRCh37/normals/MH17B001P004-germline-ensemble-annotated.vcf.gz'}
+
+if 'normal' in config:
+    normal_by_name = dict([config['normal'].split(':')])
+
+def str_to_lua_variable_name(name):
+    name = os.path.basename(name)
+    name = name.replace('.vcf.gz', '')
+    name = re.sub('[^0-9a-zA-Z_]', '_', name) # Remove invalid characters
+    name = re.sub('^[^a-zA-Z_]+', '_', name)  # Remove leading characters until we find a letter or underscore
+    return name
+
+
+rule all:
+    input:
+        'panel_of_normals.vcf.gz'
+
+
+rule clean_vcf:
+    input:
+        lambda wc: normal_by_name[wc.sample],
+        lambda wc: normal_by_name[wc.sample] + '.tbi'
+    output:
+        vcf = 'work/{sample}.clean.vcf.gz',
+        tbi = 'work/{sample}.clean.vcf.gz.tbi'
+    shell:
+        'bcftools annotate -x INFO,FORMAT {input} -Oz -o {output} && tabix {output}'
+
+
+rule combine_vcfs:
+    input:
+        expand(rules.clean_vcf.output.vcf, sample=normal_by_name.keys())
+    output:
+        vcf = 'work/clean_merged.vcf.gz',
+        tbi = 'work/clean_merged.vcf.gz.tbi'
+    threads: threads_max
+    shell:
+        'bcftools merge {input} --threads {threads} -Oz -o {output.vcf} && tabix {output.vcf}'
+        # 'bcftools concat {input} -d all --allow-overlaps --threads {threads} -Oz -o {output}'
+
+
+rule count_hits:
+    input:
+        rules.combine_vcfs.output[0]
+    output:
+        'panel_of_normals.vcf'
+    run:
+        from cyvcf2 import VCF, Writer
+        import sys
+
+        vcf = VCF(input[0])
+        vcf.add_info_to_header({'ID': 'PoN', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
+
+        w = Writer(output[0], vcf)
+
+        for v in vcf:
+            v.INFO['PoN'] = len(list(filter(None, v.format('GT'))))
+            w.write_record(v)
+
+
+rule bgzip_and_tabix_final_vcf:
+    input:
+        rules.count_hits.output[0]
+    output:
+        vcf ='panel_of_normals.vcf.gz',
+        tbi = 'panel_of_normals.vcf.gz.tbi'
+    shell:
+        'bgzip {input} && tabix {output.vcf}'
+

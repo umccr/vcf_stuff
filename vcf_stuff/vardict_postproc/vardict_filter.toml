@@ -1,0 +1,5 @@
+[[postannotation]]
+fields=["MSI", "MSILEN", "AF"]
+op="lua:check_msi(MSI, MSILEN, AF)"
+name="MSI_FAIL"
+type="Flag"
