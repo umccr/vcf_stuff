@@ -19,10 +19,12 @@ dependencies:
   - pythonpy
   - click
   - cyvcf2
-  - ngs_utils>=1.2.4
   - pandas
   #
   # Visualisation
   - jupyter
   - matplotlib
   - matplotlib-venn
+  - pip:
+    - "--editable=git+https://github.com/vladsaveliev/NGS_Utils#egg=ngs_utils"
+    - "--editable=git+https://github.com/umccr/python_utils#egg=python_utils"
