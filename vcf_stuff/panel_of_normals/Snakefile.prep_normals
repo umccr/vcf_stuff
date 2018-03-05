@@ -3,7 +3,7 @@
 import os
 import glob
 import re
-from umccrise.utils import get_loc
+from python_utils.hpc import get_loc
 
 
 threads_max = 32  # Use up to 32 cores at once, if available

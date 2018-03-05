@@ -10,18 +10,9 @@ import csv
 import pandas as pd
 from prettytable import PrettyTable
 from ngs_utils.vcf_utils import get_tumor_sample_name
-from umccrise.utils import get_loc
-from umccrise.vcf_normalisation.vcf_normalisation import make_normalise_cmd
-from umccrise.vcf_evaluation import stats_to_df, dislay_stats_df
-
-# shell.prefix("set -o pipefail; ")
-
-def get_ref(path):
-    """ If path does not exist, search it in bcbio/genome/Hsapiens location
-    """
-    if not os.path.isfile(path):
-        return os.path.join(get_loc().hsapiens, path)
-    return path
+from python_utils.hpc import get_loc
+from vcf_stuff.vcf_normalisation.vcf_norm import make_normalise_cmd
+from vcf_stuff.vcf_evaluation import stats_to_df, dislay_stats_df
 
 
 rule all:
@@ -35,7 +26,7 @@ rule all:
 
 def merge_regions():
     samples_regions = config.get('regions')
-    truth_regions = get_ref(config['truth_regions']) if 'truth_regions' in config else None
+    truth_regions = config['truth_regions'] if 'truth_regions' in config else None
 
     output = 'narrow/regions.bed'
     if samples_regions and truth_regions:
@@ -104,7 +95,7 @@ rule narrow_samples_to_tumor_sample:
 # Extract target, PASSed and tumor sample from the truth VCF:
 rule narrow_truth_to_target:
     input:
-        get_ref(config['truth_variants'])
+        config['truth_variants']
     output:
         'narrow/truth_variants.vcf.gz'
     run:
@@ -118,7 +109,7 @@ rule narrow_truth_to_target:
 rule normalise_sample:
     input:
         vcf = rules.narrow_samples_to_tumor_sample.output[0],
-        ref = get_ref(config['reference_fasta'])
+        ref = config['reference_fasta']
     output:
         vcf = 'normalise/{sample}/{sample}.vcf.gz',
         tbi = 'normalise/{sample}/{sample}.vcf.gz.tbi'
@@ -129,7 +120,7 @@ rule normalise_sample:
 rule normalise_truth:
     input:
         vcf = rules.narrow_truth_to_target.output[0],
-        ref = get_ref(config['reference_fasta'])
+        ref = config['reference_fasta']
     output:
         vcf = 'normalise/truth_variants.vcf.gz',
         tbi = 'normalise/truth_variants.vcf.gz.tbi'
@@ -244,20 +235,6 @@ rule eval:
                 snps_truth, tp_snps, fp_snps, fn_snps, snps_prec, snps_recall,
                 inds_truth, tp_inds, fp_inds, fn_inds, inds_prec, inds_recall
             ])
-
-# rule sompy:
-#     input:
-#         sample_vcf = rules.normalize_sample.output,
-#         truth_vcf = rules.normalize_truth.output,
-#         ref = get_ref(config['reference_fasta'])
-#     output:
-#         'sompy/{sample}'
-#     params:
-#         output_prefix = 'sompy/{sample}'
-#     run:
-#         regions = merge_regions()
-#         regions = ('-f ' + regions) if regions else ''
-#         shell('som.py {input.truth_vcf} {input.sample_vcf} {regions} -o {params.output_prefix} -r {input.ref}')
 
 # Combine all stats to get single report:
 rule report:

@@ -6,8 +6,8 @@
 import os
 import glob
 import re
-from umccrise.utils import get_loc
-from umccrise.panel_of_normals import get_toml_path
+from vcf_stuff.panel_of_normals import get_toml_path
+from python_utils.hpc import get_loc
 
 # configfile: 'config.yaml'
 normals_dir = config.get('normals_dir', get_loc().panel_of_normals_dir)
