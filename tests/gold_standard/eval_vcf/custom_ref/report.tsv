@@ -1,0 +1,5 @@
+Sample	SNP	SNP	SNP	SNP	SNP	INDEL	INDEL	INDEL	INDEL	INDEL
+	TP	FP	FN	Prec	Recall	TP	FP	FN	Prec	Recall
+test-ensemble	1	0	0	1.0	1.0	0	0	0	0.0	0.0
+test-vardict	1	5	0	0.16666666666666666	1.0	0	0	0	0.0	0.0
+Truth	1	0	1	1.0	1.0	0	0	0	1.0	1.0

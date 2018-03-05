@@ -1,0 +1,33 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Indicates if record is a somatic mutation">
+##INFO=<ID=CALLS,Number=.,Type=String,Description="Callsets">
+##INFO=<ID=TIERS,Number=.,Type=String,Description="Tiers to which the mutation belongs">
+##contig=<ID=1>
+##contig=<ID=2>
+##contig=<ID=3>
+##contig=<ID=4>
+##contig=<ID=5>
+##contig=<ID=6>
+##contig=<ID=7>
+##contig=<ID=8>
+##contig=<ID=9>
+##contig=<ID=10>
+##contig=<ID=11>
+##contig=<ID=12>
+##contig=<ID=13>
+##contig=<ID=14>
+##contig=<ID=15>
+##contig=<ID=16>
+##contig=<ID=17>
+##contig=<ID=18>
+##contig=<ID=19>
+##contig=<ID=20>
+##contig=<ID=21>
+##contig=<ID=22>
+##contig=<ID=X>
+##contig=<ID=Y>
+##bcftools_viewVersion=1.7+htslib-1.7
+##bcftools_viewCommand=view -r 16:0-100000 ori/MB-benchmark.vcf.gz; Date=Mon Mar  5 17:31:11 2018
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	MB
+16	93961	.	A	G	.	PASS	CALLS=MB.Q,MB.O,MB.D,MB.H,GOLD,MB.I,MB.J,MB.L2,MB.K,MB.E,MB.F,MB.B,MB.M,MB.N,MB.G,MB.C,MB.P;TIERS=tier1,tier2,tier3,tier4	GT	0/1
