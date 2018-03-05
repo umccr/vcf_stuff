@@ -7,13 +7,16 @@ from os.path import isfile, join
 from cyvcf2 import VCF, Writer
 import re
 import numpy as np
-from umccrise.utils import get_sample_ids
+from ngs_utils.vcf_utils import get_sample_ids
 
 
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
 def main(input_file, output_file=None):
+    """ Prepares a VCF file for exposing in PCGR:
+        adds TUMOR_AF, NORMAL_AF, TUMOR_DP, NORMAL_DP fields.
+    """
     vcf = VCF(input_file, gts012=True)
 
     if output_file:

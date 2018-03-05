@@ -100,13 +100,18 @@ ENV/
 # mypy
 .mypy_cache/
 
-# Custom
-.snakemake
-.DS_Store
-.idea
-vcf_stuff/panel_of_normals/hg38ToHg19.over.chain.gz
-playground
+# Other
 .vscode/
 .RData
 .Rhistory
+.snakemake
+.DS_Store
+.idea
 miniconda/
+
+# Custom
+playground
+vcf_stuff/panel_of_normals/hg38ToHg19.over.chain.gz
+tests/data/ori
+src/  # from conda env install from git
+tests/results/

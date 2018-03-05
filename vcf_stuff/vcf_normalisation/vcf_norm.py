@@ -8,9 +8,12 @@ Normalizes VCF:
 """
 import os
 import click
-from ngs_utils.file_utils import verify_file
 from os.path import isfile
-from umccrise.utils import get_loc
+
+from python_utils.hpc import get_loc
+from ngs_utils.call_process import run
+from ngs_utils.file_utils import verify_file
+
 
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
@@ -21,8 +24,7 @@ def main(input_file, output_file, reference_fasta=False):
         reference_fasta = os.path.join(get_loc().hsapiens, reference_fasta)
     verify_file(reference_fasta, is_critical=True)
     cmd = make_normalise_cmd(input_file, output_file, reference_fasta)
-    print(cmd)
-    os.system(cmd)
+    run(cmd)
 
 
 def make_normalise_cmd(input_file, output_file, reference_fasta):
