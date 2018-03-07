@@ -39,14 +39,14 @@ def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky
         'anno_tricky': anno_tricky,
     }
     if regions:
-        config['sample_regions'] = regions
+        config['sample_regions'] = abspath(regions)
 
     loc = find_loc()
 
     # Genome
     genome_d = None
     if isfile(genome):
-        config['reference_fasta'] = genome
+        config['reference_fasta'] = abspath(genome)
         genome = splitext_plus(basename(genome))[0]
     elif loc:
         config['reference_fasta'] = get_ref_file(genome, loc=loc)
@@ -65,9 +65,9 @@ def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky
                      f' Truth set "{truth}" was not found in the file system or in hpc.py'
                      f' for genome "{genome}" at file system "{loc.name}"')
 
-        config['truth_variants'] = truth_set_d['vcf']
+        config['truth_variants'] = abspath(truth_set_d['vcf'])
         if 'bed' in truth_set_d:
-            config['truth_regions'] = truth_set_d['bed']
+            config['truth_regions'] = abspath(truth_set_d['bed'])
     else:
         critical(f'Truth set {truth}: file does not exist, or cannot automatically find it by location.')
 
