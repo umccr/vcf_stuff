@@ -109,9 +109,13 @@ ENV/
 .idea
 miniconda/
 
-# Custom
+##########
+## Custom
+
 playground
 vcf_stuff/panel_of_normals/hg38ToHg19.over.chain.gz
 tests/data/ori
-src/  # from conda env install from git
 tests/results/
+
+# from conda env install from git
+src/
