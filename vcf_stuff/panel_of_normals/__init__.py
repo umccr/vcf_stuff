@@ -5,7 +5,7 @@ import sys
 import yaml
 import tempfile
 import subprocess
-from ngs_utils.call_process import run
+from ngs_utils.call_process import run_simple
 from ngs_utils.file_utils import verify_file, splitext_plus
 from python_utils.hpc import get_loc, find_loc, get_ref_file
 import locale
@@ -30,26 +30,26 @@ def get_toml_path():
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-h', 'filter_hits', type=click.INT, default=None)
-def annotate(vcf, genome, output_file=None, filter_hits=None):
+@click.option('--check-allele', is_flag=True, default=False)
+def annotate(vcf, genome, output_file=None, filter_hits=None, check_allele=False):
     """
     Annotate records in the VCF file `vcf` with `INFO/PoN_CNT`
     """
-
     fixed_toml_f = tempfile.NamedTemporaryFile(delete=False)
 
     normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
     toml = get_toml_path()
-    run(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {toml}', output_fpath=fixed_toml_f.name)
+    run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {toml} > {fixed_toml_f.name}')
 
-    cmd = f'vcfanno {fixed_toml_f.name} {vcf} | bgzip -c'
+    cmd = f'vcfanno{" " if check_allele else " -permissive-overlap"} {fixed_toml_f.name} {vcf} | bgzip -c'
     if filter_hits:
         cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + -Oz'
 
     if output_file:
-        subprocess.call(cmd + f' > {output_file}', shell=True)
+        run_simple(cmd + f' > {output_file}')
         print('Saved to ' + output_file)
     else:
-        subprocess.call(cmd, shell=True, stdout=sys.stdout)
+        run_simple(cmd)
 
     fixed_toml_f.close()
     os.unlink(fixed_toml_f.name)
