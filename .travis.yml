@@ -1,0 +1,63 @@
+sudo: required
+
+language: python
+python:
+  # We don't actually use the Travis Python (since we are on conda), but this keeps it organized.
+  - "3.6"
+
+before_install:
+  # Temporal fix for networking problem: https://github.com/travis-ci/travis-ci/issues/1484
+  - echo "127.0.1.1 "`hostname` | sudo tee /etc/hosts
+
+  # The next couple lines fix a crash with multiprocessing on Travis and
+  # are not specific to using Miniconda
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
+
+
+######################################################
+## If you want to pull cached miniconda and update: ##
+######################################################
+install:
+  # Get and install anaconda (https://conda.io/docs/travis.html) and packages
+  - if [ -d $HOME/miniconda ]; then echo "ls HOME/miniconda:" ; ls $HOME/miniconda ; fi ;
+  - if [ ! -d $HOME/miniconda/bin ] ; then
+      if [ -d $HOME/miniconda ] ; then rm -rf $HOME/miniconda ; fi ;
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh ;
+      bash miniconda.sh -b -p $HOME/miniconda ;
+      export PATH=$HOME/miniconda/bin:$PATH ;
+      hash -r ;
+      conda config --set always_yes yes --set changeps1 no ;
+      conda update -q conda ;
+      conda env create -n vcf_stuff --file environment.yml ;
+    else
+      export PATH=$HOME/miniconda/bin:$PATH ;
+      echo "else ls HOME/miniconda:" ; ls $HOME/miniconda ;
+      conda config --set always_yes yes --set changeps1 no ;
+      conda env update -f environment.yml ;
+    fi
+  - source activate vcf_stuff
+  # Useful for debugging any issues with conda
+  - conda info -a
+  # Installing the codebase (source code was automatically cloned into CWD by Travis)
+  - pip install -e .
+
+
+cache:
+  directories:
+  - $HOME/miniconda
+  timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
+
+env:
+  - TEST=test.py:TestEvalVcf
+  - TEST=test.py -a kind=norm
+  - TEST=test.py -a kind=pon
+
+script:
+  - nosetests --nocapture tests/$TEST
+
+#notifications:
+#  on_success: always
+#  email: false
+#  slack:
+#    rooms:
