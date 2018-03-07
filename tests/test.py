@@ -34,6 +34,7 @@ input_vardict_vcf = join(data_dir, 'test-vardict.vcf.gz')
 input_strelka2_vcf = join(data_dir, 'test-strelka2.vcf.gz')
 
 
+@attr(kind='eval')
 class TestEvalVcf(BaseTestCase):
     script = 'eval_vcf'
     data_dir = join(dirname(__file__), BaseTestCase.data_dir)
@@ -94,7 +95,7 @@ class TestNormVcf(BaseTestCase):
 
     def _run_norm_vcf(self, input_vcf=None):
         out_vcf = join(TestNormVcf.results_dir, basename(add_suffix(input_vcf, 'norm')))
-        cmdl = f'norm_vcf {input_vcf} -o {out_vcf}'
+        cmdl = f'norm_vcf {input_vcf} -o {out_vcf} -g test-GRCh37'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 
