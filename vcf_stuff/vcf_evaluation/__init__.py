@@ -7,7 +7,7 @@ import yaml
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import err, critical
 import pandas as pd
-from python_utils.hpc import find_loc
+from python_utils.hpc import find_loc, get_ref_file, get_genomes_d
 import locale
 
 try:
@@ -47,13 +47,10 @@ def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky
     genome_d = None
     if isfile(genome):
         config['reference_fasta'] = genome
-        genome_basename = splitext_plus(basename(genome))[0]
+        genome = splitext_plus(basename(genome))[0]
     elif loc:
-        genome_basename = genome
-        genome_d = loc.genomes.get(genome_basename)
-        if not genome_d:
-            critical(f'Genome "{genome_basename}" not found for the file system "{loc.name}"')
-        config['reference_fasta'] = genome_d['fa']
+        config['reference_fasta'] = get_ref_file(genome, loc=loc)
+        genome_d = get_genomes_d(genome, loc=loc)
     else:
         critical(f'Genome {genome}: fasta file does not exist, or cannot automatically find it by location.')
 
@@ -66,7 +63,7 @@ def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky
             critical(f'First argument must be either a VCF file, or a value from:'
                      f' {", ".join(genome_d.get("truth_sets").keys())}.'
                      f' Truth set "{truth}" was not found in the file system or in hpc.py'
-                     f' for genome "{genome_basename}" at file system "{loc.name}"')
+                     f' for genome "{genome}" at file system "{loc.name}"')
 
         config['truth_variants'] = truth_set_d['vcf']
         if 'bed' in truth_set_d:

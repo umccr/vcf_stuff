@@ -7,7 +7,7 @@ import tempfile
 import subprocess
 from ngs_utils.call_process import run
 from ngs_utils.file_utils import verify_file, splitext_plus
-from python_utils.hpc import get_loc, find_loc
+from python_utils.hpc import get_loc, find_loc, get_ref_file
 import locale
 
 try:
@@ -36,7 +36,8 @@ def annotate(vcf, genome, output_file=None, filter_hits=None):
     """
 
     fixed_toml_f = tempfile.NamedTemporaryFile(delete=False)
-    normals_dir = get_loc().panel_of_normals_dir
+
+    normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
     toml = get_toml_path()
     run(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {toml}', output_fpath=fixed_toml_f.name)
 
@@ -68,16 +69,8 @@ def pipeline(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None):
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in vcfs
                     if v.endswith('.vcf') or v.endswith('.vcf.gz')},
         'hits_thresholds': hits_thresholds.split(',') if hits_thresholds else [1, 2, 3],
+        'genome': genome,
     }
-
-    loc = find_loc()
-
-    if isfile(genome):
-        config['reference_fasta'] = genome
-    elif loc:
-        config['reference_fasta'] = f'{genome}/seq/{genome}.fa'
-    else:
-        assert isfile(genome), 'File for genome fasta does not exist, and cannot automatically find it by location.'
 
     f = tempfile.NamedTemporaryFile(mode='wt', delete=False)
     yaml.dump(config, f)

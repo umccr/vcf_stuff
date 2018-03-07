@@ -10,7 +10,7 @@ import os
 import click
 from os.path import isfile
 
-from python_utils.hpc import get_loc
+from python_utils.hpc import get_ref_file
 from ngs_utils.call_process import run
 from ngs_utils.file_utils import verify_file
 
@@ -18,11 +18,9 @@ from ngs_utils.file_utils import verify_file
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
-@click.option('-f', 'reference_fasta', type=click.Path())
-def main(input_file, output_file, reference_fasta=False):
-    if not isfile(reference_fasta):
-        reference_fasta = os.path.join(get_loc().hsapiens, reference_fasta)
-    verify_file(reference_fasta, is_critical=True)
+@click.option('-g', '-f', 'genome', type=click.Path(), default='GRCh37', help='Path to genome fasta, or genome build name (if a known location)')
+def main(input_file, output_file, genome=False):
+    reference_fasta = get_ref_file(genome)
     cmd = make_normalise_cmd(input_file, output_file, reference_fasta)
     run(cmd)
 

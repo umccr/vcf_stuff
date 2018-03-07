@@ -7,8 +7,6 @@
 import os
 import gzip
 import csv
-import pandas as pd
-from prettytable import PrettyTable
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from python_utils.hpc import get_loc
 from vcf_stuff.vcf_normalisation.vcf_norm import make_normalise_cmd
