@@ -8,7 +8,9 @@ import subprocess
 
 from ngs_utils.testing import BaseTestCase, check_call, vcf_ignore_lines, swap_output
 from ngs_utils.utils import is_az, is_local, is_travis
-from ngs_utils.file_utils import safe_mkdir, add_suffix
+from ngs_utils.file_utils import safe_mkdir, add_suffix, get_ungz_gz
+
+from nose.plugins.attrib import attr
 
 
 """ Prepare test data:
@@ -16,11 +18,11 @@ CHROM=16
 REGIONS_CODE=16:0-100000
 REGIONS_BED=16\\t0\\t100000
 FASTA=/Users/vsaveliev/googledrive/bio/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
-bcftools view -r REGIONS_R ori/MB_100vs50-ensemble-annotated.vcf.gz > test-ensemble.vcf.gz
-bcftools view -r REGIONS_R ori/MB_100vs50-mutect2-annotated.vcf.gz > test-mutect2.vcf.gz
-bcftools view -r REGIONS_R ori/MB_100vs50-vardict-annotated.vcf.gz > test-vardict.vcf.gz
-bcftools view -r REGIONS_R ori/MB_100vs50-strelka2-annotated.vcf.gz > test-strelka2.vcf.gz
-bcftools view -r REGIONS_R ori/MB-benchmark.vcf.gz > test-benchmark.vcf.gz
+bcftools view -r $REGIONS_CODE ori/MB_100vs50-ensemble-annotated.vcf.gz -Oz -o test-ensemble.vcf.gz
+bcftools view -r $REGIONS_CODE ori/MB_100vs50-mutect2-annotated.vcf.gz  -Oz -o test-mutect2.vcf.gz
+bcftools view -r $REGIONS_CODE ori/MB_100vs50-vardict-annotated.vcf.gz  -Oz -o test-vardict.vcf.gz
+bcftools view -r $REGIONS_CODE ori/MB_100vs50-strelka2-annotated.vcf.gz -Oz -o test-strelka2.vcf.gz
+bcftools view -r $REGIONS_CODE ori/MB-benchmark.vcf.gz                  -Oz -o test-benchmark.vcf.gz
 bedtools getfasta -fi $FASTA -bed <(echo "$REGIONS_BED") | sed "s/$REGIONS_CODE/$CHROM/" > test-GRCh37.fa
 samtools faidx test-GRCh37.fa
 """
@@ -60,6 +62,7 @@ class TestEvalVcf(BaseTestCase):
         self._check_file_throws(join(out_dir, 'report.tsv'), ignore_matching_lines=vcf_ignore_lines)
 
 
+@attr(kind='pon')
 class TestPonAnno(BaseTestCase):
     script = 'pon_anno'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -67,21 +70,23 @@ class TestPonAnno(BaseTestCase):
 
     def test_pon_anno(self):
         out_vcf = join(TestPonAnno.results_dir, basename(add_suffix(input_vardict_vcf, 'pon')))
-        cmdl = f'TRAVIS=1 pon_anno {input_vardict_vcf} -o {out_vcf} -h 1'
+        cmdl = f'pon_anno {input_vardict_vcf} -o {out_vcf} -h 1'
         self._run_cmd(cmdl, input_vardict_vcf, out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 
+@attr(kind='pon')
 class TestPoNPipeline(BaseTestCase):
     script = 'pon_pipeline'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
 
     def test_pon_pipeline(self):
-        cmdl = f'TRAVIS=1 pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
+        cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
                f' -o {TestPoNPipeline.results_dir} -h1,2'
         self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
 
 
+@attr(kind='norm')
 class TestNormVcf(BaseTestCase):
     script = 'norm_vcf'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -102,13 +107,15 @@ class TestNormVcf(BaseTestCase):
     def test_norm_vcf_mutect(self):
         self._run_norm_vcf(input_mutect2_vcf)
 
+@attr(kind='norm')
 class TestPcgrPrep(BaseTestCase):
     script = 'pcgr_prep'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
 
     def _run_pcgr_prep(self, input_vcf=None):
-        out_vcf = join(TestPcgrPrep.results_dir, basename(add_suffix(input_vcf, 'pcgr')))
+        ungz, _ = get_ungz_gz(input_vcf)
+        out_vcf = join(TestPcgrPrep.results_dir, basename(add_suffix(ungz, 'pcgr')))
         cmdl = f'pcgr_prep {input_vcf} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
