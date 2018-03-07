@@ -19,11 +19,11 @@ setup(
     ],
     entry_points = {
         'console_scripts': [
-            'norm_vcf     = vcf_stuff.vcf_normalisation.vcf_norm:main',
-            'pon_anno     = vcf_stuff.panel_of_normals:annotate',
-            'pon_pipeline = vcf_stuff.panel_of_normals:pipeline',
+            'norm_vcf     = vcf_stuff.vcf_normalisation.norm_vcf:main',
+            'pon_anno     = vcf_stuff.panel_of_normals.annotate:main',
+            'pon_pipeline = vcf_stuff.panel_of_normals.pipeline:main',
             'pcgr_prep    = vcf_stuff.vcf_normalisation.pcgr_prep:main',
-            'eval_vcf     = vcf_stuff.vcf_evaluation:main',
+            'eval_vcf     = vcf_stuff.vcf_evaluation.eval_vcf:main',
         ],
     },
     include_package_data=True,

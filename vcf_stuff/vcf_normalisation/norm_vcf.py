@@ -1,18 +1,8 @@
 #!/usr/bin/env python
-"""
-Normalizes VCF: 
-- splits multiallelic ALT
-- splits biallelic MNP
-- left-aligns indels
-- fixes FORMAT and INFO fields
-"""
-import os
-import click
-from os.path import isfile
 
+import click
 from python_utils.hpc import get_ref_file
 from ngs_utils.call_process import run
-from ngs_utils.file_utils import verify_file
 
 
 @click.command()
@@ -20,6 +10,13 @@ from ngs_utils.file_utils import verify_file
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-g', '-f', 'genome', type=click.Path(), default='GRCh37', help='Path to genome fasta, or genome build name (if a known location)')
 def main(input_file, output_file, genome=False):
+    """
+    Normalizes VCF:
+    - splits multiallelic ALT
+    - splits biallelic MNP
+    - left-aligns indels
+    - fixes FORMAT and INFO fields
+    """
     reference_fasta = get_ref_file(genome)
     cmd = make_normalise_cmd(input_file, output_file, reference_fasta)
     run(cmd)
