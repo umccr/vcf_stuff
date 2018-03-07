@@ -1,10 +1,10 @@
 name: vcf_stuff
 
 channels:
+  - vladsaveliev
   - bioconda
   - conda-forge
   - defaults
-  - vladsaveliev
   - anaconda
 
 dependencies:
