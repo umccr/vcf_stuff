@@ -17,7 +17,7 @@ setup(
     packages=[
         name,
     ],
-    entry_points = {
+    entry_points={
         'console_scripts': [
             'norm_vcf     = vcf_stuff.vcf_normalisation.norm_vcf:main',
             'pon_anno     = vcf_stuff.panel_of_normals.annotate:main',

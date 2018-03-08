@@ -6,9 +6,8 @@ import os
 import sys
 import yaml
 import tempfile
-from ngs_utils.file_utils import verify_file, splitext_plus
 import locale
-
+from ngs_utils.file_utils import splitext_plus
 from python_utils.hpc import get_ref_file
 from vcf_stuff.panel_of_normals import package_path
 

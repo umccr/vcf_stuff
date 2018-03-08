@@ -1,13 +1,6 @@
-import traceback
-import os
-import sys
 from os.path import dirname, join, exists, isfile, splitext, basename, isdir, relpath, getctime, getsize, abspath, expanduser
-from datetime import datetime
-import shutil
-import subprocess
 
 from ngs_utils.testing import BaseTestCase, check_call, vcf_ignore_lines, swap_output
-from ngs_utils.utils import is_az, is_local, is_travis
 from ngs_utils.file_utils import safe_mkdir, add_suffix, get_ungz_gz
 
 from nose.plugins.attrib import attr
@@ -92,6 +85,8 @@ class TestPoNPipeline(BaseTestCase):
         cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
                f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name}'
         self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
+        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-ann-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
+        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-ann-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
 
 
 @attr(kind='norm')
