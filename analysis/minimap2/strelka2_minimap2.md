@@ -8,15 +8,15 @@ It appears that with Minimap2, all callers result in pretty similar performance 
 
 ICGC-MB
 
-![](mb_venn.png)
+![](img/mb_venn.png)
 
 COLO829
 
-![](colo_venn.png)
+![](img/colo_venn.png)
 
 We also did run evaluation for GiaB NA12878 germline calls, and same pattern appeared there - Strelka2 shows a bit lower precision rate for SNPs.
 
-![](giab_venn.png)
+![](img/giab_venn.png)
 
 The whole analysis was done in [this notebook](https://github.com/umccr/vcf_stuff/blob/master/analysis/minimap2/Minimap2_explore.ipynb); here we put few findings relevant to Strelka2.
 
