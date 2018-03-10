@@ -18,7 +18,7 @@ We also did run evaluation for GiaB NA12878 germline calls, and same pattern app
 
 ![](img/giab_venn_2.png)
 
-The whole analysis was done in [this notebook](https://github.com/umccr/vcf_stuff/blob/master/analysis/minimap2/Minimap2_explore.ipynb); here we put few findings relevant to Strelka2.
+The whole analysis was done in [this Jupyter notebook](https://github.com/umccr/vcf_stuff/blob/master/analysis/minimap2/Minimap2_explore.ipynb); here we put few findings relevant to Strelka2.
 
 We guessed that Strelka2 might be making some assumptions based on some BWA-MEM features for SNP calling, e.g. SAM tag values, that might be reported differently in Minimap2, with other callers ignoring those features.
 
