@@ -16,7 +16,7 @@ COLO829
 
 We also did run evaluation for GiaB NA12878 germline calls, and same pattern appeared there - Strelka2 shows a bit lower precision rate for SNPs.
 
-![](img/giab_venn.png)
+![](img/giab_venn_2.png)
 
 The whole analysis was done in [this notebook](https://github.com/umccr/vcf_stuff/blob/master/analysis/minimap2/Minimap2_explore.ipynb); here we put few findings relevant to Strelka2.
 
