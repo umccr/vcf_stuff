@@ -17,7 +17,7 @@ For each sample and caller, also using two differrent aligners: [BWA-MEM](https:
 - Tumor: 103x, normal: 89x (downsampled from tumor: 314x, normal: 272x)
 
 
-![](mb.png.png)
+![](mb.png)
 
 ### COLO829 metastatic melanoma cell line
 
@@ -25,5 +25,5 @@ For each sample and caller, also using two differrent aligners: [BWA-MEM](https:
 - BAM file from TGEN
 - Tumor: 81x, normal: 79x
 
-![](colo.png.png)
+![](colo.png)
 
