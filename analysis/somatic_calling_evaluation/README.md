@@ -16,8 +16,9 @@ For each sample and caller, also using two differrent aligners: [BWA-MEM](https:
 - Tumor purity: 95–98%
 - Tumor: 103x, normal: 89x (downsampled from tumor: 314x, normal: 272x)
 
+![](mb_venn.png)
 
-![](mb.png)
+<br>
 
 ### COLO829 metastatic melanoma cell line
 
@@ -25,5 +26,8 @@ For each sample and caller, also using two differrent aligners: [BWA-MEM](https:
 - BAM file from TGEN
 - Tumor: 81x, normal: 79x
 
-![](colo.png)
+![](colo_venn.png)
 
+<br>
+
+Plots taken from [notebook](https://github.com/umccr/vcf_stuff/blob/master/analysis/minimap2/Minimap2_explore.ipynb).
