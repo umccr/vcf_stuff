@@ -108,19 +108,27 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
     # If FORMAT/AF exists, report it as af. Else, check FORMAT/AD. If not, check FORMAT/*U
     if 'AF' in rec.FORMAT:
         af = rec.format('AF')[:,0]
+    if 'DP' in rec.FORMAT:
         dp = rec.format('DP')[:,0]
-    else:
+
+    if dp is None:
+        # strelka2 germline?
+        if 'AD' in rec.FORMAT:
+            dp = np.sum(rec.format('AD')[:,0:], axis=1)
+        # strelka2 somatic?
+        else:
+            dp = rec.format('DP')[:,0]
+
+    if af is None:  # strelka2 before bcbio populated AFs?
         # strelka2 germline?
         if 'AD' in rec.FORMAT:
             alt_counts = rec.format('AD')[:,1]  # AD=REF,ALT so 1 is the position of ALT
-            dp = np.sum(rec.format('AD')[:,0:], axis=1)
         # strelka2 somatic?
         else:
             if rec.is_snp:
                 alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
             else:
                 alt_counts = rec.format('TIR')[:,0]
-            dp = rec.format('DP')[:,0]
         af = np.true_divide(alt_counts, dp, out=np.zeros(alt_counts.shape), where=dp!=0)
 
     try:
