@@ -2,15 +2,26 @@
 
 We evaluated WGS somatic variant calling from alignment data by two aligners: Minimap2 and BWA-MEM. Our goal was to understand if we can replace slower BWA-MEM with Minimap2 in our cancer variant calling analysis pipleine in UMCCR.
 
-We downloaded 2 datasets with curated somatic variants: [ICGC medulloblastoma](https://www.nature.com/articles/ncomms10001) (tumor: 103x, normal: 89x) and [COLO829 metastatic melanoma cell line](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349) (tumor: 81x, normal: 79x), and used bcbio-nextgen to run 3 variant calling pipelines (Strelka2, Mutect, VarDict), plus generated ensemble calls (2 of 3).
+We downloaded 2 datasets with curated somatic variants: 
+- [ICGC medulloblastoma](https://www.nature.com/articles/ncomms10001). Tumor: 103x, normal: 89x (downsampled from tumor: 314x, normal: 272x).  
+- [COLO829 metastatic melanoma cell line](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349). Tumor: 81x, normal: 79x 
+
+And we ran bcbio-nextgen with 3 variant callers:
+
+- [Strelka2](https://github.com/Illumina/strelka)
+- [VarDict](https://github.com/AstraZeneca-NGS/VarDict) (variant filtering http://bcb.io/2016/04/04/vardict-filtering/, allele frequency threshold is set to 10% to avoid excessive false positive rates and runtimes).
+- [Mutect2](https://software.broadinstitute.org/gatk/documentation/tooldocs/3.8-0/org_broadinstitute_gatk_tools_walkers_cancer_m2_MuTect2.php)
+- Ensemble calls (variant detected by 2 of 3 callers above)
 
 It appears that with Minimap2, all callers result in pretty similar performance comparing to BWA-MEM, with recall rate being even higher. And even though it looks pretty safe to migrate to Minimap2, we noticed that Strelka2 falls a bit short in precision in SNP.
 
-ICGC-MB
+### ICGC medulloblastoma
 
 ![](img/mb_venn.png)
 
-COLO829
+<br>
+
+### COLO829
 
 ![](img/colo_venn.png)
 
@@ -84,4 +95,4 @@ Tumor:  0/1: 0,3: 33,33: 89: 0:   0,36: 0:0:       56,85
 
 Even though the 1st-tier allelic depth for G is 0, the variant was called as T>G.
 
-We are wondering if in general, the discrepancy for Strelka2 comes from the alignment decisions Minimap2 makes differently from BWA (leading to diffences in coverage and reads aligner), or it might have to do with different ways to calculate and report particular SAM tags (like AS, XS)? If Strelka2's model were trained with Minimap2 data, would it improve the performance, or it has to do with Minimap2 beeing less accurate than BWA-MEM?. We would be happy to share any data and the details of the runs!
+We are wondering if in general, the discrepancy for Strelka2 comes from the alignment decisions Minimap2 makes differently from BWA (leading to diffences in coverage and reads aligner), or it might have to do with different ways to calculate and report particular SAM tags (like AS, XS)? If Strelka2's model were trained with Minimap2 data, would it improve the performance, or it has to do with Minimap2 beeing less accurate than BWA-MEM? We would be happy to share any data and the details of the runs.
