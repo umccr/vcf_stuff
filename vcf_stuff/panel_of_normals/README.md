@@ -40,6 +40,36 @@ MH17B001P010              /data/cephfs/punim0010/data/Results/Avner/MH17B001P010
 WES013BL                  /data/cephfs/punim0010/projects/Hsu_WGS_Validation/WGS-WES013PF-merged/final/2017-07-17_WGS-WES013PF-merged/WES013PFBL-germline-ensemble-annotated.vcf.gz
 WES012MVBL                /data/projects/punim0010/projects/Hsu_WGS_Validation/WGS-WES012MV-merged/final/2017-07-05_WGS-WES012MV-merged/WES012MVBL-germline-ensemble-annotated.vcf.gz
 WES003KMBL                /data/projects/punim0010/projects/Hsu_WGS_Validation/WGS-WES003KM-merged/final/2017-06-19_AGRF15-00335_H23HJDMXX_WES003KM-merged/WES003KMBL-germline-ensemble-annotated.vcf.gz
+PRJ170029_E120-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170029_E120-B01-D-ensemble-annotated.vcf.gz
+PRJ170031_E121-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170031_E121-B01-D-ensemble-annotated.vcf.gz
+PRJ170033_E123-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170033_E123-B01-D-ensemble-annotated.vcf.gz
+PRJ170035_E125-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170035_E125-B01-D-ensemble-annotated.vcf.gz
+PRJ170038_E122-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170038_E122-B01-D-ensemble-annotated.vcf.gz
+PRJ170040_E019-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170040_E019-B01-D-ensemble-annotated.vcf.gz
+PRJ170158_E143-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170158_E143-B01-D-ensemble-annotated.vcf.gz
+PRJ170160_E133-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170160_E133-B01-D-ensemble-annotated.vcf.gz
+PRJ170162_E141-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170162_E141-B01-D-ensemble-annotated.vcf.gz
+PRJ170164_E130-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170164_E130-B01-D-ensemble-annotated.vcf.gz
+PRJ170166_E140-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170166_E140-B01-D-ensemble-annotated.vcf.gz
+PRJ170168_E164-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170168_E164-B01-D-ensemble-annotated.vcf.gz
+PRJ170170_E146-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170170_E146-B01-D-ensemble-annotated.vcf.gz
+PRJ170172_E144-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170172_E144-B01-D-ensemble-annotated.vcf.gz
+PRJ170174_E156-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170174_E156-B01-D-ensemble-annotated.vcf.gz
+PRJ170176_E158-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170176_E158-B01-D-ensemble-annotated.vcf.gz
+PRJ170178_E162-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170178_E162-B01-D-ensemble-annotated.vcf.gz
+PRJ170180_E134-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170180_E134-B01-D-ensemble-annotated.vcf.gz
+PRJ170182_E142-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170182_E142-B01-D-ensemble-annotated.vcf.gz
+PRJ170184_E165-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170184_E165-B01-D-ensemble-annotated.vcf.gz
+PRJ170186_E163-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170186_E163-B01-D-ensemble-annotated.vcf.gz
+PRJ170188_E168-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170188_E168-B01-D-ensemble-annotated.vcf.gz
+PRJ170191_E159-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170191_E159-B01-D-ensemble-annotated.vcf.gz
+PRJ170193_E124-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170193_E124-B01-D-ensemble-annotated.vcf.gz
+PRJ180003_E169-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180003_E169-B01-D-ensemble-annotated.vcf.gz
+PRJ180005_E129-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180005_E129-B01-D-ensemble-annotated.vcf.gz
+PRJ180007_E170-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180007_E170-B01-D-ensemble-annotated.vcf.gz
+PRJ180010_E153-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180010_E153-B01-D-ensemble-annotated.vcf.gz
+PRJ180012_E131-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180012_E131-B01-D-ensemble-annotated.vcf.gz
+PRJ180014_E155-B01-D      /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180014_E155-B01-D-ensemble-annotated.vcf.gz
 ```
 
 ### Annotating
