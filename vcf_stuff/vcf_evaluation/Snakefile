@@ -10,7 +10,7 @@ import csv
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from python_utils.hpc import get_loc
 from vcf_stuff.vcf_normalisation.norm_vcf import make_normalise_cmd
-from vcf_stuff.vcf_evaluation import stats_to_df, dislay_stats_df
+from vcf_stuff.vcf_evaluation import stats_to_df, dislay_stats_df, f_measure
 
 
 rule all:
@@ -210,28 +210,34 @@ rule eval:
         with open(output[0], 'w') as f:
             writer = csv.writer(f, delimiter='\t')
             writer.writerow([
-                '#SNP TP', 'SNP FP', 'SNP FN', 'SNP Precision', 'SNP Recall', 
-                 'IND TP', 'IND FP', 'IND FN', 'IND Precision', 'IND Recall'
+                '#SNP TP', 'SNP FP', 'SNP FN', 'SNP Recall', 'SNP Precision',
+                 'IND TP', 'IND FP', 'IND FN', 'IND Recall', 'IND Precision'
             ])
             # https://en.wikipedia.org/wiki/Precision_and_recall :
             # precision                  = tp / (tp + fp)
             # recall = sensitivity = tpr = tp / (tp + fn)
 
+            snps_truth = tp_snps + fn_snps
+            snps_recall = tp_snps / snps_truth if snps_truth else 0
             snps_called = tp_snps + fp_snps
             snps_prec = tp_snps / snps_called if snps_called else 0
 
-            snps_truth = tp_snps + fn_snps
-            snps_recall = tp_snps / snps_truth if snps_truth else 0
-
+            inds_truth = tp_inds + fn_inds
+            inds_recall = tp_inds / inds_truth if inds_truth else 0
             inds_called = tp_inds + fp_inds
             inds_prec = tp_inds / inds_called if inds_called else 0
 
-            inds_truth = tp_inds + fn_inds
-            inds_recall = tp_inds / inds_truth if inds_truth else 0
+            snps_f1 = f_measure(1, snps_prec, snps_recall)
+            snps_f2 = f_measure(2, snps_prec, snps_recall)
+            snps_f3 = f_measure(3, snps_prec, snps_recall)
+
+            inds_f1 = f_measure(1, inds_prec, inds_recall)
+            inds_f2 = f_measure(2, inds_prec, inds_recall)
+            inds_f3 = f_measure(3, inds_prec, inds_recall)
 
             writer.writerow([
-                snps_truth, tp_snps, fp_snps, fn_snps, snps_prec, snps_recall,
-                inds_truth, tp_inds, fp_inds, fn_inds, inds_prec, inds_recall
+                snps_truth, tp_snps, fp_snps, fn_snps, snps_recall, snps_prec, snps_f1, snps_f2, snps_f3,
+                inds_truth, tp_inds, fp_inds, fn_inds, inds_recall, inds_prec, inds_f1, inds_f2, inds_f3,
             ])
 
 # Combine all stats to get single report:
