@@ -18,9 +18,17 @@ bcftools view -r $REGIONS_CODE ori/MB_100vs50-vardict-annotated.vcf.gz  -Oz -o t
 bcftools view -r $REGIONS_CODE ori/MB_100vs50-strelka2-annotated.vcf.gz -Oz -o test-strelka2.vcf.gz
 bcftools view -r $REGIONS_CODE ori/MB-benchmark.vcf.gz                  -Oz -o test-benchmark.vcf.gz
 
+ssh spa
+bcftools view -r $REGIONS_CODE /data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals.snps.vcf.gz -Oz -o panel_of_normals.TEST.snps.vcf.gz
+bcftools view -r $REGIONS_CODE /data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals.indels.vcf.gz -Oz -o panel_of_normals.TEST.indels.vcf.gz
+tabix -p vcf panel_of_normals.TEST.snps.vcf.gz
+tabix -p vcf panel_of_normals.TEST.indels.vcf.gz
+
 mkdir panel_of_normals
-bcftools view -r $REGIONS_CODE /Users/vsaveliev/googledrive/bio/extras/panel_of_normals/GRCh37/panel_of_normals.vcf.gz -Oz -o panel_of_normals/panel_of_normals.vcf.gz
-tabix panel_of_normals/panel_of_normals.vcf.gz
+scp -r spa:/data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals/panel_of_normals.TEST.indels.vcf.gz panel_of_normals
+scp -r spa:/data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals/panel_of_normals.TEST.indels.vcf.gz.tbi panel_of_normals
+scp -r spa:/data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals/panel_of_normals.TEST.snps.vcf.gz panel_of_normals
+scp -r spa:/data/cephfs/punim0010/extras/panel_of_normals/panel_of_normals/panel_of_normals.TEST.snps.vcf.gz.tbi panel_of_normals
 
 bedtools getfasta -fi $FASTA -bed <(echo "$REGIONS_BED") | sed "s/$REGIONS_CODE/$CHROM/" > test-GRCh37.fa
 samtools faidx test-GRCh37.fa
