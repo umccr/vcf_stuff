@@ -21,17 +21,16 @@ except TypeError:
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-h', 'filter_hits', type=click.INT, default=None)
-@click.option('--check-allele', is_flag=True, default=False)
-def main(vcf, genome, output_file=None, filter_hits=None, check_allele=False):
+def main(vcf, genome, output_file=None, filter_hits=None):
     """
     Annotate records in the VCF file `vcf` with `INFO/PoN_CNT`
     """
-    fixed_toml_f = tempfile.NamedTemporaryFile(delete=False)
 
+    fixed_normals_path_toml_f = tempfile.NamedTemporaryFile(delete=False)
     normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
-    run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {get_toml_path()} > {fixed_toml_f.name}')
+    run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {get_toml_path()} > {fixed_normals_path_toml_f.name}')
 
-    cmd = f'vcfanno{" " if check_allele else " -permissive-overlap"} {fixed_toml_f.name} {vcf} | bgzip -c'
+    cmd = f'vcfanno {fixed_normals_path_toml_f.name} {vcf} | bgzip -c'
     if filter_hits:
         cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + -Oz'
 
@@ -41,8 +40,8 @@ def main(vcf, genome, output_file=None, filter_hits=None, check_allele=False):
     else:
         run_simple(cmd)
 
-    fixed_toml_f.close()
-    os.unlink(fixed_toml_f.name)
+    fixed_normals_path_toml_f.close()
+    os.unlink(fixed_normals_path_toml_f.name)
 
 
 if __name__ == '__main__':

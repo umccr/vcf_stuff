@@ -3,71 +3,13 @@
 import os
 import glob
 import re
-from python_utils.hpc import get_loc
+from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix
 
+from python_utils import hpc
+from vcf_stuff.panel_of_normals import get_normals_yaml_path
+import yaml
+from cyvcf2 import VCF, Writer
 
-threads_max = 32  # Use up to 32 cores at once, if available
-
-
-if get_loc().name == 'spartan':
-    normal_by_name = dict(l.strip().split() for l in '''
-17MHP002Bld /data/cephfs/punim0010/extras/panel_of_normals/vcfs/17MHP002Bld-CCR170002.vcf.gz
-17MHP031Bld /data/cephfs/punim0010/extras/panel_of_normals/vcfs/17MHP031Bld-CCR170089_S1.vcf.gz
-BriGibBld   /data/cephfs/punim0010/extras/panel_of_normals/vcfs/BriGibBld-PRJ170155_S3.vcf.gz
-COLO829Bld  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/COLO829Bld-CCR170091a.vcf.gz
-MDx150891   /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MDx150891.vcf.gz
-MH17B001P004    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P004.vcf.gz
-MH17B001P010    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P010.vcf.gz
-MH17B001P013    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/MH17B001P013.vcf.gz
-NA12878 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA12878-1VD.vcf.gz
-NA24385 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA24385-1LL.vcf.gz
-NA24631 /data/cephfs/punim0010/extras/panel_of_normals/vcfs/NA24631-1KC.vcf.gz
-VPH52_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH52_Blood.vcf.gz
-VPH54_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH54_Blood.vcf.gz
-VPH56_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH56_Blood.vcf.gz
-VPH58_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH58_Blood.vcf.gz
-VPH59_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH59_Blood.vcf.gz
-VPH61_Blood /data/cephfs/punim0010/extras/panel_of_normals/vcfs/VPH61_Blood.vcf.gz
-WES003KMBL  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES003KMBL.vcf.gz
-WES012MVBL  /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES012MVBL.vcf.gz
-WES013BL    /data/cephfs/punim0010/extras/panel_of_normals/vcfs/WES013BL.vcf.gz
-PRJ170029_E120-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170029_E120-B01-D-ensemble-annotated.vcf.gz
-PRJ170031_E121-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170031_E121-B01-D-ensemble-annotated.vcf.gz
-PRJ170033_E123-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170033_E123-B01-D-ensemble-annotated.vcf.gz
-PRJ170035_E125-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170035_E125-B01-D-ensemble-annotated.vcf.gz
-PRJ170038_E122-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170038_E122-B01-D-ensemble-annotated.vcf.gz
-PRJ170040_E019-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170040_E019-B01-D-ensemble-annotated.vcf.gz
-PRJ170158_E143-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170158_E143-B01-D-ensemble-annotated.vcf.gz
-PRJ170160_E133-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170160_E133-B01-D-ensemble-annotated.vcf.gz
-PRJ170162_E141-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170162_E141-B01-D-ensemble-annotated.vcf.gz
-PRJ170164_E130-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170164_E130-B01-D-ensemble-annotated.vcf.gz
-PRJ170166_E140-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170166_E140-B01-D-ensemble-annotated.vcf.gz
-PRJ170168_E164-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170168_E164-B01-D-ensemble-annotated.vcf.gz
-PRJ170170_E146-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170170_E146-B01-D-ensemble-annotated.vcf.gz
-PRJ170172_E144-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170172_E144-B01-D-ensemble-annotated.vcf.gz
-PRJ170174_E156-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170174_E156-B01-D-ensemble-annotated.vcf.gz
-PRJ170176_E158-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170176_E158-B01-D-ensemble-annotated.vcf.gz
-PRJ170178_E162-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170178_E162-B01-D-ensemble-annotated.vcf.gz
-PRJ170180_E134-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170180_E134-B01-D-ensemble-annotated.vcf.gz
-PRJ170182_E142-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170182_E142-B01-D-ensemble-annotated.vcf.gz
-PRJ170184_E165-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170184_E165-B01-D-ensemble-annotated.vcf.gz
-PRJ170186_E163-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170186_E163-B01-D-ensemble-annotated.vcf.gz
-PRJ170188_E168-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170188_E168-B01-D-ensemble-annotated.vcf.gz
-PRJ170191_E159-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170191_E159-B01-D-ensemble-annotated.vcf.gz
-PRJ170193_E124-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ170193_E124-B01-D-ensemble-annotated.vcf.gz
-PRJ180003_E169-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180003_E169-B01-D-ensemble-annotated.vcf.gz
-PRJ180005_E129-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180005_E129-B01-D-ensemble-annotated.vcf.gz
-PRJ180007_E170-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180007_E170-B01-D-ensemble-annotated.vcf.gz
-PRJ180010_E153-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180010_E153-B01-D-ensemble-annotated.vcf.gz
-PRJ180012_E131-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180012_E131-B01-D-ensemble-annotated.vcf.gz
-PRJ180014_E155-B01-D    /data/cephfs/punim0010/data/Results/Tothill-Research/final/2018-04-01_a5-merged/PRJ180014_E155-B01-D-ensemble-annotated.vcf.gz
-'''.split('\n') if l.strip())
-
-if get_loc().name == 'vlad':
-    normal_by_name = {'tmp': '/Users/vsaveliev/Analysis/panel_of_normals/GRCh37/normals/MH17B001P004-germline-ensemble-annotated.vcf.gz'}
-
-if 'normal' in config:
-    normal_by_name = dict([config['normal'].split(':')])
 
 def str_to_lua_variable_name(name):
     name = os.path.basename(name)
@@ -77,31 +19,80 @@ def str_to_lua_variable_name(name):
     return name
 
 
+do_merge_multiallelic = True  # True if want to compare SITE, False if ALT
+
+
+PON_FILE = f'panel_of_normals.vcf.gz'
+
+
+data = dict()
+if hpc.get_loc().name == 'spartan':
+    with open(get_normals_yaml_path()) as f:
+        data = yaml.load(f)
+
+if hpc.get_loc().name == 'vlad':
+    data = {'tmp': '/Users/vsaveliev/Analysis/panel_of_normals/GRCh37/normals/MH17B001P004-germline-ensemble-annotated.vcf.gz'}
+
+if 'normal' in config:
+    data = dict([config['normal'].split(':')])
+
+cohort_by_sample = dict()
+vcf_by_sample = dict()
+
+for entry in data:
+    if isinstance(entry, str):  # VCF path
+        sname = VCF(entry).samples[0]
+        cohort_by_sample[sname] = sname
+        vcf_by_sample[sname] = entry
+    else:  # single-item dict {cohort: [VCF paths]}
+        cohort_name, vcf_paths = list(entry.items())[0]
+        for vcf_path in vcf_paths:
+            sname = VCF(vcf_path).samples[0]
+            cohort_by_sample[sname] = cohort_name
+            vcf_by_sample[sname] = vcf_path
+
+
 rule all:
     input:
-        'panel_of_normals.vcf.gz'
+        add_suffix(PON_FILE, 'snps'),
+        add_suffix(PON_FILE, 'indels')
 
 
 rule clean_vcf:
     input:
-        vcf = lambda wc: normal_by_name[wc.sample],
-        tbi = lambda wc: normal_by_name[wc.sample] + '.tbi'
+        vcf = lambda wc: vcf_by_sample[wc.sample],
+        tbi = lambda wc: vcf_by_sample[wc.sample] + '.tbi'
     output:
-        vcf = 'work/{sample}.clean.vcf.gz',
-        tbi = 'work/{sample}.clean.vcf.gz.tbi'
+        vcf = 'work/clean/{sample}.clean.vcf.gz',
+        tbi = 'work/clean/{sample}.clean.vcf.gz.tbi'
     shell:
-        'bcftools annotate -x INFO,FORMAT {input.vcf} -Oz -o {output.vcf} && tabix {output.vcf}'
+        'bcftools annotate -x INFO,FORMAT {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
 
 
+rule normalise_vcf:
+    input:
+        rules.clean_vcf.output.vcf
+    output:
+        vcf = 'work/clean/{sample}.clean.norm.vcf.gz',
+        tbi = 'work/clean/{sample}.clean.norm.vcf.gz.tbi'
+    shell:
+        'norm_vcf {input} -o {output.vcf}'
+
+
+# TODO:
+# Try: take PCGR `<batch>-??????-normal.pcgr.snvs_indels.tiers.tsv`, remove TIER1 and TIER2
+
+
+# Merge VCFs, make multiallelic indels as we will ignore ALT for indels
 rule combine_vcfs:
     input:
-        expand(rules.clean_vcf.output.vcf, sample=normal_by_name.keys())
+        expand(rules.normalise_vcf.output.vcf, sample=vcf_by_sample.keys()),
     output:
         vcf = 'work/clean_merged.vcf.gz',
         tbi = 'work/clean_merged.vcf.gz.tbi'
-    threads: threads_max
+    threads: 32
     shell:
-        'bcftools merge {input} --threads {threads} -Oz -o {output.vcf} && tabix {output.vcf}'
+        'bcftools merge -m indels {input} --threads {threads} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
         # 'bcftools concat {input} -d all --allow-overlaps --threads {threads} -Oz -o {output}'
 
 
@@ -109,27 +100,74 @@ rule count_hits:
     input:
         rules.combine_vcfs.output[0]
     output:
-        'panel_of_normals.vcf'
+        get_ungz_gz(PON_FILE)[0]
     run:
-        from cyvcf2 import VCF, Writer
-        import sys
-
         vcf = VCF(input[0])
-        vcf.add_info_to_header({'ID': 'PoN', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
-
+        vcf.add_info_to_header({'ID': 'PoN_cohorts', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
+        vcf.add_info_to_header({'ID': 'PoN_samples', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
         w = Writer(output[0], vcf)
+        failed_w = open(splitext_plus(output[0])[0] + '_failed_lines.tsv', 'w')
 
+        failed_lines = 0
+        good_lines = 0
         for v in vcf:
-            v.INFO['PoN'] = len(list(filter(None, v.format('GT'))))
-            w.write_record(v)
+            try:
+                v_samples = [s for s, gt in zip(vcf.samples, v.format('GT')) if gt]
+            except:
+                failed_lines += 1
+                failed_w.write(str(v))
+            else:
+                good_lines += 1
+                cohorts = set(cohort_by_sample[s] for s in v_samples)
+                v.INFO['PoN_cohorts'] = len(cohorts)
+                v.INFO['PoN_samples'] = len(v_samples)
+                w.write_record(v)
+        print(f'Written {good_lines} lines, failed {failed_lines} lines')
+        w.close()
+        failed_w.close()
+        vcf.close()
 
 
 rule bgzip_and_tabix_final_vcf:
     input:
         rules.count_hits.output[0]
     output:
-        vcf ='panel_of_normals.vcf.gz',
-        tbi = 'panel_of_normals.vcf.gz.tbi'
+        vcf = PON_FILE,
+        tbi = PON_FILE + '.tbi'
     shell:
-        'bgzip {input} && tabix {output.vcf}'
+        'bgzip {input} && tabix -p vcf {output.vcf}'
+
+
+rule split_snps_indels:
+    input:
+        rules.bgzip_and_tabix_final_vcf.output[0]
+    output:
+        snps_vcf = add_suffix(PON_FILE, 'snps'),
+        inds_vcf = add_suffix(PON_FILE, 'indels'),
+        snps_tbi = add_suffix(PON_FILE, 'snps') + '.tbi',
+        inds_tbi = add_suffix(PON_FILE, 'indels') + '.tbi'
+    shell:
+        'bcftools view -v snps {input} -Oz -o {output.snps_vcf} && tabix -p vcf {output.snps_vcf} && '
+        'bcftools view -V snps {input} -Oz -o {output.inds_vcf} && tabix -p vcf {output.inds_vcf}'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

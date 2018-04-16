@@ -8,3 +8,7 @@ def package_path():
 
 def get_toml_path():
     return verify_file(join(package_path(), 'vcfanno.toml'))
+
+
+def get_normals_yaml_path():
+    return verify_file(join(package_path(), 'normals.yaml'))
