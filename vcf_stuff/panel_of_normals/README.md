@@ -235,6 +235,31 @@ Homopolymeric artefacts might occur in different representations in VCFs, so com
 
 We will also stick with "1 sample" rule as it gives the highest result, given that most of additional FN are artefacts.
 
+Refined evaluation will look as the following:
+
+```
+cd test
+pon_anno mb-ensemble.vcf.gz -h 1 -o mb-ensemble.1sample.vcf.gz
+pon_anno mb-ensemble.vcf.gz -h 2 -o mb-ensemble.2sample.vcf.gz
+pon_anno mb-ensemble.vcf.gz -h 3 -o mb-ensemble.3sample.vcf.gz
+eval_vcf mb mb-ensemble.vcf.gz mb-ensemble.1sample.vcf.gz -o eval_new -j 30
+```
+
+![pon_eval_mb_100_100_new](pon_eval_mb_100_100_new.png)
+
+And others samples:
+
+```
+cd test_mb_100_50
+pon_pipeline mb-ensemble.vcf.gz -o pon_new -j 30 -h1,2,3
+eval_vcf pon_new/pon_filter/mb-ensemble-ann-n*.vcf.gz mb-ensem
+ble.vcf.gz -o pon_new/eval
+
+cd test_mb_300_50
+
+cd test_colo
+```
+
 
 ## Playground
 

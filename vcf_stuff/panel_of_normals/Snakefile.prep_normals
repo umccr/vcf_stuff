@@ -106,23 +106,16 @@ rule count_hits:
         vcf.add_info_to_header({'ID': 'PoN_cohorts', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
         vcf.add_info_to_header({'ID': 'PoN_samples', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
         w = Writer(output[0], vcf)
-        failed_w = open(splitext_plus(output[0])[0] + '_failed_lines.tsv', 'w')
 
-        failed_lines = 0
-        good_lines = 0
+        written_lines = 0
         for v in vcf:
-            try:
-                v_samples = [s for s, gt in zip(vcf.samples, v.format('GT')) if gt]
-            except:
-                failed_lines += 1
-                failed_w.write(str(v))
-            else:
-                good_lines += 1
-                cohorts = set(cohort_by_sample[s] for s in v_samples)
-                v.INFO['PoN_cohorts'] = len(cohorts)
-                v.INFO['PoN_samples'] = len(v_samples)
-                w.write_record(v)
-        print(f'Written {good_lines} lines, failed {failed_lines} lines')
+            v_samples = [s for s, gt in zip(vcf.samples, v.genotypes) if gt]
+            cohorts = set(cohort_by_sample[s] for s in v_samples)
+            v.INFO['PoN_cohorts'] = len(cohorts)
+            v.INFO['PoN_samples'] = len(v_samples)
+            w.write_record(v)
+            written_lines += 1
+        print(f'Written {written_lines} lines')
         w.close()
         failed_w.close()
         vcf.close()
