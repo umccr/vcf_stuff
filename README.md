@@ -130,6 +130,14 @@ The filtered VCF files will be written to `results_pon/pon_filter/`.
 
 Scripts only know about the panel location on Spartan and Raijin, so won't work outside.
 
+### Building the panel
+
+On Spartan: 
+
+```
+cd /data/cephfs/punim0010/extras/panel_of_normals
+snakemake -s Snakefile.prep_normals -p -j 20
+```
 
 ## VCF normalisation
 
