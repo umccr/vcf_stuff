@@ -93,8 +93,8 @@ class TestPoNPipeline(BaseTestCase):
         cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
                f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name}'
         self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
-        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-ann-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
-        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-ann-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
+        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
+        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
 
 
 @attr(kind='norm')

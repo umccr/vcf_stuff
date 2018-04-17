@@ -1,5 +1,0 @@
-[[annotation]]
-file="/Users/vsaveliev/googledrive/bio/extras/panel_of_normals/GRCh37/panel_of_normals.vcf.gz"
-fields=["PoN"]
-ops=["self"]
-names=["PoN_CNT"]
