@@ -6,8 +6,12 @@ def package_path():
     return dirname(abspath(__file__))
 
 
-def get_toml_path():
-    return verify_file(join(package_path(), 'vcfanno.toml'))
+def get_snps_toml_path():
+    return verify_file(join(package_path(), 'vcfanno_snps.toml'))
+
+
+def get_indels_toml_path():
+    return verify_file(join(package_path(), 'vcfanno_indels.toml'))
 
 
 def get_normals_yaml_path():
