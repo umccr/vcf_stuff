@@ -4,6 +4,7 @@ VCF Stuff
 
 [![Build Status](https://travis-ci.org/umccr/vcf_stuff.svg?branch=master)](https://travis-ci.org/umccr/vcf_stuff)
 
+
 ## Installation
 
 Clone the repository
@@ -47,6 +48,7 @@ To test
 source load_vcfstuff.sh
 nosetests -s tests/test.py
 ```
+
 
 ## Variant calling evaluataion
 
@@ -175,7 +177,9 @@ For instance, split the following one records:
 #CHROM  POS     ID      REF     ALT
 1       20      .       AG      CT       
 ```
+
 into 2 separate ones:
+
 ```
 #CHROM  POS     ID      REF     ALT
 1       20       .      A       G
@@ -191,11 +195,14 @@ vcfallelicprimitives -t DECOMPOSED --keep-geno vcf_file
 3. Left-align and normalize indels, check if REF alleles match the reference.
 
 For instance, given that the reference chromosome 1 starts with `GCTCCG`, split the following records
+
 ```
 #CHROM  POS     ID      REF     ALT
 1       2       .       CTCC    CCC,C,CCCC
 ```
+
 into the following 3:
+
 ```
 #CHROM  POS     ID      REF     ALT
 1       1       .       GCTC    G
@@ -205,6 +212,7 @@ into the following 3:
 
 These steps are applied to each input VCF for the `eval_vcf` pipeline above.
 
+
 ## INFO fields normalisation
 
 VCFs coming from bcbio-nextgen are called with different callers, each using its own way to report quality, depth and allelic frequencies (if at all). To facilitate processing and reporting VCFs in [PCGR](https://github.com/sigven/pcgr), we prepared a script that calculates and populates `TUMOR_AF`, `NORMAL_AF`, `TUMOR_DP`, `NORMAL_DP`, `TUMOR_MQ`, `NORMAL_MQ` fields, this way standardizing output from Strelka2, Mutect2, Freebayes, GATK Haplotype Caller, and VarDict, and consequenctly, Ensemble calls.
@@ -212,6 +220,7 @@ VCFs coming from bcbio-nextgen are called with different callers, each using its
 ```
 pcgr_prep data/test-ensemble.vcf.gz -g GRCh37 > test-ensemble.pcgr_prep.vcf
 ```
+
 
 ## Playground
 

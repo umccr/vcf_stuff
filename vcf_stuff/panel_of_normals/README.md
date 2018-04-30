@@ -252,13 +252,48 @@ And others samples:
 ```
 cd test_mb_100_50
 pon_pipeline mb-ensemble.vcf.gz -o pon_new -j 30 -h1,2,3
-eval_vcf pon_new/pon_filter/mb-ensemble-ann-n*.vcf.gz mb-ensem
-ble.vcf.gz -o pon_new/eval
+eval_vcf pon_new/pon_filter/mb-ensemble-ann-n*.vcf.gz mb-ensemble.vcf.gz -o pon_new/eval
 
 cd test_mb_300_50
 
 cd test_colo
 ```
+
+## Lifting to hg38
+
+Download the hg19toHg38 chain file. GRCh-to-hg files don't work, so we have to add `chr` prefixes manually.
+
+```
+wget https://github.com/AstraZeneca-NGS/reference_data/blob/master/over.chain/hg19ToHg38.over.chain.gz\?raw\=true -O /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz
+```
+
+```
+cd /data/cephfs/punim0010/extras/panel_of_normals
+mkdir hg38
+cd hg38
+
+# Convert to hg19
+gunzip -c ../panel_of_normals.indels.vcf.gz | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.indels.hg19.vcf.gz
+gunzip -c ../panel_of_normals.snps.vcf.gz | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.snps.hg19.vcf.gz
+
+# Convert to hg38
+CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.indels.hg19.vcf.gz /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.indels.unsorted.vcf
+CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.snps.hg19.vcf.gz /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.snps.unsorted.vcf
+
+# Remove alternative chromosomes that appear after lifting over; sort and tabix the result:
+bcftools view panel_of_normals.snps.unsorted.vcf -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.snps.vcf.gz
+bcftools view panel_of_normals.indels.unsorted.vcf -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.indels.vcf.gz
+tabix -p vcf panel_of_normals.snps.vcf.gz
+tabix -p vcf panel_of_normals.indels.vcf.gz
+```
+
+## Discussion
+
+### Population frequency
+
+We can check if the population frequency of the variant matches its frequency in the panel, and only apply it if it is significantly higher. Because otherwise it might be not an artefact, but a common pre-existing variant. 
+
+E .g. if we see more than 5 times the dbSNP GMAF or gnomad AF - then keep it in the panel. For instance, if the GMAF is 0.05 - which means it's common to see it 1 in 20 by chance - we'd expect around 2,5 samples in the panel to have it. If that's the case, than we shoule remove it from the panel. If we see it more often - then it's probably an artefact.
 
 
 ## Playground
