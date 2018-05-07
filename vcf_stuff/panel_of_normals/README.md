@@ -274,14 +274,14 @@ cd hg38
 
 # Convert to hg19
 gunzip -c ../panel_of_normals.indels.vcf.gz | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.indels.hg19.vcf.gz
-gunzip -c ../panel_of_normals.snps.vcf.gz | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.snps.hg19.vcf.gz
+gunzip -c ../panel_of_normals.snps.vcf.gz   | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.snps.hg19.vcf.gz
 
 # Convert to hg38
 CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.indels.hg19.vcf.gz /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.indels.unsorted.vcf
-CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.snps.hg19.vcf.gz /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.snps.unsorted.vcf
+CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.snps.hg19.vcf.gz   /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.snps.unsorted.vcf
 
 # Remove alternative chromosomes that appear after lifting over; sort and tabix the result:
-bcftools view panel_of_normals.snps.unsorted.vcf -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.snps.vcf.gz
+bcftools view panel_of_normals.snps.unsorted.vcf   -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.snps.vcf.gz
 bcftools view panel_of_normals.indels.unsorted.vcf -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.indels.vcf.gz
 tabix -p vcf panel_of_normals.snps.vcf.gz
 tabix -p vcf panel_of_normals.indels.vcf.gz
