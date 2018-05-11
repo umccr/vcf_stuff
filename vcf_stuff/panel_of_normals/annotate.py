@@ -30,6 +30,8 @@ def main(vcf, genome, output_file=None, filter_hits=None):
     normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
     run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {get_snps_toml_path()} > {fixed_snps_toml_f.name}')
 
+    run_simple(f'bcftools view -H {os.path.join(normals_dir, "panel_of_normals.snps.vcf.gz")}')
+
     fixed_indels_toml_f = tempfile.NamedTemporaryFile(delete=False)
     normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
     run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {get_indels_toml_path()} > {fixed_indels_toml_f.name}')
