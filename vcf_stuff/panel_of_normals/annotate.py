@@ -36,6 +36,8 @@ def main(vcf, genome, output_file=None, filter_hits=None):
     normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
     run_simple(f'sed s#file=\\\"#file=\\\"{normals_dir}/# {get_indels_toml_path()} > {fixed_indels_toml_f.name}')
 
+    run_simple(f'cat {fixed_indels_toml_f.name)}')
+
     cmd = (f'vcfanno {fixed_snps_toml_f.name} {vcf}' +
         f' | vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | bgzip -c')
     if filter_hits:
@@ -46,6 +48,8 @@ def main(vcf, genome, output_file=None, filter_hits=None):
         sys.stderr.write(f'Saved to {output_file}\n')
     else:
         run_simple(cmd)
+
+    run_simple(f'bcftools view -H {output_file}')
 
     fixed_snps_toml_f.close()
     fixed_indels_toml_f.close()
