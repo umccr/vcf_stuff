@@ -129,7 +129,9 @@ class TestPcgrPrep(BaseTestCase):
         out_vcf = join(TestPcgrPrep.results_dir, basename(add_suffix(ungz, 'pcgr')))
         cmdl = f'pcgr_prep {input_vcf} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
-        self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
+        self._check_file_throws(out_vcf,
+            wrapper='bcftools query -f "%TUMOR_AF\\t%NORMAL_AF\\t%TUMOR_DP\\t%NORMAL_DP\\t%TUMOR_MQ\\n" | '
+                    'awk \'{printf("%.2f %.2f %.2f %.2f %.2f\\n", $1, $2, $3, $4, $5) }\'')
 
     def test_pcgr_prep_vardict(self):
         self._run_pcgr_prep(input_vardict_vcf)

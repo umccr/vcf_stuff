@@ -1,14 +1,10 @@
 # Snakemake file for filtering of a VCF file against a set of normal samples.
-
-# Usage: 
+# Usage:
 # snakemake -p --configfile=config.yaml
 
-import os
-from os.path import isfile
-import glob
-import re
 from python_utils.hpc import get_ref_file
 
+shell.prefix("")
 
 # configfile: 'config.yaml'
 

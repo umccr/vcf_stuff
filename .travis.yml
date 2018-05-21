@@ -51,10 +51,10 @@ cache:
 env:
   - TEST=test.py:TestEvalVcf.test_preset_ref
   - TEST=test.py:TestEvalVcf.test_custom_ref
-  - TEST=test.py TestPonAnno
-  - TEST=test.py TestPoNPipeline
-  - TEST=test.py TestNormVcf
-  - TEST=test.py TestPcgrPrep
+  - TEST=test.py:TestPonAnno
+  - TEST=test.py:TestPoNPipeline
+  - TEST=test.py:TestNormVcf
+  - TEST=test.py:TestPcgrPrep
 
 script:
   - nosetests --nocapture tests/$TEST
