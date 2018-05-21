@@ -15,11 +15,12 @@ dependencies:
   - bedtools
   - vcfanno
   - vcflib  # for VCF normalization
-  - snakemake>=4.3.1vlad
+  - snakemake>=5.1.2vlad
   - pythonpy
   - click
   - cyvcf2
   - pandas
+  - ngs_utils
   #
   # Visualisation
   - jupyter
@@ -28,5 +29,4 @@ dependencies:
   #
   # Actively developed accompanying libraries
   - pip:
-    - "--editable=git+https://github.com/vladsaveliev/NGS_Utils#egg=ngs_utils"
     - "--editable=git+https://github.com/umccr/python_utils#egg=python_utils"
