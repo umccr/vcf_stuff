@@ -8,34 +8,39 @@ VCF Stuff
 ## Installation
 
 Clone the repository
+
 ```
 git clone https://github.com/umccr/vcf_stuff
 ```
 
 Install conda
+
 ```
 wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-bash miniconda.sh -b -p ./miniconda
-export PATH=$(pwd)/miniconda/bin:$PATH
+bash miniconda.sh -b -p ./miniconda && rm miniconda.sh
+. miniconda/etc/profile.d/conda.sh
 ```
 
 Install vcf_stuff
+
 ```
 conda env create -p $(pwd)/miniconda/envs/vcf_stuff --file environment.yml
-source activate $(pwd)/miniconda/envs/vcf_stuff
+conda  activate $(pwd)/miniconda/envs/vcf_stuff
 pip install -e .
 ```
 
-Create a loader script
+To automate sourcing in the future, you can create a loader script
+
 ```
 cat <<EOT > load_vcfstuff.sh
-SCRIPTPATH=\$(dirname \$(readlink -e $(pwd)))
-export PATH=\$SCRIPTPATH/miniconda/bin:\$PATH
-source activate \$SCRIPTPATH/miniconda/envs/vcf_stuff
+SCRIPTPATH=\$(readlink -e $(pwd))
+. \$SCRIPTPATH/miniconda/etc/profile.d/conda.sh
+conda activate \$SCRIPTPATH/miniconda/envs/vcf_stuff
 EOT
 ```
 
-To update
+## Updating
+
 ```
 source load_vcfstuff.sh
 git pull                                                             # if the code base changed
@@ -43,7 +48,7 @@ conda env update -f environment.yml                                  # if depend
 ./setup.py develop && source deactivate && source load_vcfstuff.sh   # if added/renamed packages or scripts
 ```
 
-To test
+## Testing
 ```
 source load_vcfstuff.sh
 nosetests -s tests/test.py
