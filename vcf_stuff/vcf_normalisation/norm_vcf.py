@@ -4,6 +4,8 @@ import click
 from python_utils.hpc import get_ref_file
 from ngs_utils.call_process import run
 
+from ngs_utils.utils import set_locale
+set_locale()
 
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))

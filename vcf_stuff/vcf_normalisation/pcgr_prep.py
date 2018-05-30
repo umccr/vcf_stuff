@@ -9,6 +9,8 @@ import re
 import numpy as np
 from ngs_utils.vcf_utils import get_sample_ids
 
+from ngs_utils.utils import set_locale
+set_locale()
 
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))

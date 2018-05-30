@@ -8,16 +8,10 @@ import yaml
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import err, critical
 from python_utils.hpc import find_loc, get_ref_file, get_genomes_d
-import locale
-
 from vcf_stuff.vcf_evaluation import package_path
 
-try:
-    if 'UTF-8' not in locale.getlocale(locale.LC_ALL):
-        locale.setlocale(locale.LC_ALL, 'en_AU.UTF-8')
-except TypeError:
-    pass
-
+from ngs_utils.utils import set_locale
+set_locale()
 
 @click.command()
 @click.argument('truth')

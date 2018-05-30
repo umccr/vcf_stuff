@@ -5,16 +5,10 @@ import os
 import tempfile
 from ngs_utils.call_process import run_simple
 from python_utils.hpc import get_loc, find_loc, get_ref_file
-import locale
-
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
 
-try:
-    if 'UTF-8' not in locale.getlocale(locale.LC_ALL):
-        locale.setlocale(locale.LC_ALL, 'en_AU.UTF-8')
-except TypeError:
-    pass
-
+from ngs_utils.utils import set_locale
+set_locale()
 
 @click.command()
 @click.argument('vcf', type=click.Path(exists=True))

@@ -7,6 +7,9 @@ import click
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from pprint import pprint
 
+from ngs_utils.utils import set_locale
+set_locale()
+
 
 @click.group()
 @click.pass_context
