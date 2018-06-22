@@ -15,12 +15,13 @@ dependencies:
   - bedtools
   - vcfanno
   - vcflib  # for VCF normalization
-  - snakemake>=5.1.2vlad
+  - snakemake>=5.1.4vlad
   - pythonpy
   - click
   - cyvcf2
   - pandas
   - ngs_utils
+  - nose
   #
   # Visualisation
   - jupyter
