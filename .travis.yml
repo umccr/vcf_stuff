@@ -49,6 +49,10 @@ env:
   - TEST=test.py:TestNormVcf
   - TEST=test.py:TestPcgrPrep
 
+stages:
+  - install
+  - test
+
 jobs:
   include:
     - stage: install
