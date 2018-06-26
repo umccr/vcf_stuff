@@ -46,14 +46,18 @@ jobs:
     - stage: install
       script: true  # to trigger installation
     - stage: test
-      script: nosetests --nocapture tests/test.py:TestEvalVcf.test_preset_ref
-    - script: nosetests --nocapture tests/test.py:TestEvalVcf.test_custom_ref
-    - script: nosetests --nocapture tests/test.py:TestPonAnno
-    - script: nosetests --nocapture tests/test.py:TestPoNPipeline
-    - script: nosetests --nocapture tests/test.py:TestNormVcf
-    - script: nosetests --nocapture tests/test.py:TestPcgrPrep
+      env:
+        - TEST=test.py:TestEvalVcf.test_preset_ref
+        - TEST=test.py:TestEvalVcf.test_custom_ref
+        - TEST=test.py:TestPonAnno
+        - TEST=test.py:TestPoNPipeline
+        - TEST=test.py:TestNormVcf
+        - TEST=test.py:TestPcgrPrep
+      install: skip
+      script:
+        - nosetests --nocapture tests/$TEST
 
 cache:
   directories:
-  - $HOME/miniconda
+    - $HOME/miniconda
   timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
