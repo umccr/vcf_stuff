@@ -55,7 +55,8 @@ jobs:
         - pip install -e .
       
     - stage: test
-      script: nosetests --nocapture tests/$TEST
+      script: 
+        - nosetests --nocapture tests/$TEST
       before_install: true
 
 cache:
