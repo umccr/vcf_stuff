@@ -41,18 +41,21 @@ install:
   # Installing the codebase (source code was automatically cloned into CWD by Travis)
   - pip install -e .
 
+env:
+  - TEST=test.py:TestEvalVcf.test_preset_ref
+  - TEST=test.py:TestEvalVcf.test_custom_ref
+  - TEST=test.py:TestPonAnno
+  - TEST=test.py:TestPoNPipeline
+  - TEST=test.py:TestNormVcf
+  - TEST=test.py:TestPcgrPrep
+
 jobs:
   include:
     - stage: install
       script: true  # to trigger installation
+      env: TEST=none
+
     - stage: test
-      env:
-        - TEST=test.py:TestEvalVcf.test_preset_ref
-        - TEST=test.py:TestEvalVcf.test_custom_ref
-        - TEST=test.py:TestPonAnno
-        - TEST=test.py:TestPoNPipeline
-        - TEST=test.py:TestNormVcf
-        - TEST=test.py:TestPcgrPrep
       install: skip
       script:
         - nosetests --nocapture tests/$TEST
