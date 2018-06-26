@@ -1,18 +1,10 @@
 sudo: required
+dist: trusty
 
 language: python
 python:
   # We don't actually use the Travis Python (since we are on conda), but this keeps it organized.
   - "3.6"
-
-before_install:
-  # Temporal fix for networking problem: https://github.com/travis-ci/travis-ci/issues/1484
-  - echo "127.0.1.1 "`hostname` | sudo tee /etc/hosts
-
-  # The next couple lines fix a crash with multiprocessing on Travis and
-  # are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
 
 install:
   ##########################################
@@ -41,6 +33,11 @@ install:
   # Installing the codebase (source code was automatically cloned into CWD by Travis)
   - pip install -e .
 
+cache:
+  directories:
+    - $HOME/miniconda
+  timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
+
 env:
   - TEST=test.py:TestEvalVcf.test_preset_ref
   - TEST=test.py:TestEvalVcf.test_custom_ref
@@ -49,18 +46,6 @@ env:
   - TEST=test.py:TestNormVcf
   - TEST=test.py:TestPcgrPrep
 
-jobs:
-  include:
-    - stage: install
-      script: true  # to trigger installation
-      env: TEST=none
+script: 
+  - nosetests --nocapture tests/$TEST
 
-    - stage: test
-      install: skip
-      script:
-        - nosetests --nocapture tests/$TEST
-
-cache:
-  directories:
-    - $HOME/miniconda
-  timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
