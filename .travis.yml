@@ -60,9 +60,8 @@ jobs:
       env: TEST=none
 
     - stage: test
-      install: skip
-      script:
-        - nosetests --nocapture tests/$TEST
+      install: true
+      script: nosetests --nocapture tests/$TEST
 
 cache:
   directories:
