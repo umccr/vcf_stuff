@@ -33,10 +33,10 @@ install:
   # Installing the codebase (source code was automatically cloned into CWD by Travis)
   - pip install -e .
 
-cache:
-  directories:
-    - $HOME/miniconda
-  timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
+#cache:
+#  directories:
+#    - $HOME/miniconda
+#  timeout: 600  # allow 10 minutes to cache instead of default 3 minutes
 
 env:
   - TEST=test.py:TestEvalVcf.test_preset_ref
