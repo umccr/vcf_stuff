@@ -58,12 +58,13 @@ def main(input_file, output_file=None):
         af, dp, mq = _collect_vals_per_sample(rec, control_index, tumor_index)
 
         for t, v in zip(['AF', 'DP', 'MQ'], [af, dp, mq]):
-            rec.INFO[tumor_prefix + t] = str(v[tumor_index])
-            if control_index is not None:
-                if len(v) <= control_index:
-                    sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {control_index} of control sample. Record {v}\n')
-                elif v[control_index] is not None:
-                    rec.INFO[normal_prefix + t] = str(v[control_index])
+            if v:
+                rec.INFO[tumor_prefix + t] = str(v[tumor_index])
+                if control_index is not None:
+                    if len(v) <= control_index:
+                        sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {control_index} of control sample. Record {v}\n')
+                    elif v[control_index] is not None:
+                        rec.INFO[normal_prefix + t] = str(v[control_index])
 
         if w:
             w.write_record(rec)
@@ -118,20 +119,28 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
         if 'AD' in rec.FORMAT:
             dp = np.sum(rec.format('AD')[:,0:], axis=1)
         # strelka2 somatic?
-        else:
+        elif 'DP' in rec.FORMAT:
             dp = rec.format('DP')[:,0]
+        # unknown caller?
+        else:
+            dp = None
 
     if af is None:  # strelka2 before bcbio populated AFs?
         # strelka2 germline?
         if 'AD' in rec.FORMAT:
             alt_counts = rec.format('AD')[:,1]  # AD=REF,ALT so 1 is the position of ALT
         # strelka2 somatic?
-        else:
+        elif rec.ALT[0] + 'U' in rec.FORMAT:
             if rec.is_snp:
                 alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
             else:
                 alt_counts = rec.format('TIR')[:,0]
-        af = np.true_divide(alt_counts, dp, out=np.zeros(alt_counts.shape), where=dp!=0)
+        # unknown caller?
+        else:
+            alt_counts = None
+
+        if alt_counts and dp:
+            af = np.true_divide(alt_counts, dp, out=np.zeros(alt_counts.shape), where=dp!=0)
 
     try:
         mq = rec.format('MQ', float)[:,0]  # VarDict has an incorrect MQ header (with Integer type instead of Float), so need to specify "float" type here explicitly otherwise MQ won't be parsed
