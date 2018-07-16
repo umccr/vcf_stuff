@@ -21,14 +21,20 @@ set_locale()
 @click.option('-r', 'regions', type=click.Path())
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('--anno-tricky', 'anno_tricky', is_flag=True)
-def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky=False):
+@click.option('--anno-dp-af', 'anno_dp_af', is_flag=True)
+@click.option('--remove-anno', 'remove_anno', is_flag=True)
+def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky=False, anno_dp_af=False, remove_anno=False):
     if not vcfs:
         raise click.BadParameter('Provide at least one VCF file')
+
+    assert not (remove_anno is True and anno_dp_af is True), '--anno-dp-af and --remove-anno cannot be set at the same time'
 
     config = {
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in vcfs
                     if v.endswith('.vcf') or v.endswith('.vcf.gz')},
         'anno_tricky': anno_tricky,
+        'anno_dp_af': anno_dp_af,
+        'remove_anno': remove_anno,
     }
     if regions:
         config['sample_regions'] = abspath(regions)
@@ -80,7 +86,6 @@ def main(truth, vcfs, genome, output_dir=None, regions=None, jobs=1, anno_tricky
         out_file = join(output_dir, 'report.tsv')
         if isfile(out_file):
             print(f'Results are in "{output_dir}" folder. E.g. final report saved to "{output_dir}/report.tsv"')
-
 
 
 if __name__ == '__main__':

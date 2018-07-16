@@ -7,6 +7,8 @@
 import os
 import gzip
 import csv
+
+from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from python_utils.hpc import get_loc
 from vcf_stuff.vcf_normalisation.norm_vcf import make_normalise_cmd
@@ -23,7 +25,7 @@ rule all:
 
 
 def merge_regions():
-    samples_regions = config.get('regions')
+    samples_regions = config.get('sample_regions')
     truth_regions = config['truth_regions'] if 'truth_regions' in config else None
 
     output = 'narrow/regions.bed'
@@ -70,21 +72,38 @@ rule narrow_samples_to_regions_and_pass:
         regions = ('-T ' + regions) if regions else ''
         shell('bcftools view {input} {regions} -f .,PASS -Oz -o {output}')
 
-# Propagate FORMAT fields into INFO (using NORMAL_ prefix for normal samples matches):
-rule annotate_pcgr:
-    input:
-        rules.narrow_samples_to_regions_and_pass.output[0]
-    output:
-        'narrow/{sample}.regions.pass.anno.vcf.gz'
-    shell:
-        'pcgr_prep {input} | bgzip -c > {output}'
+if config.get('anno_dp_af'):
+    # Propagate FORMAT fields into INFO (using NORMAL_ prefix for normal samples matches):
+    rule anno_dp_af:
+        input:
+            rules.narrow_samples_to_regions_and_pass.output[0]
+        output:
+            'narrow/{sample}.regions.pass.anno.vcf.gz'
+        shell:
+            'pcgr_prep {input} | bgzip -c > {output}'
+
+    anno_rule = rules.anno_dp_af
+
+elif config.get('remove_anno'):
+    rule remove_anno:
+        input:
+            rules.narrow_samples_to_regions_and_pass.output[0]
+        output:
+            'narrow/{sample}.regions.pass.clean.vcf.gz'
+        shell:
+            'bcftools annotate -x INFO,FORMAT {input} | bgzip -c > {output}'
+
+    anno_rule = rules.remove_anno
+
+else:
+    anno_rule = rules.narrow_samples_to_regions_and_pass
 
 # Extract only tumor sample and tabix:
 rule narrow_samples_to_tumor_sample:
     input:
-        rules.annotate_pcgr.output[0]
+        anno_rule.output[0]
     output:
-        'narrow/{sample}.regions.pass.anno.tumor.vcf.gz'
+        add_suffix(anno_rule.output[0], 'tumor')
     run:
         sn = get_tumor_sample_name(input[0])
         assert sn
@@ -99,7 +118,7 @@ rule narrow_truth_to_target:
     run:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
-        shell('bcftools view {input} {regions} -Oz -o {output} && tabix -p vcf -f {output}')
+        shell('bcftools view {input} {regions} -Ou | bcftools annotate -x INFO,FORMAT -Oz -o {output} && tabix -p vcf -f {output}')
 
 ############################
 ######### NORMALSE #########
