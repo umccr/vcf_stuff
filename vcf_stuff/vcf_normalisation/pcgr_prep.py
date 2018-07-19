@@ -58,7 +58,7 @@ def main(input_file, output_file=None):
         af, dp, mq = _collect_vals_per_sample(rec, control_index, tumor_index)
 
         for t, v in zip(['AF', 'DP', 'MQ'], [af, dp, mq]):
-            if v:
+            if v is not None:
                 rec.INFO[tumor_prefix + t] = str(v[tumor_index])
                 if control_index is not None:
                     if len(v) <= control_index:
@@ -139,7 +139,7 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
         else:
             alt_counts = None
 
-        if alt_counts and dp:
+        if alt_counts is not None and dp is not None:
             af = np.true_divide(alt_counts, dp, out=np.zeros(alt_counts.shape), where=dp!=0)
 
     try:
