@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+
 from os.path import join
 import sys
 import click
 import os
 import tempfile
 from ngs_utils.call_process import run_simple
-from python_utils.hpc import get_ref_file
+from hpc_utils.hpc import get_ref_file
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
 from ngs_utils.file_utils import verify_file, verify_dir
 from ngs_utils.utils import set_locale; set_locale()

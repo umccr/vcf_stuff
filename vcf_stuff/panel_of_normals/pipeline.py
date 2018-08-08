@@ -7,7 +7,7 @@ import sys
 import yaml
 import tempfile
 from ngs_utils.file_utils import splitext_plus
-from python_utils.hpc import get_ref_file
+from hpc_utils.hpc import get_ref_file
 from vcf_stuff.panel_of_normals import package_path
 
 from ngs_utils.utils import set_locale

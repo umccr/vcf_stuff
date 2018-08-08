@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import click
-from python_utils.hpc import get_ref_file
+from hpc_utils.hpc import get_ref_file
 from ngs_utils.call_process import run
 
 from ngs_utils.utils import set_locale

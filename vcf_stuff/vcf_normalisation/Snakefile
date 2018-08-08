@@ -1,6 +1,6 @@
 import os
 from ngs_utils.file_utils import splitext_plus
-from python_utils.hpc import get_loc
+from hpc_utils.hpc import get_loc
 from .norm_vcf import make_normalise_cmd
 
 

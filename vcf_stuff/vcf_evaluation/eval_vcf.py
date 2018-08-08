@@ -7,7 +7,7 @@ import os
 import yaml
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import err, critical
-from python_utils.hpc import find_loc, get_ref_file, get_genomes_d
+from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
 from vcf_stuff.vcf_evaluation import package_path
 
 from ngs_utils.utils import set_locale

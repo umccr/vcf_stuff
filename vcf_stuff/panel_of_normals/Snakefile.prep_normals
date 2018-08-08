@@ -5,7 +5,7 @@ import glob
 import re
 from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix
 
-from python_utils import hpc
+from hpc_utils import hpc
 from vcf_stuff.panel_of_normals import get_normals_yaml_path
 import yaml
 from cyvcf2 import VCF, Writer
