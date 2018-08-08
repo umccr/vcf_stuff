@@ -18,7 +18,8 @@ dependencies:
   - snakemake>=5.1.4vlad
   - pythonpy
   - click
-  - cyvcf2
+  - cyvcf2>=0.10.0
+  - numpy>=1.15.0
   - pandas
   - ngs_utils
   - nose
