@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from os.path import join
+from os.path import join, basename
 import sys
 import click
 import os
@@ -8,7 +8,7 @@ import tempfile
 from ngs_utils.call_process import run_simple
 from hpc_utils.hpc import get_ref_file
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
-from ngs_utils.file_utils import verify_file, verify_dir
+from ngs_utils.file_utils import verify_file, verify_dir, add_suffix, splitext_plus
 from ngs_utils.utils import set_locale; set_locale()
 
 @click.command()
@@ -42,10 +42,37 @@ def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None):
 
     # run_simple(f'cat {fixed_indels_toml_f.name}')
 
-    cmd = (f'vcfanno {fixed_snps_toml_f.name} {vcf}' +
-        f' | vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | bgzip -c')
+    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf}')
+
+    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
+    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin')
+    #
+    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
+    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
+    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" ')
+    #
+    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
+    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
+    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN ')
+    #
+    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
+    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
+    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode +')
+
+    anno_snps_f = tempfile.NamedTemporaryFile(delete=False,
+        suffix=f'{splitext_plus(basename(vcf))[0] + ".snps.vcf.gz"}')
+    run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | '
+               f'bgzip -c > {anno_snps_f.name} && tabix {anno_snps_f.name}')
+
+    anno_indels_f = tempfile.NamedTemporaryFile(delete=False,
+        suffix=f'{splitext_plus(basename(vcf))[0] + ".snps.indels.vcf.gz"}')
+    run_simple(f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} {anno_snps_f.name} | '
+               f'bgzip -c > {anno_indels_f.name} && tabix {anno_indels_f.name}')
+
     if filter_hits:
-        cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode +'
+        cmd = f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + {anno_indels_f.name}'
+    else:
+        cmd = 'bcftools view {anno_indels.name}'
 
     if output_file:
         run_simple(cmd + f' -Oz -o {output_file}')
@@ -57,8 +84,12 @@ def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None):
 
     fixed_snps_toml_f.close()
     fixed_indels_toml_f.close()
+    anno_snps_f.close()
+    anno_indels_f.close()
     os.unlink(fixed_snps_toml_f.name)
     os.unlink(fixed_indels_toml_f.name)
+    os.unlink(anno_snps_f.name)
+    os.unlink(anno_indels_f.name)
 
 
 if __name__ == '__main__':
