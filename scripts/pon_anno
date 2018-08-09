@@ -17,12 +17,22 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-h', '--filter-hits', type=click.INT, default=None)
 @click.option('-g', '--genome', default='GRCh37')
 @click.option('--panel-of-normals-dir', '--pon-dir', default=None)
-def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None):
+@click.option('--work-dir', default=None)
+def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None, work_dir=None):
     """
     Annotate records in the VCF file `vcf` with `INFO/PoN_CNT, optionally flag INFO/PoN_CNT>=filter_hits with FILTER=PoN`
     """
 
-    fixed_snps_toml_f = tempfile.NamedTemporaryFile(delete=False)
+    if work_dir:
+        run(vcf, output_file, filter_hits, genome, pon_dir, work_dir)
+    else:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run(vcf, output_file, filter_hits, genome, pon_dir, tmpdir)
+
+
+def run(vcf, output_file, filter_hits, genome, pon_dir, work_dir):
+    fixed_snps_toml = join(work_dir, 'fixed_snps.toml')
+    fixed_indels_toml = join(work_dir, 'fixed_indels.toml')
 
     if pon_dir:
         verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz'), is_critical=True, description='Panel of normals SNPs file in user provided folder')
@@ -33,46 +43,39 @@ def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None):
     else:
         pon_dir = get_ref_file(genome, key='panel_of_normals_dir')
 
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()} > {fixed_snps_toml_f.name}')
+    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()} > {fixed_snps_toml}')
 
     # run_simple(f'bcftools view -H {os.path.join(normals_dir, "panel_of_normals.snps.vcf.gz")}')
 
-    fixed_indels_toml_f = tempfile.NamedTemporaryFile(delete=False)
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} > {fixed_indels_toml_f.name}')
+    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} > {fixed_indels_toml}')
 
-    # run_simple(f'cat {fixed_indels_toml_f.name}')
+    anno_snps_vcf = join(work_dir, splitext_plus(basename(vcf))[0] + '.snps.vcf.gz')
+    run_simple(f'vcfanno {fixed_snps_toml} {vcf} | '
+               f'bgzip -c > {anno_snps_vcf} && tabix {anno_snps_vcf}')
+    run_simple(f'gunzip -c {anno_snps_vcf} >&2')    # debug
 
-    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf}')
+    anno_indels_vcf = add_suffix(anno_snps_vcf, 'indel')
+    run_simple(f'vcfanno -permissive-overlap {fixed_indels_toml} {anno_snps_vcf} | '
+               f'bgzip -c > {anno_indels_vcf} && tabix {anno_indels_vcf}')
+    run_simple(f'gunzip -c {anno_indels_vcf} >&2')    # debug
 
-    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
-    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin')
-    #
-    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
-    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
-    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" ')
-    #
-    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
-    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
-    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN ')
-    #
-    # run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | bgzip -c | '
-    #            f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} /dev/stdin | '
-    #            f'bgzip -c | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode +')
+    # debug:
+    tmp1 = join(work_dir, 'tmp1.vcf')
+    run_simple(f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" {anno_indels_vcf} > {tmp1}')
+    run_simple(f'bcftools view -H {tmp1} >&2')
 
-    anno_snps_f = tempfile.NamedTemporaryFile(delete=False,
-        suffix=f'{splitext_plus(basename(vcf))[0] + ".snps.vcf.gz"}')
-    run_simple(f'vcfanno {fixed_snps_toml_f.name} {vcf} | '
-               f'bgzip -c > {anno_snps_f.name} && tabix {anno_snps_f.name}')
+    tmp2 = join(work_dir, 'tmp2.vcf')
+    run_simple(f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" {anno_indels_vcf} --soft-filter PoN > {tmp2}')
+    run_simple(f'bcftools view -H {tmp2} >&2')
 
-    anno_indels_f = tempfile.NamedTemporaryFile(delete=False,
-        suffix=f'{splitext_plus(basename(vcf))[0] + ".snps.indels.vcf.gz"}')
-    run_simple(f'vcfanno -permissive-overlap {fixed_indels_toml_f.name} {anno_snps_f.name} | '
-               f'bgzip -c > {anno_indels_f.name} && tabix {anno_indels_f.name}')
+    tmp3 = join(work_dir, 'tmp3.vcf')
+    run_simple(f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" {anno_indels_vcf} --soft-filter PoN --mode + > {tmp3}')
+    run_simple(f'bcftools view -H {tmp3} >&2')
 
     if filter_hits:
-        cmd = f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + {anno_indels_f.name}'
+        cmd = f'bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + {anno_indels_vcf}'
     else:
-        cmd = 'bcftools view {anno_indels.name}'
+        cmd = 'bcftools view {anno_indels_vcf}'
 
     if output_file:
         run_simple(cmd + f' -Oz -o {output_file}')
@@ -81,15 +84,6 @@ def main(vcf, output_file=None, filter_hits=None, genome=None, pon_dir=None):
         run_simple(cmd)
 
     # run_simple(f'bcftools view -H {output_file}')
-
-    fixed_snps_toml_f.close()
-    fixed_indels_toml_f.close()
-    anno_snps_f.close()
-    anno_indels_f.close()
-    os.unlink(fixed_snps_toml_f.name)
-    os.unlink(fixed_indels_toml_f.name)
-    os.unlink(anno_snps_f.name)
-    os.unlink(anno_indels_f.name)
 
 
 if __name__ == '__main__':
