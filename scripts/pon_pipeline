@@ -19,12 +19,13 @@ set_locale()
 @click.option('-o', 'output_dir', type=click.Path())
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('-h', 'hits_thresholds')
+@click.option('--ref-fa', 'ref_fa')
 @click.option('--panel-of-normals-dir', '--pon-dir', default=None)
-def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, pon_dir=None):
+def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, ref_fa=None, pon_dir=None):
     """
     Filter all VCF files `vcfs`: remove records with `PoN_CNT` > `hits_thresholds`
     """
-    ref_fa = get_ref_file(genome)
+    ref_fa = ref_fa or get_ref_file(genome)
 
     if pon_dir:
         verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz'), is_critical=True, description='Panel of normals SNPs file in user provided folder')

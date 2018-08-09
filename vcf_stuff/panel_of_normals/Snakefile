@@ -8,8 +8,8 @@ shell.prefix("")
 
 # configfile: 'config.yaml'
 
-ref_fasta = config.get('ref_fa') or get_ref_file(config['genome'])
-normals_dir = config.get('normals_dir') or get_ref_file(config['genome'], key='panel_of_normals_dir')
+ref_fasta = config.get('ref_fa')
+normals_dir = config.get('normals_dir')
 
 hits_thresholds = config.get('hits_thresholds', [1, 2, 3])
 samples = config.get('samples')
@@ -37,6 +37,8 @@ rule pon_anno:
     output:
         'pon_filter/{sample}-n{ht}.vcf.gz'
     params:
-        ht = lambda wildcards: wildcards.ht
+        ht = lambda wildcards: wildcards.ht,
+        pon_dir = normals_dir
     shell:
-        'pon_anno {input.vcf} -h {params.ht} | bcftools view -f.,PASS -Oz -o {output} && tabix -p vcf {output}'
+        'pon_anno {input.vcf} -h {params.ht} --pon-dir {params.pon_dir}' \
+        ' | bcftools view -f.,PASS -Oz -o {output} && tabix -p vcf {output}'
