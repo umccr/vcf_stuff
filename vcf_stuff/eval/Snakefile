@@ -12,7 +12,7 @@ from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from hpc_utils.hpc import get_loc
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
-from vcf_stuff.vcf_evaluation import stats_to_df, dislay_stats_df, f_measure
+from vcf_stuff.eval import stats_to_df, dislay_stats_df, f_measure
 
 
 rule all:
