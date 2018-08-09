@@ -1,0 +1,95 @@
+##fileformat=VCFv4.2
+##ALT=<ID=BND,Description="Translocation Breakend">
+##ALT=<ID=DEL,Description="Deletion">
+##ALT=<ID=DUP:TANDEM,Description="Tandem Duplication">
+##ALT=<ID=INS,Description="Insertion">
+##ALT=<ID=INV,Description="Inversion">
+##FILTER=<ID=BPI_BreakpointError,Description="BPI failed to determine breakpoints">
+##FILTER=<ID=BPI_ClippingConcordance,Description="At least 5 base clipped bases concordance between tumor and normal">
+##FILTER=<ID=BPI_MinAnchorLength,Description="There isn't at least one PR with >=30 bases matched in both alignments">
+##FILTER=<ID=BPI_MinDepth,Description="The depth across one of the breakpoints is <10">
+##FILTER=<ID=BPI_PRNormalSupport,Description="PR support in the normal">
+##FILTER=<ID=BPI_PRSupportZero,Description="No PR support in tumor">
+##FILTER=<ID=BPI_SRNormalSupport,Description="Short delete or dupe (<1000) has SR support in normal">
+##FILTER=<ID=BPI_SRSupportZero,Description="Short delete or dupe (<1000) must have SR support">
+##FILTER=<ID=MaxMQ0Frac,Description="For a small variant (<1000 bases) in the normal sample, the fraction of reads with MAPQ0 around either breakend exceeds 0.4">
+##FILTER=<ID=MinSomaticScore,Description="Somatic score is less than 30">
+##FORMAT=<ID=PR,Number=.,Type=Integer,Description="Spanning paired-read support for the ref and alt alleles in the order listed">
+##FORMAT=<ID=SR,Number=.,Type=Integer,Description="Split reads for the ref and alt alleles in the order listed, for reads where P(allele|read)>0.999">
+##INFO=<ID=BND_DEPTH,Number=1,Type=Integer,Description="Read depth at local translocation breakend">
+##INFO=<ID=BPI_AF,Number=2,Type=Float,Description="AF at each breakpoint">
+##INFO=<ID=BPI_AMBIGUOUS,Number=0,Type=Flag,Description="BPI could not determine the breakpoints, inspect manually">
+##INFO=<ID=BPI_END,Number=1,Type=Integer,Description="BPI adjusted breakend location">
+##INFO=<ID=BPI_START,Number=1,Type=Integer,Description="BPI adjusted breakend location">
+##INFO=<ID=CIEND,Number=2,Type=Integer,Description="Confidence interval around END">
+##INFO=<ID=CIGAR,Number=A,Type=String,Description="CIGAR alignment for each alternate indel allele">
+##INFO=<ID=CIPOS,Number=2,Type=Integer,Description="Confidence interval around POS">
+##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant described in this record">
+##INFO=<ID=EVENT,Number=1,Type=String,Description="ID of event associated to breakend">
+##INFO=<ID=HOMLEN,Number=.,Type=Integer,Description="Length of base pair identical homology at event breakpoints">
+##INFO=<ID=HOMSEQ,Number=.,Type=String,Description="Sequence of base pair identical homology at event breakpoints">
+##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">
+##INFO=<ID=INV3,Number=0,Type=Flag,Description="Inversion breakends open 3' of reported location">
+##INFO=<ID=INV5,Number=0,Type=Flag,Description="Inversion breakends open 5' of reported location">
+##INFO=<ID=JUNCTION_SOMATICSCORE,Number=1,Type=Integer,Description="If the SV junctino is part of an EVENT (ie. a multi-adjacency variant), this field provides the SOMATICSCORE value for the adjacency in question only">
+##INFO=<ID=LEFT_SVINSSEQ,Number=.,Type=String,Description="Known left side of insertion for an insertion of unknown length">
+##INFO=<ID=MATEID,Number=.,Type=String,Description="ID of mate breakend">
+##INFO=<ID=MATE_BND_DEPTH,Number=1,Type=Integer,Description="Read depth at remote translocation mate breakend">
+##INFO=<ID=RIGHT_SVINSSEQ,Number=.,Type=String,Description="Known right side of insertion for an insertion of unknown length">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Somatic mutation">
+##INFO=<ID=SOMATICSCORE,Number=1,Type=Integer,Description="Somatic variant quality score">
+##INFO=<ID=SVINSLEN,Number=.,Type=Integer,Description="Length of insertion">
+##INFO=<ID=SVINSSEQ,Number=.,Type=String,Description="Sequence of insertion">
+##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="Difference in length between REF and ALT alleles">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##bpiVersion=1.5
+##cmdline=bcbio/anaconda/share/manta-1.2.1-0/bin/configManta.py --normalBam=HCC2218/work/align/HCC2218BL/HCC2218BL-sort.bam --tumorBam=HCC2218/work/align/HCC2218C/HCC2218C-sort.bam --referenceFasta=bcbio/genomes/Hsapiens/GRCh37/seq/GRCh37.fa --runDir=HCC2218/work/bcbiotx/tmpWEc2wG/manta --exome
+##contig=<ID=1,length=249250621>
+##contig=<ID=2,length=243199373>
+##contig=<ID=3,length=198022430>
+##contig=<ID=4,length=191154276>
+##contig=<ID=5,length=180915260>
+##contig=<ID=6,length=171115067>
+##contig=<ID=7,length=159138663>
+##contig=<ID=8,length=146364022>
+##contig=<ID=9,length=141213431>
+##contig=<ID=10,length=135534747>
+##contig=<ID=11,length=135006516>
+##contig=<ID=12,length=133851895>
+##contig=<ID=13,length=115169878>
+##contig=<ID=14,length=107349540>
+##contig=<ID=15,length=102531392>
+##contig=<ID=16,length=90354753>
+##contig=<ID=17,length=81195210>
+##contig=<ID=18,length=78077248>
+##contig=<ID=19,length=59128983>
+##contig=<ID=20,length=63025520>
+##contig=<ID=21,length=48129895>
+##contig=<ID=22,length=51304566>
+##contig=<ID=X,length=155270560>
+##contig=<ID=Y,length=59373566>
+##contig=<ID=MT,length=16569>
+##fileDate=20180205
+##reference=file:///bcbio/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+##source=GenerateSVCandidates 1.2.1
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	HCC2218BL	HCC2218C
+1	44195682	MantaDEL:369:0:1:0:0:0	T	<DEL>	.	PASS	BPI_AF=0.787,0.402;BPI_END=44201846;BPI_START=44195682;END=44201846;SOMATIC;SOMATICSCORE=205;SVLEN=-6164;SVTYPE=DEL	PR:SR	41,0:45,0	14,25:31,50
+1	211021468	MantaDEL:1421:0:1:0:1:0	A	<DEL>	.	PASS	BPI_AF=0.694,0.073;BPI_END=211033724;BPI_START=211021468;END=211033724;SOMATIC;SOMATICSCORE=77;SVLEN=-12256;SVTYPE=DEL	PR:SR	46,0:155,0	35,6:193,14
+1	228158942	MantaBND:1596:0:1:0:0:0:1	A	]17:72663037]A	.	PASS	BND_DEPTH=194;BPI_AF=0.044,0.767;BPI_END=72663037;BPI_START=228158941;CIPOS=0,1;HOMLEN=1;HOMSEQ=A;MATEID=MantaBND:1596:0:1:0:0:0:0;MATE_BND_DEPTH=4;SOMATIC;SOMATICSCORE=58;SVTYPE=BND	PR:SR	33,0:89,0	53,0:329,27
+14	106471426	MantaDUP:TANDEM:12548:0:2:0:0:0	G	<DUP:TANDEM>	.	PASS	BPI_AF=0.055,0.047;BPI_END=107282972;BPI_START=106471426;END=107282972;SOMATIC;SOMATICSCORE=161;SVLEN=811546;SVTYPE=DUP	PR:SR	68,0:155,0	89,8:334,88
+16	34176270	MantaDEL:916:1:1:0:4:0	AAAGAAAAGAAAGAAAGAAGGAAACAAAGAAAGAAAGAAAGAGAAAGAAAGAGG	AGAAA	.	BPI_SRSupportZero;MinSomaticScore	BPI_END=34176323;BPI_START=34176270;CIGAR=1M4I53D;END=34176323;SOMATIC;SOMATICSCORE=12;SVLEN=-53;SVTYPE=DEL	PR:SR	2,0:9,0	1,0:10,3
+16	68697299	MantaDEL:13638:0:1:0:0:0	A	<DEL>	.	PASS	BPI_AF=1.00,0.923;BPI_END=68853201;BPI_START=68697301;CIEND=0,2;CIPOS=0,2;END=68853199;HOMLEN=2;HOMSEQ=AC;SOMATIC;SOMATICSCORE=418;SVLEN=-155900;SVTYPE=DEL	PR:SR	142,0:127,0	1,10:1,25
+17	26875648	MantaDEL:14016:0:1:0:0:0	C	<DEL>	.	PASS	BPI_AF=0.083,0.718;BPI_END=58648799;BPI_START=26875650;CIEND=0,2;CIPOS=0,2;END=58648797;HOMLEN=2;HOMSEQ=CT;SOMATIC;SOMATICSCORE=67;SVLEN=-31773149;SVTYPE=DEL	PR:SR	69,0:86,0	117,18:227,17
+17	33499702	MantaDEL:14074:0:1:0:0:0	C	<DEL>	.	PASS	BPI_AF=0.767,0.028;BPI_END=47219425;BPI_START=33499702;END=47219425;SOMATIC;SOMATICSCORE=44;SVLEN=-13719723;SVTYPE=DEL	PR:SR	41,0:80,0	393,12:870,42
+17	37762655	MantaDEL:4268:0:1:0:0:0	C	<DEL>	.	PASS	BPI_AF=0.050,0.193;BPI_END=48465302;BPI_START=37762661;CIEND=0,6;CIPOS=0,6;END=48465296;HOMLEN=6;HOMSEQ=GTCCCC;SOMATIC;SOMATICSCORE=36;SVLEN=-10702641;SVTYPE=DEL	PR:SR	12,0:24,0	25,2:155,6
+17	37897260	MantaDEL:14128:0:1:0:0:0	T	<DEL>	.	MinSomaticScore	BPI_END=37898587;BPI_START=37897262;CIEND=0,2;CIPOS=0,2;END=37898585;HOMLEN=2;HOMSEQ=GC;SOMATIC;SOMATICSCORE=23;SVLEN=-1325;SVTYPE=DEL	PR:SR	34,0:102,0	133,4:898,3
+17	46597818	MantaINV:1966:0:1:0:0:0	C	<INV>	.	PASS	BPI_AF=0.524,0.016;BPI_END=47246948;BPI_START=46597820;CIEND=-2,0;CIPOS=0,2;END=47246950;HOMLEN=2;HOMSEQ=GG;INV3;SOMATIC;SOMATICSCORE=34;SVLEN=649132;SVTYPE=INV	PR:SR	34,0:40,0	117,1:394,7
+17	46862316	MantaINV:14235:0:0:0:1:0	G	<INV>	.	PASS	BPI_AF=0.027,0.024;BPI_END=46862441;BPI_START=46862317;CIEND=-1,0;CIPOS=0,1;END=46862442;HOMLEN=1;HOMSEQ=C;INV3;SOMATIC;SOMATICSCORE=35;SVLEN=126;SVTYPE=INV	PR:SR	67,0:112,0	262,3:872,23
+17	47524043	MantaINV:14255:0:1:0:0:0	A	<INV>	.	PASS	BPI_AF=0.798,0.678;BPI_END=73723867;BPI_START=47524044;CIEND=-1,0;CIPOS=0,1;END=73723868;HOMLEN=1;HOMSEQ=A;INV3;SOMATIC;SOMATICSCORE=295;SVLEN=26199825;SVTYPE=INV	PR:SR	44,0:90,0	31,126:73,249
+17	57733045	MantaINV:14347:0:1:0:0:0	A	<INV>	.	MinSomaticScore	BPI_END=71445410;BPI_START=57733045;END=71445410;INV5;SOMATIC;SOMATICSCORE=13;SVINSLEN=3;SVINSSEQ=TTC;SVLEN=13712365;SVTYPE=INV	PR:SR	1,0:10,0	2,0:8,9
+17	57909960	MantaBND:14353:0:1:0:0:0:0	T	T[X:24148804[	.	BPI_MinDepth;BPI_PRSupportZero;MinSomaticScore	BND_DEPTH=10;BPI_END=24148816;BPI_START=57909973;CIPOS=0,13;HOMLEN=13;HOMSEQ=TTGTTTTGTTTTG;MATEID=MantaBND:14353:0:1:0:0:0:1;MATE_BND_DEPTH=9;SOMATIC;SOMATICSCORE=12;SVTYPE=BND	PR:SR	3,0:3,0	1,0:2,46
+17	58008827	MantaINV:14363:0:1:0:0:0	G	<INV>	.	PASS	BPI_AF=0.169,0.589;BPI_END=59995227;BPI_START=58008827;END=59995227;INV5;SOMATIC;SOMATICSCORE=37;SVLEN=1986400;SVTYPE=INV	PR:SR	4,0:14,0	1,14:113,10
+17	60640943	MantaDEL:14436:0:1:0:0:0	A	<DEL>	.	BPI_ClippingConcordance;BPI_PRNormalSupport	BPI_END=74393926;BPI_START=60640945;CIEND=0,2;CIPOS=0,2;END=74393924;HOMLEN=2;HOMSEQ=CA;SOMATIC;SOMATICSCORE=63;SVLEN=-13752981;SVTYPE=DEL	PR:SR	27,0:69,1	12,16:58,21
+17	72663037	MantaBND:1596:0:1:0:0:0:0	T	T[1:228158942[	.	PASS	BND_DEPTH=4;BPI_AF=0.767,0.044;BPI_END=228158941;BPI_START=72663037;CIPOS=0,1;HOMLEN=1;HOMSEQ=A;MATEID=MantaBND:1596:0:1:0:0:0:1;MATE_BND_DEPTH=194;SOMATIC;SOMATICSCORE=58;SVTYPE=BND	PR:SR	33,0:89,0	53,0:329,27
+17	72865801	MantaINV:14552:0:1:0:0:0	A	<INV>	.	PASS	BPI_AF=0.800,0.125;BPI_END=72866120;BPI_START=72865805;CIEND=-4,0;CIPOS=0,4;END=72866124;HOMLEN=4;HOMSEQ=TAGC;INV3;SOMATIC;SOMATICSCORE=44;SVLEN=323;SVTYPE=INV	PR:SR	34,0:49,0	87,16:250,30
+X	24148804	MantaBND:14353:0:1:0:0:0:1	T	]17:57909960]T	.	BPI_MinDepth;BPI_PRSupportZero;MinSomaticScore	BND_DEPTH=9;BPI_END=57909973;BPI_START=24148816;CIPOS=0,13;HOMLEN=13;HOMSEQ=TGTTTTGTTTTGT;MATEID=MantaBND:14353:0:1:0:0:0:0;MATE_BND_DEPTH=10;SOMATIC;SOMATICSCORE=12;SVTYPE=BND	PR:SR	3,0:3,0	1,0:2,46
