@@ -71,6 +71,8 @@ class TestEvalVcf(BaseTestCase):
         self._check_file_throws(join(out_dir, 'report.tsv'), ignore_matching_lines=vcf_ignore_lines)
 
 
+pon_data_dir = join(data_dir, 'panel_of_normals')
+
 @attr(kind='pon')
 class TestPonAnno(BaseTestCase):
     script = 'pon_anno'
@@ -79,7 +81,7 @@ class TestPonAnno(BaseTestCase):
 
     def test_pon_anno(self):
         out_vcf = join(TestPonAnno.results_dir, basename(add_suffix(input_vardict_vcf, 'pon')))
-        cmdl = f'pon_anno {input_vardict_vcf} -o {out_vcf} -h 1 -g {genome_name}'
+        cmdl = f'pon_anno {input_vardict_vcf} -o {out_vcf} -h 1 -g {genome_name} --pon-dir {pon_data_dir}'
         self._run_cmd(cmdl, input_vardict_vcf, out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 
@@ -91,7 +93,7 @@ class TestPoNPipeline(BaseTestCase):
 
     def test_pon_pipeline(self):
         cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
-               f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name}'
+               f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name} --pon-dir {pon_data_dir}'
         self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
         self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
         self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)

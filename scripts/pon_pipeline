@@ -6,7 +6,7 @@ import os
 import sys
 import yaml
 import tempfile
-from ngs_utils.file_utils import splitext_plus
+from ngs_utils.file_utils import splitext_plus, verify_file, verify_dir
 from hpc_utils.hpc import get_ref_file
 from vcf_stuff.panel_of_normals import package_path
 
@@ -19,19 +19,28 @@ set_locale()
 @click.option('-o', 'output_dir', type=click.Path())
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('-h', 'hits_thresholds')
-def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None):
+@click.option('--panel-of-normals-dir', '--pon-dir', default=None)
+def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, pon_dir=None):
     """
     Filter all VCF files `vcfs`: remove records with `PoN_CNT` > `hits_thresholds`
     """
     ref_fa = get_ref_file(genome)
-    normals_dir = get_ref_file(genome, key='panel_of_normals_dir')
+
+    if pon_dir:
+        verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz'), is_critical=True, description='Panel of normals SNPs file in user provided folder')
+        verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
+        verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz'), is_critical=True, description='Panel of normals indels file in user provided folder')
+        verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
+        pon_dir = verify_dir(pon_dir, is_critical=True)
+    else:
+        pon_dir = get_ref_file(genome, key='panel_of_normals_dir')
 
     config = {
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in vcfs
                     if v.endswith('.vcf') or v.endswith('.vcf.gz')},
         'hits_thresholds': hits_thresholds.split(',') if hits_thresholds else [1, 2, 3],
         'ref_fa': ref_fa,
-        'normals_dir': normals_dir,
+        'normals_dir': pon_dir,
     }
 
     f = tempfile.NamedTemporaryFile(mode='wt', delete=False)
