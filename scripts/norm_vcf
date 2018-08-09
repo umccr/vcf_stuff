@@ -3,9 +3,8 @@
 import click
 from hpc_utils.hpc import get_ref_file
 from ngs_utils.call_process import run
-
-from ngs_utils.utils import set_locale
-set_locale()
+from ngs_utils.utils import set_locale; set_locale()
+from vcf_stuff.vcf_normalisation import make_normalise_cmd
 
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
@@ -21,16 +20,6 @@ def main(input_file, output_file, genome=False):
     reference_fasta = get_ref_file(genome)
     cmd = make_normalise_cmd(input_file, output_file, reference_fasta)
     run(cmd)
-
-
-def make_normalise_cmd(input_file, output_file, reference_fasta):
-    return (
-        f'bcftools norm -m \'-\' {input_file} -Ov -f {reference_fasta}'     # split multiallelic ALT and left-aligns indels
-        f' | vcfallelicprimitives -t DECOMPOSED --keep-geno --keep-info'    # split MNP into single SNPs
-        f' | vcfstreamsort'
-        f' | grep -v "##INFO=<ID=TYPE,Number=1"'
-        f' | bgzip -c > {output_file}'
-        f' && tabix -p vcf {output_file}')
 
 
 if __name__ == '__main__':

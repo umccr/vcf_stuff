@@ -1,7 +1,7 @@
-# Snakemake file for evaluation of a set of VCF files against a truth set. 
+# Snakemake file for evaluation of a set of VCF files against a truth set.
 # Handles multiallelic, normalization, inconsistent sample names.
 
-# Usage: 
+# Usage:
 # snakemake -p --configfile=config.yaml
 
 import os
@@ -11,7 +11,7 @@ import csv
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from hpc_utils.hpc import get_loc
-from vcf_stuff.vcf_normalisation.norm_vcf import make_normalise_cmd
+from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.vcf_evaluation import stats_to_df, dislay_stats_df, f_measure
 
 
@@ -204,7 +204,7 @@ rule bcftools_isec:
 def count_variants(vcf):
     snps = 0
     indels = 0
-    with (gzip.open(vcf) if vcf.endswith('.gz') else open(vcf)) as f:    
+    with (gzip.open(vcf) if vcf.endswith('.gz') else open(vcf)) as f:
         for l in [l for l in f if not l.startswith('#')]:
             _, _, _, ref, alt = l.split('\t')[:5]
             if len(ref) == len(alt) == 1:
@@ -215,7 +215,7 @@ def count_variants(vcf):
 
 # Count TP, FN and FN VCFs to get stats for each sample:
 rule eval:
-    input: 
+    input:
         fp = rules.bcftools_isec.output.fp,
         fn = rules.bcftools_isec.output.fn,
         tp = rules.bcftools_isec.output.tp
@@ -287,7 +287,7 @@ rule report:
 #         rules.index_samples.output,
 #         rules.index_truth.output,
 #         regions = rules.prep_target.output,
-#         truth_vcf = rules.narrow_truth_to_target.output, 
+#         truth_vcf = rules.narrow_truth_to_target.output,
 #         sample_vcf = rules.narrow_samples_to_target.output
 #     output:
 #         '{sample}/{sample}.re.a/weighted_roc.tsv.gz'
@@ -341,7 +341,7 @@ rule report:
 #                             data[change_type][metric] = val
 #             pprint.pprint(data)
 #             try:
-#                 out_lines.append([sname, truth_snps   - data['SNP']['FN'],   data['SNP']['FP'],   data['SNP']['FN'], 
+#                 out_lines.append([sname, truth_snps   - data['SNP']['FN'],   data['SNP']['FP'],   data['SNP']['FN'],
 #                                          truth_indels - data['INDEL']['FN'], data['INDEL']['FP'], data['INDEL']['FN']])
 #             except KeyError:
 #                 print('Some of the required data for ' + sname + ' not found in ' + fp)
