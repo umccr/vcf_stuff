@@ -42,16 +42,11 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
             print(f'Results are in "{output_dir}" folder. E.g. final report saved to "{output_dir}/report.tsv"')
 
 def get_ref(genome, conf, truth):
-    # Genome
     genome_d = None
-    if isfile(genome):
-        conf['reference_fasta'] = abspath(genome)
-        genome = splitext_plus(basename(genome))[0]
-    elif loc:
-        conf['reference_fasta'] = get_ref_file(genome, loc=loc)
+    if loc:
         genome_d = get_genomes_d(genome, loc=loc)
     else:
-        critical(f'Genome {genome}: fasta file does not exist, or cannot automatically find it by location.')
+        critical(f'Genome {genome} data does not exist for location {loc.name}.')
 
     # Truth set
     if isfile(truth):
