@@ -41,6 +41,7 @@ install:
 env:
   - TEST=test.py:TestEvalVcf.test_preset_ref
   - TEST=test.py:TestEvalVcf.test_custom_ref
+  - TEST=test.py:TestEvalCnv
   - TEST=test.py:TestPonAnno
   - TEST=test.py:TestPoNPipeline
   - TEST=test.py:TestNormVcf
