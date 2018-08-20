@@ -15,7 +15,7 @@ dependencies:
   - bedtools
   - vcfanno
   - vcflib  # for VCF normalization
-  - snakemake>=5.1.4vlad
+  - snakemake>=5.2.2vlad
   - pythonpy
   - click
   - cyvcf2>=0.10.0
@@ -33,3 +33,4 @@ dependencies:
   - pip:
     - "--editable=git+https://github.com/umccr/hpc_utils#egg=hpc_utils"
     - "--editable=git+https://github.com/vladsaveliev/NGS_Utils#egg=ngs_utils"
+    - "--editable=git+https://github.com/vladsaveliev/TargQC#egg=targqc"
