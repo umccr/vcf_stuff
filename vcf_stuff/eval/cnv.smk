@@ -1,0 +1,287 @@
+import os
+import gzip
+import csv
+import pandas as pd
+
+from ngs_utils.file_utils import add_suffix
+from ngs_utils.vcf_utils import get_tumor_sample_name
+from hpc_utils.hpc import get_loc
+from vcf_stuff.eval import dislay_stats_df
+from vcf_stuff.eval.cnv import cnv_to_bed
+from pybedtools import BedTool
+from collections import defaultdict
+
+
+
+rule all:
+    input:
+        report = 'eval/report.tsv',
+        table = 'eval/table.tsv'
+    output:
+        report = 'report.tsv',
+        table = 'table.tsv'
+    shell:
+        'ln -s {input.report} {output.report} && '
+        'ln -s {input.table} {output.table}'
+
+
+def merge_regions():
+    samples_regions = config.get('sample_regions')
+    truth_regions = config['truth_regions'] if 'truth_regions' in config else None
+
+    output = 'narrow/regions.bed'
+    if samples_regions and truth_regions:
+        shell('bedops -i <(sort-bed {truth_regions}) <(sort-bed {samples_regions}) > {output}')
+        return output
+    elif truth_regions:
+        shell('sort-bed {truth_regions} > {output}')
+        return output
+    elif samples_regions:
+        shell('sort-bed {samples_regions} > {output}')
+        return output
+    else:
+        return None
+
+
+rule cnv_to_bed_sample:
+    input:
+        lambda wc: config['samples'][wc.sample]
+    output:
+        'bed/sample_{sample}.bed'
+    run:
+        cnv_to_bed(input[0], output[0])
+
+rule cnv_to_bed_truth:
+    input:
+        lambda wc: config['truth_variants']
+    output:
+        'bed/truth.bed'
+    run:
+        cnv_to_bed(input[0], output[0])
+
+rule annotate_bed_sample:
+    input:
+        rules.cnv_to_bed_sample.output[0]
+    output:
+        'bed_anno/sample_{sample}.bed'
+    params:
+        work_dir = 'work/annotate_bed/sample_{sample}'
+    shell:
+        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g GRCh37 --short -a best_all'
+
+rule annotate_bed_truth:
+    input:
+        rules.cnv_to_bed_truth.output[0]
+    output:
+        'bed_anno/truth.bed'
+    params:
+        work_dir = 'work/annotate_bed/truth'
+    shell:
+        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g GRCh37 --short -a best_all'
+
+
+def _read_gene_set(bed_fpath):
+    return set(r[3] for r in BedTool(bed_fpath))
+
+def _read_gene_cn_set(bed_fpath):
+    return set((r[3], int(r[4].split('|')[1])) for r in BedTool(bed_fpath))
+
+def _cn_to_event(cn):
+    if cn < 2: return 'Del'
+    if cn > 2: return 'Amp'
+    return 'Norm'
+
+def _metrics_from_sets(truth_set, sample_set):
+    tp = len(sample_set & truth_set)
+    fp = len(sample_set - truth_set)
+    fn = len(truth_set - sample_set)
+    truth = len(truth_set)
+    called = len(sample_set)
+    recall = tp / truth if truth else 0
+    prec = tp / called if called else 0
+    return truth, tp, fp, fn, recall, prec
+
+
+rule table:
+    input:
+        sample_beds = expand('bed_anno/sample_{sample}.bed', sample=sorted(config['samples'].keys())),
+        truth_bed = 'bed_anno/truth.bed',
+    output:
+        'eval/table.tsv'
+    params:
+        samples = sorted(config['samples'].keys())
+    run:
+        cn_by_gene_by_sname = defaultdict(dict)
+        for sample_bed, sname in zip([input.truth_bed] + input.sample_beds, ['truth'] + params.samples):
+            sample_gene_cn_set    = _read_gene_cn_set(sample_bed)
+            for gene, cn in sample_gene_cn_set:
+                cn_by_gene_by_sname[sname][gene] = cn
+
+        df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
+        print(df.to_string(index=True))
+        with open(output[0], 'w') as out_f:
+            df.to_csv(out_f, sep='\t', index=False)
+
+
+def _stats_to_df(stat_by_sname):
+    idx = pd.MultiIndex.from_arrays([
+        ['Sample', 'CN', 'CN', 'CN', 'CN'    , 'CN'  , 'EVENT', 'EVENT', 'EVENT', 'EVENT' , 'EVENT', 'GENE', 'GENE', 'GENE' , 'GENE'  , 'GENE'],
+        [''      , 'TP', 'FP', 'FN', 'Recall', 'Prec', 'TP'   , 'FP'   , 'FN'   , 'Recall', 'Prec' , 'TP'  , 'FP'  , 'FN'   , 'Recall', 'Prec']
+        ],
+        names=['1', '2'])
+
+    data = []
+    s_truth = i_truth = None
+    for sname, stats in stat_by_sname.items():
+        c_truth, c_tp, c_fp, c_fn, c_rec, c_prec, \
+        e_truth, e_tp, e_fp, e_fn, e_rec, e_prec, \
+        g_truth, g_tp, g_fp, g_fn, g_rec, g_prec = stats
+        data.append({
+            ('Sample', ''): sname,
+            ('CN', 'TP'): int(c_tp),
+            ('CN', 'FP'): int(c_fp),
+            ('CN', 'FN'): int(c_fn),
+            ('CN', 'Recall'): float(c_rec),  # TP/truth - grows with TP grow
+            ('CN', 'Prec'): float(c_prec),  # TP/called - falls with FP grow
+            ('EVENT', 'TP'): int(e_tp),
+            ('EVENT', 'FP'): int(e_fp),
+            ('EVENT', 'FN'): int(e_fn),
+            ('EVENT', 'Recall'): float(e_rec),
+            ('EVENT', 'Prec'): float(e_prec),
+            ('GENE', 'TP'): int(g_tp),
+            ('GENE', 'FP'): int(g_fp),
+            ('GENE', 'FN'): int(g_fn),
+            ('GENE', 'Recall'): float(g_rec),
+            ('GENE', 'Prec'): float(g_prec),
+        })
+    return pd.DataFrame(data, columns=idx)
+
+# Combine all stats to get single report:
+rule report:
+    input:
+        # stats_files = expand('eval/{sample}_stats.tsv', sample=sorted(config['samples'].keys()))
+        sample_beds = expand('bed_anno/sample_{sample}.bed', sample=sorted(config['samples'].keys())),
+        truth_bed  = 'bed_anno/truth.bed',
+        t = 'eval/table.tsv'   # we want to show the table before the report
+    output:
+        'eval/report.tsv'
+    params:
+        samples = sorted(config['samples'].keys())
+    run:
+        stats_by_sname = dict()
+        for sample_bed, sname in zip(input.sample_beds, params.samples):
+            sample_gene_cn_set    = _read_gene_cn_set(sample_bed)
+            truth_gene_cn_set     = _read_gene_cn_set(input.truth_bed)
+
+            sample_gene_set       = set(gene for gene, cn in sample_gene_cn_set)
+            truth_gene_set        = set(gene for gene, cn in truth_gene_cn_set)
+
+            sample_gene_event_set = set((gene, _cn_to_event(cn)) for gene, cn in sample_gene_cn_set)
+            truth_gene_event_set  = set((gene, _cn_to_event(cn)) for gene, cn in truth_gene_cn_set)
+
+            cn_metrics = _metrics_from_sets(truth_gene_cn_set, sample_gene_cn_set)
+            event_metrics = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
+            gene_metrics = _metrics_from_sets(truth_gene_set, sample_gene_set)
+
+            stats_by_sname[sname] = cn_metrics + event_metrics + gene_metrics
+
+        df = _stats_to_df(stats_by_sname)
+        dislay_stats_df(df)
+        # Writing raw data to the TSV file
+        with open(output[0], 'w') as out_f:
+            df.to_csv(out_f, sep='\t', index=False)
+
+
+# ##########################
+# ######### NARROW #########
+# # Extracts target regions and PASSed calls:
+# rule narrow_samples_to_regions:
+#     input:
+#         lambda wildcards: config['samples'][wildcards.sample]
+#     output:
+#         'narrow/{sample}.regions.pass.vcf.gz'
+#     run:
+#         regions = merge_regions()
+#         regions = ('-T ' + regions) if regions else ''
+#         shell('bcftools view {input} {regions} -f .,PASS -Oz -o {output}')
+
+
+############################
+######### EVALUATE #########
+# rule overlap_events:
+#     input:
+#         rules.annotate_bed.output[0]
+#     output:
+#         'eval/{sample}'
+#     run:
+#         pass
+
+#
+# # Count TP, FN and FN VCFs to get stats for each sample:
+# rule eval:
+#     input:
+#         fp = rules.bcftools_isec.output.fp,
+#         fn = rules.bcftools_isec.output.fn,
+#         tp = rules.bcftools_isec.output.tp
+#     output:
+#         'eval/{sample}_stats.tsv'
+#     run:
+#         fp_snps, fp_inds = count_variants(input.fp)
+#         fn_snps, fn_inds = count_variants(input.fn)
+#         tp_snps, tp_inds = count_variants(input.tp)
+#
+#         with open(output[0], 'w') as f:
+#             writer = csv.writer(f, delimiter='\t')
+#             writer.writerow([
+#                 '#SNP TP', 'SNP FP', 'SNP FN', 'SNP Recall', 'SNP Precision',
+#                  'IND TP', 'IND FP', 'IND FN', 'IND Recall', 'IND Precision'
+#             ])
+#             # https://en.wikipedia.org/wiki/Precision_and_recall :
+#             # precision                  = tp / (tp + fp)
+#             # recall = sensitivity = tpr = tp / (tp + fn)
+#
+#             snps_truth = tp_snps + fn_snps
+#             snps_recall = tp_snps / snps_truth if snps_truth else 0
+#             snps_called = tp_snps + fp_snps
+#             snps_prec = tp_snps / snps_called if snps_called else 0
+#
+#             inds_truth = tp_inds + fn_inds
+#             inds_recall = tp_inds / inds_truth if inds_truth else 0
+#             inds_called = tp_inds + fp_inds
+#             inds_prec = tp_inds / inds_called if inds_called else 0
+#
+#             snps_f1 = f_measure(1, snps_prec, snps_recall)
+#             snps_f2 = f_measure(2, snps_prec, snps_recall)
+#             snps_f3 = f_measure(3, snps_prec, snps_recall)
+#
+#             inds_f1 = f_measure(1, inds_prec, inds_recall)
+#             inds_f2 = f_measure(2, inds_prec, inds_recall)
+#             inds_f3 = f_measure(3, inds_prec, inds_recall)
+#
+#             writer.writerow([
+#                 snps_truth, tp_snps, fp_snps, fn_snps, snps_recall, snps_prec, snps_f1, snps_f2, snps_f3,
+#                 inds_truth, tp_inds, fp_inds, fn_inds, inds_recall, inds_prec, inds_f1, inds_f2, inds_f3,
+#             ])
+#
+# # Combine all stats to get single report:
+# rule report:
+#     input:
+#         stats_files = expand(rules.eval.output, sample=sorted(config['samples'].keys()))
+#         # sompy_files = expand(rules.sompy.output, sample=sorted(config['samples'].keys()))
+#     output:
+#         'eval/report.tsv'
+#     params:
+#         samples = sorted(config['samples'].keys())
+#     run:
+#         stats_by_sname = dict()
+#         for stats_file, sname in zip(input.stats_files, params.samples):
+#             with open(stats_file) as f:
+#                 stats_by_sname[sname] = f.readlines()[1].strip().split('\t')
+#         df = stats_to_df(stats_by_sname)
+#
+#         dislay_stats_df(df)
+#
+#         # Writing raw data to the TSV file
+#         with open(output[0], 'w') as out_f:
+#             df.to_csv(out_f, sep='\t', index=False)
+

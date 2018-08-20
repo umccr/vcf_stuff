@@ -1,6 +1,6 @@
 VCF Stuff
 ---------
-📊Evaluating, filtering, comparing, and visualising VCF
+📊Evaluating, filtering, comparing, and visualising genomic variants
 
 [![Build Status](https://travis-ci.org/umccr/vcf_stuff.svg?branch=master)](https://travis-ci.org/umccr/vcf_stuff)
 
@@ -64,7 +64,7 @@ cd tests
 eval_vcf data/test-benchmark.vcf.gz data/test-ensemble.vcf.gz data/test-vardict.vcf.gz -g data/test-GRCh37.fa -o results_eval_vcf
 ```
 
-Normalizes all input VCFs (see `norm_vcf` below), and compares `test-ensemble.vcf.gz` and `test-vardict.vcf.gz` against the reference VCF `test-benchmark.vcf.gz`. Outputs statistics to stdout:
+The tool normalizes all input VCFs (see `norm_vcf` below), and compares `test-ensemble.vcf.gz` and `test-vardict.vcf.gz` against the reference VCF `test-benchmark.vcf.gz`. Outputs statistics to stdout:
 
 ```
        Sample  SNP                         INDEL                      
@@ -101,6 +101,55 @@ This will pick up the reference VCF from the [ICGC medulloblastoma study](https:
 Available truth sets preset options: `mb`, `colo` ([COLO829 metastatic melanoma cell line](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349)), `giab` (GiaB NA12878 germline variants), `dream` (DREAM synthetic challenge 3). For the latter 2, also truth regions BED files used, which are merged automatically with `-r` regions if those are provided.
 
 `regions` and `truth_regions` are the optional fields for the validation target BED files. The BED files, if any provided, will be merged together and used to subset the variants in both truth and query variant sets.
+
+
+## CNV evaluation
+
+Similar to the VCF evaluation, you can compare CNV calls to the truth sets. The following callers are supported:
+
+- cnvkit
+- facets
+- purple
+- manta
+
+The following truth sets are supported:
+
+- HCC2218
+
+Usage: 
+
+```
+eval_cnv truthset_cnv.tsv cnvkit-call.cns purple.cnv.tsv facets.tsv -g GRCh37 -o results_eval_cnv
+```
+
+The tool re-annotates all regions against the Ensemble gene annotations, and produce a table:
+
+```
+Sample       CN                           EVENT                       GENE                       
+             TP   FP  FN Recall   Prec    TP   FP  FN Recall   Prec   TP   FP  FN Recall   Prec
+cnvkit-call  40  122  60 40.00% 24.69%    52  110  36 59.09% 32.10%   56  106  29 65.88% 34.57%
+facets       26   47  74 26.00% 35.62%    37   36  51 42.05% 50.68%   40   33  45 47.06% 54.79%
+purple.cnv   13   56  87 13.00% 18.84%    20   49  68 22.73% 28.99%   25   42  60 29.41% 37.31%
+```
+
+The 3 major sections of the table (CN, EVENT, GENE) represent the level of comparison:
+
+- GENE compares the sets of gene in which any event is occured (so if the truth set has a deletion in EGFR, and the sample has an amplification in EGFR, it will count as a true positive.
+
+- EVENT additionally requires the types of events per gene to be the same (Amp or Del).
+
+- CN requires the integer copy number estimation value to be the same.
+
+In addition to that overall stats table, the tool will produce a per-gene table for exploration, like the following:
+
+```
+             truth  cnvkit-call      facets  purple.cnv
+AC003051.1     4.0          4.0         NaN         1.0
+ANKS1B         1.0          2.0         2.0         1.0
+CCSER1         NaN          2.0         2.0         2.0
+CDH13          1.0          1.0         1.0         1.0
+...
+```
 
 
 ## Panel of normals
