@@ -74,7 +74,7 @@ class TestEvalVcf(BaseTestCase):
 @attr(kind='eval_cnv')
 class TestEvalCnv(BaseTestCase):
     script = 'eval_cnv'
-    data_dir = join(dirname(__file__), BaseTestCase.data_dir, 'cnv')
+    data_dir = join(dirname(__file__), BaseTestCase.data_dir, 'cnv', 'hcc2218')
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
 

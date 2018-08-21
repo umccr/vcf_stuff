@@ -32,6 +32,17 @@ chrom  seg  num.mark  nhet  cnlr.median          mafR                  segclust 
 chrom  start      end        tot_cn
 1      10001      31920394   1
 1      144810725  145092947  5
+
+==> hartwig_truthset_clean.tsv <==
+Truth_type  Truth_orientation  Truth_sv_len  Truth_chr1  Truth_bp1  Truth_chr2  Truth_bp2  Manta_filter     Manta_chr1  Manta_bp1  Manta_chr2  Manta_bp2  BPI_adj_Manta_chr1  BPI_adj_Manta_bp1  BPI_adj_Manta_chr2  BPI_adj_Manta_bp2  Manual_check_1  Manual_check_2  Gridss_filter1   Gridss_diff_BPI1  Gridss_filter2   Gridss_diff_BPI2  Gridss_chr1  Gridss_bp1  Gridss_chr2  Gridss_bp2  Purple_type1  Purple_type2  Purple_chr1  Purple_bp1  Purple_chr2  Purple_bp2  Conserting_chr1  Conserting_bp1  Conserting_chr2  Conserting_bp2
+DEL         INNIE              33588         1           207981233  1           208014821  NA               1           207981229  1           208014817  1                   207981233          1                   208014821          NA              NA              NA               0                 NA               1                 1            207981233   1            208014822   DEL           DEL           1            207981001   1            208015001   1                207981233       1                208014818
+DUP         OUTIE              153518        1           224646602  1           224800120  NA               1           224646602  1           224800120  1                   224646602          1                   224800120          NA              NA              NA               1                 NA               0                 1            224646603   1            224800120   DUP           DUP           1            224647001   1            224800001   1                224646603       1                224800120
+DEL         INNIE              3238          1           224782795  1           224786033  NA               1           224782795  1           224786033  1                   224782795          1                   224786033          NA              NA              NA               0                 NA               1                 1            224782795   1            224786034   DEL           DEL           1            224782795   1            224786033   1                224782795       1                224786034
+BND         TANDEM_RIGHT       NA            1           87337011   10          36119127   MinSomaticScore  1           87336976   10          36119258   1                   87337011           10                  36119127           NA              NA              SINGLE_ASSEMBLY  0                 SINGLE_ASSEMBLY  0                 1            87337011    10           36119127    BND           NA            1            87337001    NA           NA          NA               NA              NA               NA
+DEL         INNIE              2732596       10          33386464   10          36119060   MinSomaticScore  10          33386392   10          36118937   10                  33386464           10                  36119060           TRUE            TRUE            NA               NA                NA               NA                NA           NA          NA           NA          BND           NA            10           33386001    NA           NA          NA               NA              NA               NA
+BND         TANDEM_RIGHT       NA            10          60477422   12          72667074   NA               10          60477422   12          72667074   10                  60477422           12                  72667074           NA              NA              SINGLE_ASSEMBLY  1                 SINGLE_ASSEMBLY  0                 10           60477423    12           72667074    NA            NA            NA           NA          NA           NA          NA               NA              NA               NA
+BND         OUTIE              NA            10          7059510    19          17396810   NA               10          7059511    19          17396810   10                  7059510            19                  17396810           NA              NA              NA               1                 NA               0                 10           7059511     19           17396810    NA            NA            NA           NA          NA           NA          NA               NA              19               17396811
+BND         INNIE              NA            10          7132876    19          17397643   NA               10          7132872    19          17397640   10                  7132876            19                  17397643           NA              NA              NA               0                 NA               1                 10           7132876     19           17397644    BND           NA            10           7133001     NA           NA          NA               NA              19               17397637
 """
 
 
@@ -53,7 +64,8 @@ header_by_caller = {
     'cnvkit': 'chromosome	start	end	gene	log2	baf	cn	cn1	cn2	depth	probes	weight'.split(),
     'facets': 'chrom	seg	num.mark	nhet	cnlr.median	mafR	segclust	cnlr.median.clust	mafR.clust	start	end	cf.em	tcn.em	lcn.em'.split(),
     'purple': '#chromosome	start	end	copyNumber	bafCount	observedBAF	actualBAF	segmentStartSupport	segmentEndSupport	method'.split(),
-    'hcc2218truthset': 'chrom	start	end	tot_cn'.split(),
+    'hcc2218_truth': 'chrom	start	end	tot_cn'.split(),
+    'colo829_hartwig_truth': 'Truth_type	Truth_orientation	Truth_sv_len	Truth_chr1	Truth_bp1	Truth_chr2	Truth_bp2	Manta_filter	Manta_chr1	Manta_bp1	Manta_chr2	Manta_bp2	BPI_adj_Manta_chr1	BPI_adj_Manta_bp1	BPI_adj_Manta_chr2	BPI_adj_Manta_bp2	Manual_check_1	Manual_check_2	Gridss_filter1	Gridss_diff_BPI1	Gridss_filter2	Gridss_diff_BPI2	Gridss_chr1	Gridss_bp1	Gridss_chr2	Gridss_bp2	Purple_type1	Purple_type2	Purple_chr1	Purple_bp1	Purple_chr2	Purple_bp2	Conserting_chr1	Conserting_bp1	Conserting_chr2	Conserting_bp2'.split(),
 }
 
 parse_row_by_caller = {
@@ -76,26 +88,30 @@ parse_row_by_caller = {
         end  =r.get('end'),
         cn   =round(float(r.get('copyNumber'))),
     ),
-    'hcc2218truthset': lambda r: CnvCall(
+    'hcc2218_truth': lambda r: CnvCall(
         chrom=r.get('chrom'),
         start=r.get('start'),
         end  =r.get('end'),
         cn   =r.get('tot_cn'),
     ),
+    'colo829_hartwig_truth': lambda r: CnvCall(
+        chrom=r.get('Truth_chr1'),
+        start=r.get('Truth_bp1'),
+        end  =r.get('Truth_bp2'),
+        event={'DEL': 'Del', 'DUP': 'Amp'}[r.get('Truth_type')],
+    ) if r['Truth_chr1'] == r['Truth_chr2'] and r['Truth_type'] in ['DEL', 'DUP'] else None,
 }
-
 
 
 def iter_manta(fh):
     vcf = VCF(fh)
     for r in vcf:
-        if r.INFO['SVTYPE'] == 'DEL' and r.INFO.get('BPI_AF') is not None:
-            cn = round(float(np.mean(r.INFO['BPI_AF'])) * 2)
+        if r.INFO['SVTYPE'] in ['DEL', 'DUP']:
             yield CnvCall(
                 chrom=r.CHROM,
                 start=r.INFO['BPI_START'],
                 end  =r.INFO['BPI_END'],
-                cn   =cn
+                event={'DEL': 'Del', 'DUP': 'Amp'}[r.INFO['SVTYPE']],
             )
 
 
@@ -131,11 +147,12 @@ def cnv_to_bed(cnv_path, out_bed_path):
     with open(out_bed_path, 'w') as out:
         writer = csv.writer(out, delimiter='\t')
         for i, call in enumerate(parse_fn(cnv_path)):
-            bed_row = call.get_bed_raw()
-            writer.writerow(bed_row)
-            if i == 0:
-                print(bed_row)
-                print()
+            if call:
+                bed_row = call.get_bed_raw()
+                writer.writerow(bed_row)
+                if i == 0:
+                    print(bed_row)
+                    print()
 
 
 if __name__ == '__main__':

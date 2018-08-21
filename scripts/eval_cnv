@@ -22,10 +22,10 @@ loc = find_loc()
 @click.option('-r', 'regions', type=click.Path())
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('--unlock', is_flag=True, help='Propagaded to snakemake')
-@click.option('--check-gt', is_flag=True, help='Some callers use BAF to calculate more exact CN genotype '
-                                               '(AB, AA, BB, AAB, etc) rather than just a CN number (1, 2, 3...), '
-                                               'so the CN=2 events are differenet from no-event. '
-                                               'Unless this option is used, the tool will ignore CN=2.')
+@click.option('--check-gt', is_flag=True, help='Some callers calculate, BAF and thus can report copy-neutral LOHs '
+                                               '(AA, BB) that can be indistinguishable from normal AB genotypes '
+                                               'by LRR-only callers (all will have CN=2). '
+                                               'Unless this option is specified, the tool will ignore CN=2.')
 def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock=False, check_gt=False):
     if not cnv_files:
         raise click.BadParameter('Provide at least one input CNV file')

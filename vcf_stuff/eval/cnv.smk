@@ -86,26 +86,31 @@ rule annotate_bed_truth:
 chrom_order = get_chrom_order(config['genome'])
 
 
-def _read_cns_by_chrom_gene(bed_fpath):
-    """ Reads a BED file in form of chr,start,end,gene,?|cn
+def _read_cn_data_by_chrom_gene(bed_fpath):
+    """ Reads a BED file in form of:
+        chr start     end       gene   |cn|event
+        21  42818744  42820836	MX1    ||Del
+        1   1         2533000	PRKCZ  |3
         Returns a dict of {"chr:gene" -> list_of_cn}
     """
-    cns_by_chrom_gene = defaultdict(list)
+    cn_data_by_chrom_gene = defaultdict(list)
     for r in BedTool(bed_fpath):
         genes = r[3].split(',')
-        cn = int(r[4].split('|')[1])
-        if cn == 2 and config.get('check_gt') is not True:
-            continue
+        g_cn_event = r[4].split('|')
+        cn, event = None, None
+        if len(g_cn_event) == 2:
+            cn = g_cn_event[1]
+            cn = int(cn) if cn else None
+        if len(g_cn_event) == 3:
+            event = g_cn_event[2]
+        if cn is not None:
+            if cn == 2 and config.get('check_gt') is not True:
+                continue
         for g in genes:
             if g and g != '.':
                 chrom = r[0]
-                # try:
-                #     chrom = int(chrom)
-                # except ValueError:
-                #     pass
-                # chrom = chrom_order[chrom]
-                cns_by_chrom_gene[(chrom, g)].append(cn)
-    return cns_by_chrom_gene
+                cn_data_by_chrom_gene[(chrom, g)].append((cn, event))
+    return cn_data_by_chrom_gene
     # sorted_gene_chroms = sorted(cns_by_gene_chrom.keys(), key=lambda k: chr_order[k[0]])
     # cns_by_gene = {c + ':' + g : cns_by_gene_chrom[(c, g)] for (c, g) in sorted_gene_chroms}
     # return cns_by_gene
@@ -125,12 +130,27 @@ def _read_cns_by_chrom_gene(bed_fpath):
 #     cns_by_gene = {c + ':' + g : cns_by_gene_chrom[(c, g)] for (c, g) in sorted_gene_chroms}
 #     return cns_by_gene
 
-def _cns_by_gene_to_set(cns_by_gene):
+def _data_by_gene__to__gene_cn_set(data_by_gene):
     gene_cn_set = set()
-    for gene, cns in cns_by_gene.items():
-        for cn in cns:
+    for gene, data in data_by_gene.items():
+        for cn, event in data:
             gene_cn_set.add((gene, cn))
     return gene_cn_set
+
+def _cn_to_event(cn):
+    cn = int(cn)
+    if cn < 2: return 'Del'
+    if cn > 2: return 'Amp'
+    return 'Mix'
+
+def _data_by_gene__to__gene_event_set(data_by_gene):
+    gene_event_set = set()
+    for gene, data in data_by_gene.items():
+        for cn, event in data:
+            if event is None and cn is not None:
+                event = _cn_to_event(cn)
+            gene_event_set.add((gene, event))
+    return gene_event_set
 
 # def _read_gene_set(bed_fpath):
 #     return set(r[3] for r in BedTool(bed_fpath))
@@ -141,11 +161,6 @@ def _cns_by_gene_to_set(cns_by_gene):
 def _aggr_cns(cns):
     cns = sorted(cns, key=lambda cn: abs(cn - 2))
     return cns[-1]
-
-def _cn_to_event(cn):
-    if cn < 2: return 'Del'
-    if cn > 2: return 'Amp'
-    return 'Mix'
 
 def _metrics_from_sets(truth_set, sample_set):
     tp = len(sample_set & truth_set)
@@ -161,7 +176,7 @@ def _metrics_from_sets(truth_set, sample_set):
 rule table:
     input:
         sample_beds = expand('bed_anno/sample_{sample}.bed', sample=sorted(config['samples'].keys())),
-        truth_bed = 'bed_anno/truth.bed',
+        truth_bed = 'bed_anno/truth.bed'
     output:
         'eval/table.tsv'
     params:
@@ -171,8 +186,11 @@ rule table:
         for sample_bed, sname in zip([input.truth_bed] + input.sample_beds, ['truth'] + params.samples):
             # cn_by_gene_by_sname[sname] = _read_cns_by_chrom_gene(sample_bed)
             # g, cns in _read_cns_by_chrom_gene(sample_bed).items()
-            cn_by_gene_by_sname[sname] = {g: ', '.join(map(str, cns)) for g, cns in _read_cns_by_chrom_gene(sample_bed).items()}
-
+            cn_by_gene_by_sname[sname] = {
+                g: ', '.join([f'{event}:{cn}' if cn is not None else f'{event}' for cn, event in
+                             [(cn, event or _cn_to_event(cn)) for (cn, event) in vals]])
+                for g, vals in _read_cn_data_by_chrom_gene(sample_bed).items()
+            }
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
         # index = [(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in cn_by_gene_by_sname.keys()]]
         # df = df.reindex(index=[(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in df.index]])
@@ -182,37 +200,60 @@ rule table:
             df.to_csv(out_f, sep='\t', index=True)
 
 
-def _stats_to_df(stat_by_sname):
-    idx = pd.MultiIndex.from_arrays([
-        ['Sample', 'CN', 'CN', 'CN', 'CN'    , 'CN'  , 'EVENT', 'EVENT', 'EVENT', 'EVENT' , 'EVENT', 'GENE', 'GENE', 'GENE' , 'GENE'  , 'GENE'],
-        [''      , 'TP', 'FP', 'FN', 'Recall', 'Prec', 'TP'   , 'FP'   , 'FN'   , 'Recall', 'Prec' , 'TP'  , 'FP'  , 'FN'   , 'Recall', 'Prec']
-        ],
-        names=['1', '2'])
+# def _stats_to_df(stat_by_sname, include_cn=True):
+#     idx = pd.MultiIndex.from_arrays([
+#         ['Sample', 'GENE', 'GENE', 'GENE' , 'GENE'  , 'GENE', 'EVENT', 'EVENT', 'EVENT', 'EVENT' , 'EVENT'] + (['CN', 'CN', 'CN', 'CN'    , 'CN'  ] if include_cn else []),
+#         [''      , 'TP'  , 'FP'  , 'FN'   , 'Recall', 'Prec', 'TP'   , 'FP'   , 'FN'   , 'Recall', 'Prec' ] + (['TP', 'FP', 'FN', 'Recall', 'Prec'] if include_cn else [])
+#         ],
+#         names=['1', '2'])
+#
+#     data = []
+#     s_truth = i_truth = None
+#     for sname, stats in stat_by_sname.items():
+#         [g_truth, g_tp, g_fp, g_fn, g_rec, g_prec], [e_truth, e_tp, e_fp, e_fn, e_rec, e_prec] = stats[0:2]
+#         if include_cn:
+#             [c_truth, c_tp, c_fp, c_fn, c_rec, c_prec] = stats[2]
+#
+#         d = {
+#             ('Sample', ''): sname,
+#             ('EVENT', 'TP'): int(e_tp),
+#             ('EVENT', 'FP'): int(e_fp),
+#             ('EVENT', 'FN'): int(e_fn),
+#             ('EVENT', 'Recall'): float(e_rec),
+#             ('EVENT', 'Prec'): float(e_prec),
+#             ('GENE', 'TP'): int(g_tp),
+#             ('GENE', 'FP'): int(g_fp),
+#             ('GENE', 'FN'): int(g_fn),
+#             ('GENE', 'Recall'): float(g_rec),
+#             ('GENE', 'Prec'): float(g_prec),
+#         }
+#         if include_cn:
+#             d.extend({
+#                 ('CN', 'TP'): int(c_tp),
+#                 ('CN', 'FP'): int(c_fp),
+#                 ('CN', 'FN'): int(c_fn),
+#                 ('CN', 'Recall'): float(c_rec),
+#                 ('CN', 'Prec'): float(c_prec),
+#             })
+#         data.append(d)
+#     )
+#     return pd.DataFrame(data, columns=idx)
 
+def _stats_to_df(stat_by_sname):
+    idx = ['Sample', 'TP', 'FP', 'FN', 'Recall']
     data = []
     s_truth = i_truth = None
     for sname, stats in stat_by_sname.items():
-        c_truth, c_tp, c_fp, c_fn, c_rec, c_prec, \
-        e_truth, e_tp, e_fp, e_fn, e_rec, e_prec, \
-        g_truth, g_tp, g_fp, g_fn, g_rec, g_prec = stats
+        truth, tp, fp, fn, rec, prec = stats
         data.append({
-            ('Sample', ''): sname,
-            ('CN', 'TP'): int(c_tp),
-            ('CN', 'FP'): int(c_fp),
-            ('CN', 'FN'): int(c_fn),
-            ('CN', 'Recall'): float(c_rec),  # TP/truth - grows with TP grow
-            ('CN', 'Prec'): float(c_prec),  # TP/called - falls with FP grow
-            ('EVENT', 'TP'): int(e_tp),
-            ('EVENT', 'FP'): int(e_fp),
-            ('EVENT', 'FN'): int(e_fn),
-            ('EVENT', 'Recall'): float(e_rec),
-            ('EVENT', 'Prec'): float(e_prec),
-            ('GENE', 'TP'): int(g_tp),
-            ('GENE', 'FP'): int(g_fp),
-            ('GENE', 'FN'): int(g_fn),
-            ('GENE', 'Recall'): float(g_rec),
-            ('GENE', 'Prec'): float(g_prec),
+            ('Sample'): sname,
+            ('TP'): int(tp),
+            ('FP'): int(fp),
+            ('FN'): int(fn),
+            ('Recall'): float(rec),
+            ('Prec'): float(prec)
         })
+
     return pd.DataFrame(data, columns=idx)
 
 # Combine all stats to get single report:
@@ -227,31 +268,49 @@ rule report:
     params:
         samples = sorted(config['samples'].keys())
     run:
-        stats_by_sname = dict()
+        gene_stats_by_sname = dict()
+        event_stats_by_sname = dict()
+        cn_stats_by_sname = dict()
         for sample_bed, sname in zip(input.sample_beds, params.samples):
-            sample_cns_by_gene    = _read_cns_by_chrom_gene(sample_bed)
-            truth_cns_by_gene     = _read_cns_by_chrom_gene(input.truth_bed)
+            sample_data_by_gene   = _read_cn_data_by_chrom_gene(sample_bed)
+            truth_data_by_gene    = _read_cn_data_by_chrom_gene(input.truth_bed)
 
-            sample_gene_cn_set    = _cns_by_gene_to_set(sample_cns_by_gene)
-            truth_gene_cn_set     = _cns_by_gene_to_set(truth_cns_by_gene)
+            sample_gene_set       = set(sample_data_by_gene.keys())
+            truth_gene_set        = set(truth_data_by_gene.keys())
+            gene_stats_by_sname[sname] = _metrics_from_sets(truth_gene_set, sample_gene_set)
 
-            sample_gene_set       = set(sample_cns_by_gene.keys())
-            truth_gene_set        = set(truth_cns_by_gene.keys())
+            sample_gene_event_set = _data_by_gene__to__gene_event_set(sample_data_by_gene)
+            truth_gene_event_set  = _data_by_gene__to__gene_event_set(truth_data_by_gene)
+            event_stats_by_sname[sname] = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
 
-            sample_gene_event_set = set((gene, _cn_to_event(cn)) for (gene, cn) in sample_gene_cn_set)
-            truth_gene_event_set  = set((gene, _cn_to_event(cn)) for (gene, cn) in truth_gene_cn_set)
+            sample_gene_cn_set    = _data_by_gene__to__gene_cn_set(sample_data_by_gene)
+            truth_gene_cn_set     = _data_by_gene__to__gene_cn_set(truth_data_by_gene)
+            include_cn = all(cn is not None for (g, cn) in truth_gene_cn_set)
+            if include_cn:
+                cn_stats_by_sname[sname] = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
 
-            cn_metrics = _metrics_from_sets(truth_gene_cn_set, sample_gene_cn_set)
-            event_metrics = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
-            gene_metrics = _metrics_from_sets(truth_gene_set, sample_gene_set)
+        with open(output[0], 'a') as out_fh:
+            df = _stats_to_df(gene_stats_by_sname)
+            print('Gene level comparison')
+            dislay_stats_df(df)
+            out_fh.write('Gene level comparison')
+            df.to_csv(out_fh, sep='\t', index=False)
+            out_fh.write('\n')
 
-            stats_by_sname[sname] = cn_metrics + event_metrics + gene_metrics
+            df = _stats_to_df(event_stats_by_sname)
+            print('\nEvent level comparison (Amp, Del)')
+            dislay_stats_df(df)
+            out_fh.write('\nEvent level comparison (Amp, Del)')
+            df.to_csv(out_fh, sep='\t', index=False)
+            out_fh.write('\n')
 
-        df = _stats_to_df(stats_by_sname)
-        dislay_stats_df(df)
-        # Writing raw data to the TSV file
-        with open(output[0], 'w') as out_f:
-            df.to_csv(out_f, sep='\t', index=False)
+            if cn_stats_by_sname:
+                df = _stats_to_df(cn_stats_by_sname)
+                print('\nCN level comparison')
+                dislay_stats_df(df)
+                out_fh.write('\nCN level comparison')
+                df.to_csv(out_fh, sep='\t', index=False)
+                out_fh.write('\n')
 
 
 # ##########################
