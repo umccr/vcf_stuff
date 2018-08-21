@@ -23,7 +23,7 @@ dependencies:
   - pandas
   - ngs_utils
   - nose
-  - targqc>=1.7
+  - bed_annotation>=1.7.1
   #
   # Visualisation
   - jupyter

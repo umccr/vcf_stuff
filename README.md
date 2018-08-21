@@ -114,40 +114,64 @@ Similar to the VCF evaluation, you can compare CNV calls to the truth sets. The 
 
 The following truth sets are supported:
 
-- HCC2218
+- HCC2218 exome
+- COLO829 WGS (Hartwig's)
+- COLO820 WGS ([Craig's study](https://www.nature.com/articles/ncomms10001))
 
 Usage: 
 
 ```
-eval_cnv truthset_cnv.tsv cnvkit-call.cns purple.cnv.tsv facets.tsv -g GRCh37 -o results_eval_cnv
+eval_cnv -g GRCh37 -o results_eval_cnv
+    data/cnv/hcc2218/HCC2218_truthset_cnv_bcbio.tsv \
+    data/cnv/hcc2218/HCC2218_cnvkit-call.cns purple.cnv.tsv \
+    data/cnv/hcc2218/HCC2218_purple.cnv.tsv \
+    data/cnv/hcc2218/HCC2218_facets_cncf.tsv \    
 ```
 
-The tool re-annotates all regions against the Ensemble gene annotations, and produce a table:
+The tool re-annotates all regions against the Ensembl genomic features, and produces 3 tables:
 
 ```
-Sample       CN                           EVENT                       GENE                       
-             TP   FP  FN Recall   Prec    TP   FP  FN Recall   Prec   TP   FP  FN Recall   Prec
-cnvkit-call  40  122  60 40.00% 24.69%    52  110  36 59.09% 32.10%   56  106  29 65.88% 34.57%
-facets       26   47  74 26.00% 35.62%    37   36  51 42.05% 50.68%   40   33  45 47.06% 54.79%
-purple.cnv   13   56  87 13.00% 18.84%    20   49  68 22.73% 28.99%   25   42  60 29.41% 37.31%
+Gene level comparison
+                Sample    TP    FP    FN  Recall   Prec
+0  HCC2218_cnvkit-call  6399  2631    13  99.80% 70.86%
+1  HCC2218_facets_cncf  6399  5280    13  99.80% 54.79%
+2        HCC2218_manta   606    89  5806   9.45% 87.19%
+3   HCC2218_purple.cnv  4602  5924  1810  71.77% 43.72%
+
+Event level comparison (Amp, Del)
+                Sample    TP    FP    FN  Recall   Prec
+0  HCC2218_cnvkit-call  6396  2638    20  99.69% 70.80%
+1  HCC2218_facets_cncf  6398  5289    18  99.72% 54.74%
+2        HCC2218_manta   317   378  6099   4.94% 45.61%
+3   HCC2218_purple.cnv  4022  6508  2394  62.69% 38.20%
+
+CN level comparison
+                Sample    TP    FP    FN  Recall   Prec
+0  HCC2218_cnvkit-call  5950  3125   494  92.33% 65.56%
+1  HCC2218_facets_cncf  5821  5876   623  90.33% 49.76%
+2        HCC2218_manta     0   695  6444   0.00%  0.00%
+3   HCC2218_purple.cnv  3111  7423  3333  48.28% 29.53%
 ```
 
-The 3 major sections of the table (CN, EVENT, GENE) represent the level of comparison:
+Each table represents the different level of comparison:
 
-- GENE compares the sets of gene in which any event is occured (so if the truth set has a deletion in EGFR, and the sample has an amplification in EGFR, it will count as a true positive.
+- `Gene level comparison` compares the sets of gene in which any event is occured. E.g. the truth set has a deletion in EGFR, and the sample has also any other event in EGFR (e.g. an amplification), it will count as a true positive.
 
-- EVENT additionally requires the types of events per gene to be the same (Amp or Del).
+- `Event level comparison (Amp, Del)` also requires the types of events per gene to be the same. It supports 2 types of events: Amp and Del. `DUP` for certain callers is authomatically translated into `Amp`, and `DEL` into `Del`. Callers that do not report event types but report CN values, CN>2 translates into `Amp`, CN<2 translates into `Del`, and CN=2 is ignored (we don't support copy-neutral LOHs).
 
-- CN requires the integer copy number estimation value to be the same.
+- `CN level comparison` requires also the integer copy number estimation values to be the same. Only generated for callers and truth sets that contain CN values.
 
-In addition to that overall stats table, the tool will produce a per-gene table for exploration, like the following:
+In addition to that overall stats table, the tool will produce a per-gene table for details exploration, like the following:
 
 ```
-             truth  cnvkit-call      facets  purple.cnv
-AC003051.1     4.0          4.0         NaN         1.0
-ANKS1B         1.0          2.0         2.0         1.0
-CCSER1         NaN          2.0         2.0         2.0
-CDH13          1.0          1.0         1.0         1.0
+                 truth         HCC2218_cnvkit-call  HCC2218_facets_cncf  HCC2218_manta  HCC2218_purple.cnv
+1  AADACL3       Del:1         Del:1                Del:1                               Del:1
+1  AADACL4       Del:1         Del:1                Del:1                               Del:1
+1  ABCB10        Amp:6         Amp:6                Amp:6                               Amp:4
+1  ABL2          Amp:3         Amp:3                Amp:3
+1  AC004824.2    Del:1         Del:1                Del:1                               Del:1
+1  AC092782.1    Amp:4         Amp:4                Amp:4                               Amp:3
+1  AC092811.1    Amp:5         Amp:5                Amp:5                               Amp:4
 ...
 ```
 
