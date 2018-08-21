@@ -5,6 +5,7 @@ import pandas as pd
 
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
+from ngs_utils.bed_utils import get_chrom_order
 from hpc_utils.hpc import get_loc
 from vcf_stuff.eval import dislay_stats_df
 from vcf_stuff.eval.cnv import cnv_to_bed
@@ -65,9 +66,10 @@ rule annotate_bed_sample:
     output:
         'bed_anno/sample_{sample}.bed'
     params:
-        work_dir = 'work/annotate_bed/sample_{sample}'
+        work_dir = 'work/annotate_bed/sample_{sample}',
+        genome = config['genome']
     shell:
-        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g GRCh37 --short -a best_all'
+        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g {params.genome} --short -a best_all'
 
 rule annotate_bed_truth:
     input:
@@ -75,20 +77,51 @@ rule annotate_bed_truth:
     output:
         'bed_anno/truth.bed'
     params:
-        work_dir = 'work/annotate_bed/truth'
+        work_dir = 'work/annotate_bed/truth',
+        genome = config['genome']
     shell:
-        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g GRCh37 --short -a best_all'
+        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g {params.genome} --short -a best_all'
 
 
-def _read_cns_by_gene(bed_fpath):
-    cns_by_gene = defaultdict(list)
+chrom_order = get_chrom_order(config['genome'])
+
+
+def _read_cns_by_chrom_gene(bed_fpath):
+    """ Reads a BED file in form of chr,start,end,gene,?|cn
+        Returns a dict of {"chr:gene" -> list_of_cn}
+    """
+    cns_by_chrom_gene = defaultdict(list)
     for r in BedTool(bed_fpath):
         genes = r[3].split(',')
         cn = int(r[4].split('|')[1])
         for g in genes:
-            if g != '.':
-                cns_by_gene[g].append(cn)
-    return cns_by_gene
+            if g and g != '.':
+                chrom = r[0]
+                # try:
+                #     chrom = int(chrom)
+                # except ValueError:
+                #     pass
+                # chrom = chrom_order[chrom]
+                cns_by_chrom_gene[(chrom, g)].append(cn)
+    return cns_by_chrom_gene
+    # sorted_gene_chroms = sorted(cns_by_gene_chrom.keys(), key=lambda k: chr_order[k[0]])
+    # cns_by_gene = {c + ':' + g : cns_by_gene_chrom[(c, g)] for (c, g) in sorted_gene_chroms}
+    # return cns_by_gene
+
+# def _read_cns_by_gene(bed_fpath):
+#     """ Reads a BED file in form of chr,start,end,gene,?|cn
+#         Returns a dict of {"chr:gene" -> list_of_cn}
+#     """
+#     cns_by_gene_chrom = defaultdict(list)
+#     for r in BedTool(bed_fpath):
+#         genes = r[3].split(',')
+#         cn = int(r[4].split('|')[1])
+#         for g in genes:
+#             if g and g != '.':
+#                 cns_by_gene_chrom[(r[0], g)].append(cn)
+#     sorted_gene_chroms = sorted(cns_by_gene_chrom.keys(), key=lambda k: chr_order[k[0]])
+#     cns_by_gene = {c + ':' + g : cns_by_gene_chrom[(c, g)] for (c, g) in sorted_gene_chroms}
+#     return cns_by_gene
 
 def _cns_by_gene_to_set(cns_by_gene):
     gene_cn_set = set()
@@ -134,9 +167,14 @@ rule table:
     run:
         cn_by_gene_by_sname = defaultdict(dict)
         for sample_bed, sname in zip([input.truth_bed] + input.sample_beds, ['truth'] + params.samples):
-            cn_by_gene_by_sname[sname] = {g: ','.join(map(str, cns)) for g, cns in _read_cns_by_gene(sample_bed).items()}
+            # cn_by_gene_by_sname[sname] = _read_cns_by_chrom_gene(sample_bed)
+            # g, cns in _read_cns_by_chrom_gene(sample_bed).items()
+            cn_by_gene_by_sname[sname] = {g: ', '.join(map(str, cns)) for g, cns in _read_cns_by_chrom_gene(sample_bed).items()}
 
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
+        # index = [(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in cn_by_gene_by_sname.keys()]]
+        # df = df.reindex(index=[(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in df.index]])
+        # print(df)
         print(df.to_string(index=True, na_rep='.'))
         with open(output[0], 'w') as out_f:
             df.to_csv(out_f, sep='\t', index=True)
@@ -189,8 +227,8 @@ rule report:
     run:
         stats_by_sname = dict()
         for sample_bed, sname in zip(input.sample_beds, params.samples):
-            sample_cns_by_gene    = _read_cns_by_gene(sample_bed)
-            truth_cns_by_gene     = _read_cns_by_gene(input.truth_bed)
+            sample_cns_by_gene    = _read_cns_by_chrom_gene(sample_bed)
+            truth_cns_by_gene     = _read_cns_by_chrom_gene(input.truth_bed)
 
             sample_gene_cn_set    = _cns_by_gene_to_set(sample_cns_by_gene)
             truth_gene_cn_set     = _cns_by_gene_to_set(truth_cns_by_gene)

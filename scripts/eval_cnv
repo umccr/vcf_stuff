@@ -28,6 +28,7 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
 
     conf = {
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in cnv_files},
+        'genome': genome,
     }
     if regions:
         conf['sample_regions'] = abspath(regions)
