@@ -159,7 +159,17 @@ Each table represents the different level of comparison:
 
 - `Event level comparison (Amp, Del)` also requires the types of events per gene to be the same. It supports 2 types of events: Amp and Del. `DUP` for certain callers is authomatically translated into `Amp`, and `DEL` into `Del`. Callers that do not report event types but report CN values, CN>2 translates into `Amp`, CN<2 translates into `Del`, and CN=2 is ignored (we don't support copy-neutral LOHs).
 
-- `CN level comparison` requires also the integer copy number estimation values to be the same. Only generated for callers and truth sets that contain CN values.
+- `CN level comparison` requires also the integer copy number estimation values to be the same. Only generated for callers and truth sets that contain CN values. For example, for WGS COLO829, it would looks like the following:
+
+```
+Gene level comparison
+Sample                     TP    FP    FN  Recall  Prec
+COLO_TGEN_bwa-cnvkit-call  6716  4680  6   99.91%  58.93%
+
+Event level comparison (Amp, Del)
+Sample                     TP    FP    FN  Recall  Prec
+COLO_TGEN_bwa-cnvkit-call  6714  4700  8   99.88%  58.82%
+```
 
 In addition to that overall stats table, the tool will produce a per-gene table for details exploration, like the following:
 
@@ -174,7 +184,6 @@ In addition to that overall stats table, the tool will produce a per-gene table 
 1  AC092811.1    Amp:5         Amp:5                Amp:5                               Amp:4
 ...
 ```
-
 
 ## Panel of normals
 
