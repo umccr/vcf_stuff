@@ -191,7 +191,7 @@ Removing variants detected as germline in a set of unrelated normal tissue sampl
 
 Below showing stats for the evaluation of the ICGC MB T/N variant calling with 300x tumor coverage, and 50 normal coverage. The number in `vardict_n1` means how many heats in PoN we allow before we filter out the variant.
 
-![Evaluation of the ICGC MB T/N variant calling with 300x tumor coverage, and 50 normal coverage](benchmark_50_300.png)
+![Evaluation of the ICGC MB T/N variant calling with 300x tumor coverage, and 50 normal coverage](vcf_stuff/panel_of_normals/benchmark_50_300.png)
 
 Annotate a VCF against a panel of normals:
 
