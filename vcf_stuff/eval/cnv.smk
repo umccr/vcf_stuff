@@ -60,16 +60,19 @@ rule cnv_to_bed_truth:
     run:
         cnv_to_bed(input[0], output[0])
 
+
+anno_cmd = 'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} --short -a all' \
+           ' --coding-only -g ' + config['genome']
+
 rule annotate_bed_sample:
     input:
         rules.cnv_to_bed_sample.output[0]
     output:
         'bed_anno/sample_{sample}.bed'
     params:
-        work_dir = 'work/annotate_bed/sample_{sample}',
-        genome = config['genome']
+        work_dir = 'work/annotate_bed/sample_{sample}'
     shell:
-        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g {params.genome} --short -a best_all'
+       anno_cmd
 
 rule annotate_bed_truth:
     input:
@@ -77,10 +80,9 @@ rule annotate_bed_truth:
     output:
         'bed_anno/truth.bed'
     params:
-        work_dir = 'work/annotate_bed/truth',
-        genome = config['genome']
+        work_dir = 'work/annotate_bed/truth'
     shell:
-        'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g {params.genome} --short -a best_all'
+        anno_cmd
 
 
 chrom_order = get_chrom_order(config['genome'])
@@ -187,8 +189,8 @@ rule table:
             # cn_by_gene_by_sname[sname] = _read_cns_by_chrom_gene(sample_bed)
             # g, cns in _read_cns_by_chrom_gene(sample_bed).items()
             cn_by_gene_by_sname[sname] = {
-                g: ', '.join([f'{event}:{cn}' if cn is not None else f'{event}' for cn, event in
-                             [(cn, event or _cn_to_event(cn)) for (cn, event) in vals]])
+                g: ', '.join(set([f'{event}:{cn}' if cn is not None else f'{event}' for cn, event in
+                             [(cn, event or _cn_to_event(cn)) for (cn, event) in vals]]))
                 for g, vals in _read_cn_data_by_chrom_gene(sample_bed).items()
             }
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
