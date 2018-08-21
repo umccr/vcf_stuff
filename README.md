@@ -128,7 +128,7 @@ eval_cnv -g GRCh37 -o results_eval_cnv
     data/cnv/hcc2218/HCC2218_facets_cncf.tsv \    
 ```
 
-The tool re-annotates all regions against the Ensembl genomic features, and produces 3 tables:
+The tool re-annotates all regions using the [BED annotation](https://github.com/vladsaveliev/TargQC/#bed-annotation) tool, and produces 3 tables with standard performance statistics:
 
 ```
 Gene level comparison
