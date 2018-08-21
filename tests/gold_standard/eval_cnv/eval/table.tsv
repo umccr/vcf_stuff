@@ -1,165 +1,168 @@
-		truth	HCC2218_cnvkit-call	HCC2218_facets_cncf	HCC2218_purple.cnv
-1	AGRN		0		
-1	ASH1L	5	5	6	
-1	CAMTA1	1	1	1	1
-1	CDC42BPA	7			
-1	DISC1	6	6	6	
-1	DNAH14	5	5	5	4
-1	EPB41		1		
-1	HIST2H2BF		7		
-1	ITPKB		7		
-1	KCNN3				4
-1	PDE4DIP	5	5		3
-1	PRDM16		0		
-1	PRKCZ		1		
-1	RP4-669L17.10		3		
-1	RPRD2		5		5
-1	RYR2	4	4	4	3
-1	TCHH		9, 9		
-1	USH2A	3	3	3	
-10	AGAP8		3		
-10	C10orf76		1		
-10	KIAA1217				1
-10	PCDH15			1	1
-10	SPRN		1		
-10	USP54		1		
-10	WDFY4	3	3	3	
-11	LRRC4C				1
-11	PLEKHB1	1			
-11	TRIM49C		3		
-12	ANKS1B	1			1
-13	GPC5				1
-13	PCDH9	1	1	1	
-14	DYNC1H1		4		
-14	IGHD	6	5		
-14	LINC00221	3	3		
-14	MYH6		3		
-14	TECPR2		3		
-14	TMEM179		3		
-14	UNC79	3	3	3	
-16	ANKRD11		0		
-16	CDH1	0			
-16	CDH13	1	1	1	1
-16	FTO	1	1	1	
-16	HYDIN	5		6	
-16	NFATC3		0		
-16	TANGO6	1	1		
-17	AC003051.1	4	4		1
-17	AC102948.2	3			
-17	ACACA	1	1	1	1
-17	ASIC2	4, 16, 4, 16, 4, 16, 4, 3	3	3	3
-17	BCAS3	17	14	14	3
-17	BRIP1		20		
-17	CA10	7, 5	5	6	3
-17	CACNA1G	12			
-17	CASC17	4			3
-17	CCT6B	4			
-17	CDK12	9, 1, 17	16	16	
-17	CEP112	3	4	4	
-17	CLTC	10	8		
-17	CRHR1		1		
-17	CTB-91J4.1	10			
-17	DNAH9	1	1	1	1
-17	GRB2	9	8	8	
-17	ITGA3	10			
-17	KSR1	4	4		
-17	MBTD1	5			
-17	MED13	3	14		
-17	MMP28	1			
-17	MSI2		3	3	1
-17	MYO18A		4		
-17	NLK	3			
-17	NSFP1		0		
-17	PITPNC1	4	4		
-17	PPM1E	4	4		
-17	PRKCA	5	5		
-17	RAB37			12	
-17	RAD51L3-RFFL	3			
-17	RNF157			1	
-17	RP11-1018N14.5	4			
-17	RP11-101O21.1	10			
-17	RP11-1058G23.1	4			
-17	RP11-118B18.1	4			
-17	RP11-192H23.4	4	5		
-17	RP11-68I3.2	3			
-17	RP11-81K2.1	17			
-17	RPTOR			1	
-17	SARM1		5		
-17	SDK2	8, 14	12	9	
-17	SEPT9	4	4	4	
-17	SKAP1	1	1	1	17
-17	SLC39A11			1	8
-17	SPAG9	10	10	10	
-17	SPOP	8	8		
-17	SSH2	5	3	4	
-17	STXBP4	1	1	1	
-17	TAOK1	6	5		
-17	TBC1D16	4	4	3	
-17	TLK2	6			
-17	UNC45B	1, 3			
-17	USP32		14		
-17	VMP1				8
-17	ZNF652		18	18	
-18	DCC				1
-18	DLGAP1				1
-18	MYO5B		3		
-19	CENPBD1P1	1			
-19	CTC-260E6.6		1		
-19	GNG7		1		
-19	ZBTB45		0	1	
-19	ZNF536			1	
-2	AC114765.1		1		
-2	AC131097.3		1		
-2	ACVR2A	0	0		
-2	CTNNA2		1		1
-2	LRP1B		1	1	1
-20	MACROD2	1			1
-20	PTPRT	3	3	3	
-21	TPTE				4
-3	ERC2		1		
-3	LSAMP	1	1	1	1
-3	ROBO2	1			1
-3	TBC1D5	1	1	1	
-3	ZNF717	3			
-4	KCNIP4	1	1	1	1
-5	CDH18		3	3	
-5	MSNP1	4			
-5	PDZD2	3			
-5	TENM2	3	3	3	
-6	CDKAL1		3		1
-6	EYS		3	3	
-7	CNTNAP2	3	3	3	1
-7	GATS		3		
-7	MAGI2	1	1	1	
-7	MUC12		3		
-7	SDK1				1
-7	TBRG4		1		
-7	TRRAP		3		
-8	ARHGAP39		3	5	
-8	CSMD1	1	1	1	1
-8	CSMD3	4	4	4	3
-8	NCALD		4		
-8	SAMD12	3			
-8	SNTG1	6, 8	7		
-8	SPIDR	3	3	4	
-8	TRAPPC9	4			
-8	VPS13B		4		
-8	ZMAT4	1			
-9	DOCK8		3		
-9	SPTAN1		3		
-9	TLN1		1		
-MT	MT-ND5		5		
-X	ARMCX4		1		
-X	COL4A5		3		
-X	CT47A12		4		
-X	DIAPH2		3		
-X	DMD		3	3	1
-X	HTR2C		3		
-X	IL1RAPL2		3		1
-X	IRS4		4		
-X	TENM1		3		
-Y	NLGN4Y				1
-Y	PARP4P1				1
-Y	PCDH11Y		0		14
-Y	RCC2P1				1
-Y	SLC9B1P1				1
+		truth	HCC2218_cnvkit-call	HCC2218_facets_cncf	HCC2218_manta	HCC2218_purple.cnv
+1	AGRN		Del:0			
+1	ASH1L	Amp:5	Amp:5	Amp:6		
+1	CAMTA1	Del:1	Del:1	Del:1		Del:1
+1	CDC42BPA	Amp:7				
+1	DISC1	Amp:6	Amp:6	Amp:6		
+1	DNAH14	Amp:5	Amp:5	Amp:5		Amp:4
+1	EPB41		Del:1			
+1	HIST2H2BF		Amp:7			
+1	ITPKB		Amp:7			
+1	KCNH1				Del	
+1	KCNN3					Amp:4
+1	PDE4DIP	Amp:5	Amp:5			Amp:3
+1	PRDM16		Del:0			
+1	PRKCZ		Del:1			
+1	RP4-669L17.10		Amp:3			
+1	RPRD2		Amp:5			Amp:5
+1	RYR2	Amp:4	Amp:4	Amp:4		Amp:3
+1	ST3GAL3				Del	
+1	TCHH		Amp:9, Amp:9			
+1	USH2A	Amp:3	Amp:3	Amp:3		
+10	AGAP8		Amp:3			
+10	C10orf76		Del:1			
+10	KIAA1217					Del:1
+10	PCDH15			Del:1		Del:1
+10	SPRN		Del:1			
+10	USP54		Del:1			
+10	WDFY4	Amp:3	Amp:3	Amp:3		
+11	LRRC4C					Del:1
+11	PLEKHB1	Del:1				
+11	TRIM49C		Amp:3			
+12	ANKS1B	Del:1				Del:1
+13	GPC5					Del:1
+13	PCDH9	Del:1	Del:1	Del:1		
+14	DYNC1H1		Amp:4			
+14	IGHD	Amp:6	Amp:5			
+14	LINC00221	Amp:3	Amp:3		Amp	
+14	MYH6		Amp:3			
+14	TECPR2		Amp:3			
+14	TMEM179		Amp:3			
+14	UNC79	Amp:3	Amp:3	Amp:3		
+16	ANKRD11		Del:0			
+16	CDH1	Del:0			Del	
+16	CDH13	Del:1	Del:1	Del:1		Del:1
+16	FTO	Del:1	Del:1	Del:1		
+16	HYDIN	Amp:5		Amp:6		
+16	NFATC3		Del:0			
+16	TANGO6	Del:1	Del:1			
+17	AC003051.1	Amp:4	Amp:4			Del:1
+17	AC102948.2	Amp:3				
+17	ACACA	Del:1	Del:1	Del:1	Del	Del:1
+17	ASIC2	Amp:4, Amp:16, Amp:4, Amp:16, Amp:4, Amp:16, Amp:4, Amp:3	Amp:3	Amp:3	Del	Amp:3
+17	BCAS3	Amp:17	Amp:14	Amp:14		Amp:3
+17	BRIP1		Amp:20			
+17	CA10	Amp:7, Amp:5	Amp:5	Amp:6		Amp:3
+17	CACNA1G	Amp:12				
+17	CASC17	Amp:4				Amp:3
+17	CCT6B	Amp:4				
+17	CDK12	Amp:9, Del:1, Amp:17	Amp:16	Amp:16		
+17	CEP112	Amp:3	Amp:4	Amp:4	Del	
+17	CLTC	Amp:10	Amp:8			
+17	CRHR1		Del:1			
+17	CTB-91J4.1	Amp:10				
+17	DNAH9	Del:1	Del:1	Del:1		Del:1
+17	GRB2	Amp:9	Amp:8	Amp:8		
+17	GRB7				Del	
+17	ITGA3	Amp:10				
+17	KSR1	Amp:4	Amp:4			
+17	MBTD1	Amp:5				
+17	MED13	Amp:3	Amp:14			
+17	MMP28	Del:1				
+17	MSI2		Amp:3	Amp:3		Del:1
+17	MYO18A		Amp:4			
+17	NLK	Amp:3				
+17	NSFP1		Del:0			
+17	PITPNC1	Amp:4	Amp:4			
+17	PPM1E	Amp:4	Amp:4			
+17	PRKCA	Amp:5	Amp:5			
+17	RAB37			Amp:12		
+17	RAD51L3-RFFL	Amp:3				
+17	RNF157			Del:1		
+17	RP11-1018N14.5	Amp:4				
+17	RP11-101O21.1	Amp:10				
+17	RP11-1058G23.1	Amp:4				
+17	RP11-118B18.1	Amp:4				
+17	RP11-192H23.4	Amp:4	Amp:5			
+17	RP11-68I3.2	Amp:3				
+17	RP11-81K2.1	Amp:17				
+17	RPTOR			Del:1		
+17	SARM1		Amp:5			
+17	SDK2	Amp:8, Amp:14	Amp:12	Amp:9		
+17	SEPT9	Amp:4	Amp:4	Amp:4		
+17	SKAP1	Del:1	Del:1	Del:1	Del	Amp:17
+17	SLC39A11			Del:1		Amp:8
+17	SPAG9	Amp:10	Amp:10	Amp:10		
+17	SPOP	Amp:8	Amp:8			
+17	SSH2	Amp:5	Amp:3	Amp:4		
+17	STXBP4	Del:1	Del:1	Del:1		
+17	TAOK1	Amp:6	Amp:5			
+17	TBC1D16	Amp:4	Amp:4	Amp:3		
+17	TLK2	Amp:6				
+17	UNC45B	Del:1, Amp:3				
+17	USP32		Amp:14			
+17	VMP1					Amp:8
+17	ZNF652		Amp:18	Amp:18		
+18	DCC					Del:1
+18	DLGAP1					Del:1
+18	MYO5B		Amp:3			
+19	CENPBD1P1	Del:1				
+19	CTC-260E6.6		Del:1			
+19	GNG7		Del:1			
+19	ZBTB45		Del:0	Del:1		
+19	ZNF536			Del:1		
+2	AC114765.1		Del:1			
+2	AC131097.3		Del:1			
+2	ACVR2A	Del:0	Del:0			
+2	CTNNA2		Del:1			Del:1
+2	LRP1B		Del:1	Del:1		Del:1
+20	MACROD2	Del:1				Del:1
+20	PTPRT	Amp:3	Amp:3	Amp:3		
+21	TPTE					Amp:4
+3	ERC2		Del:1			
+3	LSAMP	Del:1	Del:1	Del:1		Del:1
+3	ROBO2	Del:1				Del:1
+3	TBC1D5	Del:1	Del:1	Del:1		
+3	ZNF717	Amp:3				
+4	KCNIP4	Del:1	Del:1	Del:1		Del:1
+5	CDH18		Amp:3	Amp:3		
+5	MSNP1	Amp:4				
+5	PDZD2	Amp:3				
+5	TENM2	Amp:3	Amp:3	Amp:3		
+6	CDKAL1		Amp:3			Del:1
+6	EYS		Amp:3	Amp:3		
+7	CNTNAP2	Amp:3	Amp:3	Amp:3		Del:1
+7	GATS		Amp:3			
+7	MAGI2	Del:1	Del:1	Del:1		
+7	MUC12		Amp:3			
+7	SDK1					Del:1
+7	TBRG4		Del:1			
+7	TRRAP		Amp:3			
+8	ARHGAP39		Amp:3	Amp:5		
+8	CSMD1	Del:1	Del:1	Del:1		Del:1
+8	CSMD3	Amp:4	Amp:4	Amp:4		Amp:3
+8	NCALD		Amp:4			
+8	SAMD12	Amp:3				
+8	SNTG1	Amp:6, Amp:8	Amp:7			
+8	SPIDR	Amp:3	Amp:3	Amp:4		
+8	TRAPPC9	Amp:4				
+8	VPS13B		Amp:4			
+8	ZMAT4	Del:1				
+9	DOCK8		Amp:3			
+9	SPTAN1		Amp:3			
+9	TLN1		Del:1			
+MT	MT-ND5		Amp:5			
+X	ARMCX4		Del:1			
+X	COL4A5		Amp:3			
+X	CT47A12		Amp:4			
+X	DIAPH2		Amp:3			
+X	DMD		Amp:3	Amp:3		Del:1
+X	HTR2C		Amp:3			
+X	IL1RAPL2		Amp:3			Del:1
+X	IRS4		Amp:4			
+X	TENM1		Amp:3			
+Y	NLGN4Y					Del:1
+Y	PARP4P1					Del:1
+Y	PCDH11Y		Del:0			Amp:14
+Y	RCC2P1					Del:1
+Y	SLC9B1P1					Del:1

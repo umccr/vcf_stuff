@@ -287,20 +287,20 @@ rule report:
             truth_gene_cn_set     = _data_by_gene__to__gene_cn_set(truth_data_by_gene)
             include_cn = all(cn is not None for (g, cn) in truth_gene_cn_set)
             if include_cn:
-                cn_stats_by_sname[sname] = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
+                cn_stats_by_sname[sname] = _metrics_from_sets(truth_gene_cn_set, sample_gene_cn_set)
 
         with open(output[0], 'a') as out_fh:
             df = _stats_to_df(gene_stats_by_sname)
             print('Gene level comparison')
             dislay_stats_df(df)
-            out_fh.write('Gene level comparison')
+            out_fh.write('Gene level comparison\n')
             df.to_csv(out_fh, sep='\t', index=False)
             out_fh.write('\n')
 
             df = _stats_to_df(event_stats_by_sname)
             print('\nEvent level comparison (Amp, Del)')
             dislay_stats_df(df)
-            out_fh.write('\nEvent level comparison (Amp, Del)')
+            out_fh.write('\nEvent level comparison (Amp, Del)\n')
             df.to_csv(out_fh, sep='\t', index=False)
             out_fh.write('\n')
 
@@ -308,7 +308,7 @@ rule report:
                 df = _stats_to_df(cn_stats_by_sname)
                 print('\nCN level comparison')
                 dislay_stats_df(df)
-                out_fh.write('\nCN level comparison')
+                out_fh.write('\nCN level comparison\n')
                 df.to_csv(out_fh, sep='\t', index=False)
                 out_fh.write('\n')
 
