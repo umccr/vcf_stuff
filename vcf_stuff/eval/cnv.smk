@@ -189,15 +189,17 @@ rule table:
             # cn_by_gene_by_sname[sname] = _read_cns_by_chrom_gene(sample_bed)
             # g, cns in _read_cns_by_chrom_gene(sample_bed).items()
             cn_by_gene_by_sname[sname] = {
-                g: ', '.join(set([f'{event}:{cn}' if cn is not None else f'{event}' for cn, event in
-                             [(cn, event or _cn_to_event(cn)) for (cn, event) in vals]]))
+                g: ', '.join(sorted(list(set([f'{event}:{cn}'
+                                  if cn is not None
+                                  else f'{event}'
+                                  for cn, event in
+                             [(cn, event or _cn_to_event(cn))
+                              for (cn, event) in vals]])))
+                             )
                 for g, vals in _read_cn_data_by_chrom_gene(sample_bed).items()
             }
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
-        # index = [(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in cn_by_gene_by_sname.keys()]]
-        # df = df.reindex(index=[(chr_order[c], g) for (c, g) in [c_g.split(':') for c_g in df.index]])
-        # print(df)
-        print(df.to_string(index=True, na_rep='.'))
+        # print(df.to_string(index=True, na_rep='.'))
         with open(output[0], 'w') as out_f:
             df.to_csv(out_f, sep='\t', index=True)
 

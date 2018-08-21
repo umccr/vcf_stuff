@@ -259,7 +259,7 @@
 1	CD84	Amp:3	Amp:3	Amp:3		
 1	CDA	Del:1	Del:1	Del:1		Del:1
 1	CDC42	Del:1	Del:1	Del:1		Del:1
-1	CDC42BPA	Amp:7	Amp:7, Amp:6	Amp:6		Amp:4
+1	CDC42BPA	Amp:7	Amp:6, Amp:7	Amp:6		Amp:4
 1	CDC42SE1	Amp:5	Amp:5	Amp:6		Amp:5
 1	CDC73	Amp:3	Amp:3	Amp:3		
 1	CDK11A	Del:1	Del:1	Del:1		Del:1
@@ -519,7 +519,7 @@
 1	GON4L	Amp:3	Amp:3	Amp:3		
 1	GORAB	Amp:3	Amp:3	Amp:3		
 1	GPA33	Amp:3	Amp:3	Amp:3		
-1	GPATCH2	Amp:3	Amp:5, Amp:3	Amp:3		
+1	GPATCH2	Amp:3	Amp:3, Amp:5	Amp:3		
 1	GPATCH3	Del:1	Del:1	Del:1		Del:1
 1	GPATCH4	Amp:3	Amp:3	Amp:3		
 1	GPN2	Del:1	Del:1	Del:1		Del:1
@@ -783,7 +783,7 @@
 1	MRPS15					Del:1
 1	MRPS21	Amp:5	Amp:5	Amp:6		Amp:5
 1	MRTO4	Del:1	Del:1	Del:1		Del:1
-1	MSTO1	Amp:5, Amp:3	Amp:5, Amp:3	Amp:3, Amp:6		
+1	MSTO1	Amp:3, Amp:5	Amp:3, Amp:5	Amp:3, Amp:6		
 1	MT1HL1	Amp:4	Amp:4	Amp:4		Amp:3
 1	MTFR1L	Del:1	Del:1	Del:1		Del:1
 1	MTHFR	Del:1	Del:1	Del:1		Del:1
@@ -990,7 +990,7 @@
 1	PLA2G2F	Del:1	Del:1	Del:1		Del:1
 1	PLA2G4A	Amp:3	Amp:3	Amp:3		
 1	PLA2G5	Del:1	Del:1	Del:1		Del:1
-1	PLCH2	Del:1	Del:1, Del:0	Del:1		Del:1
+1	PLCH2	Del:1	Del:0, Del:1	Del:1		Del:1
 1	PLD5	Amp:4	Amp:4	Amp:4		Amp:3
 1	PLEKHA6	Amp:3	Amp:3	Amp:3		
 1	PLEKHG5	Del:1	Del:1	Del:1		Del:1
@@ -1196,7 +1196,7 @@
 1	SELL	Amp:3	Amp:3	Amp:3		
 1	SELP	Amp:3	Amp:3	Amp:3		
 1	SEMA4A	Amp:3	Amp:3	Amp:3		
-1	SEMA6C	Amp:5	Amp:5	Amp:6		Amp:5, Amp:4
+1	SEMA6C	Amp:5	Amp:5	Amp:6		Amp:4, Amp:5
 1	SEPN1	Del:1	Del:1	Del:1		Del:1
 1	SERINC2	Del:1	Del:1	Del:1		Del:1
 1	SERPINC1	Amp:3	Amp:3	Amp:3		
@@ -1260,7 +1260,7 @@
 1	SNX27	Amp:5	Amp:5	Amp:6		Amp:4
 1	SOAT1	Amp:3	Amp:3	Amp:3		
 1	SOX13	Amp:3	Amp:3	Amp:3		
-1	SPATA17	Amp:5, Amp:3	Amp:5	Amp:5		
+1	SPATA17	Amp:3, Amp:5	Amp:5	Amp:5		
 1	SPATA21	Del:1	Del:1	Del:1		Del:1
 1	SPEN	Del:1	Del:1	Del:1		Del:1
 1	SPHAR	Amp:6	Amp:6	Amp:6		Amp:4
@@ -1462,7 +1462,7 @@
 1	YARS					Del:1
 1	YOD1	Amp:3	Amp:3	Amp:3		
 1	YTHDF2	Del:1	Del:1	Del:1		Del:1
-1	YY1AP1	Amp:3	Amp:5, Amp:3	Amp:3		
+1	YY1AP1	Amp:3	Amp:3, Amp:5	Amp:3		
 1	ZBED6	Amp:3	Amp:3	Amp:3		
 1	ZBTB17	Del:1	Del:1	Del:1		Del:1
 1	ZBTB18	Amp:4	Amp:4	Amp:4		Amp:3
@@ -4011,7 +4011,7 @@
 16	CDH13	Del:1	Del:1	Del:1		Del:1
 16	CDH15	Del:1	Del:0	Del:1		Del:1
 16	CDH16	Del:1	Del:0	Del:1		Del:1
-16	CDH3	Del:1, Del:0	Del:0	Del:1	Del	Del:1
+16	CDH3	Del:0, Del:1	Del:0	Del:1	Del	Del:1
 16	CDH5	Del:1	Del:1	Del:1		Del:1
 16	CDH8	Del:1	Del:1	Del:1		Del:1
 16	CDK10	Del:1	Del:0	Del:1		Del:1
@@ -4139,7 +4139,7 @@
 16	HSD17B2	Del:1	Del:1	Del:1		Del:1
 16	HSDL1	Del:1	Del:1	Del:1		Del:1
 16	HSF4	Del:1	Del:0	Del:1		Del:1
-16	HYDIN	Amp:5, Del:1	Del:1	Del:1, Amp:6		Del:1
+16	HYDIN	Amp:5, Del:1	Del:1	Amp:6, Del:1		Del:1
 16	IL17C	Del:1	Del:0	Del:1		Del:1
 16	IL34	Del:1	Del:1	Del:1		Del:1
 16	IRF8	Del:1	Del:1	Del:1		Del:1
@@ -4191,7 +4191,7 @@
 16	MVD	Del:1	Del:0	Del:1		Del:1
 16	MYLK3	Del:1	Del:1	Del:1		Del:1
 16	N4BP1	Del:1	Del:1	Del:1		Del:1
-16	NAE1	Del:1	Del:1, Del:0	Del:1		Del:1
+16	NAE1	Del:1	Del:0, Del:1	Del:1		Del:1
 16	NDRG4	Del:1	Del:1	Del:1		Del:1
 16	NECAB2	Del:1	Del:1	Del:1		Del:1
 16	NETO2	Del:1	Del:1	Del:1		Del:1
@@ -4337,7 +4337,7 @@
 17	AATF	Del:1	Del:1	Del:1	Del	Del:1
 17	AATK			Del:1		
 17	ABCA10	Amp:4	Amp:4	Amp:4	Del	Amp:3
-17	ABCA5	Amp:4	Amp:4	Del:1, Amp:4	Del	Amp:3, Del:1
+17	ABCA5	Amp:4	Amp:4	Amp:4, Del:1	Del	Amp:3, Del:1
 17	ABCA6	Amp:4	Amp:4	Amp:4	Del	Amp:3
 17	ABCA8	Amp:4	Amp:4	Amp:4	Del	Amp:3
 17	ABCA9	Amp:4	Amp:4	Amp:4	Del	Amp:3
@@ -4407,7 +4407,7 @@
 17	ANAPC11			Del:1		
 17	ANKFN1		Amp:3	Amp:3	Del	Del:1
 17	ANKFY1	Del:1	Del:1	Del:1		Del:1
-17	ANKRD13B	Amp:3, Amp:6	Amp:5, Amp:3	Amp:4	Del	
+17	ANKRD13B	Amp:3, Amp:6	Amp:3, Amp:5	Amp:4	Del	
 17	ANKRD40	Amp:12	Amp:10	Amp:10	Del	Amp:3
 17	AOC2	Del:1	Del:1	Del:1	Del	Del:1
 17	AOC3	Del:1	Del:1	Del:1	Del	Del:1
@@ -4421,7 +4421,7 @@
 17	ARHGEF15	Del:1	Del:1	Del:1		Del:1
 17	ARL16			Del:1		
 17	ARL17A	Del:1	Del:0, Del:1	Del:1	Del	Del:1
-17	ARL17B	Del:1	Del:1, Del:0	Del:1	Del	Del:1
+17	ARL17B	Del:1	Del:0, Del:1	Del:1	Del	Del:1
 17	ARL4D	Del:1	Del:1	Del:1	Del	Del:1
 17	ARL5C	Del:1	Del:1	Del:1	Del	Del:1
 17	ARMC7	Amp:9	Amp:8	Amp:8	Del	
@@ -4430,7 +4430,7 @@
 17	ASB16	Del:1	Del:1	Del:1	Del	Del:1
 17	ASGR1	Del:1	Del:1	Del:1		Del:1
 17	ASGR2	Del:1	Del:1	Del:1		Del:1
-17	ASIC2	Amp:3, Amp:4, Amp:16	Amp:3	Amp:3	Del	Amp:3
+17	ASIC2	Amp:16, Amp:3, Amp:4	Amp:3	Amp:3	Del	Amp:3
 17	ASPA	Del:1	Del:1	Del:1		Del:1
 17	ASPSCR1			Del:1		
 17	ATAD5				Del	
@@ -4554,7 +4554,7 @@
 17	CDC27	Del:1	Del:1	Del:1	Del	Del:1
 17	CDC42EP4			Del:1	Del	Amp:8
 17	CDC6	Del:1	Del:1	Del:1	Del	Del:1
-17	CDK12	Del:1, Amp:17, Amp:9	Del:1, Amp:16	Del:1, Amp:16	Del	Del:1
+17	CDK12	Amp:17, Amp:9, Del:1	Amp:16, Del:1	Amp:16, Del:1	Del	Del:1
 17	CDK3			Del:1	Del	
 17	CDK5R1				Del	Amp:3
 17	CDK5RAP3	Del:1	Del:1	Del:1	Del	Del:1
@@ -4574,7 +4574,7 @@
 17	CISD3	Del:1	Del:1	Del:1	Del	Del:1
 17	CLDN7	Del:1	Del:1	Del:1		Del:1
 17	CLEC10A	Del:1	Del:1	Del:1		Del:1
-17	CLTC	Amp:4, Amp:10	Amp:4, Amp:8	Amp:3, Amp:14	Del	Del:1
+17	CLTC	Amp:10, Amp:4	Amp:4, Amp:8	Amp:14, Amp:3	Del	Del:1
 17	CLUH	Del:1	Del:1	Del:1		Del:1
 17	CNP	Del:1	Del:1	Del:1	Del	Del:1
 17	CNTD1	Del:1	Del:1	Del:1	Del	Del:1
@@ -4776,7 +4776,7 @@
 17	HCRT	Del:1	Del:1	Del:1	Del	Del:1
 17	HDAC5	Del:1	Del:1	Del:1	Del	Del:1
 17	HEATR6	Amp:17	Amp:14	Amp:14	Del	Amp:3
-17	HELZ	Amp:5, Amp:4	Amp:5, Amp:4	Amp:4	Del	Amp:3
+17	HELZ	Amp:4, Amp:5	Amp:4, Amp:5	Amp:4	Del	Amp:3
 17	HES7	Del:1	Del:1	Del:1		Del:1
 17	HEXDC			Del:1		
 17	HEXIM1	Del:1	Del:1	Del:1	Del	Del:1
@@ -4788,7 +4788,7 @@
 17	HLF	Del:1	Del:1	Del:1	Del	Del:1
 17	HN1	Amp:9	Amp:8	Amp:8	Del	
 17	HNF1B	Del:1	Del:1	Del:1	Del	Del:1
-17	HOXB1	Amp:17	Amp:18	Amp:18	Del	Amp:3, Amp:17
+17	HOXB1	Amp:17	Amp:18	Amp:18	Del	Amp:17, Amp:3
 17	HOXB13	Amp:17	Amp:18	Amp:18	Del	Amp:3
 17	HOXB2	Amp:17	Amp:18	Amp:18	Del	Amp:3
 17	HOXB3	Amp:17	Amp:18	Amp:18	Del	Amp:3
@@ -4817,7 +4817,7 @@
 17	ITGA3	Amp:10	Amp:8	Amp:10	Del	Amp:3
 17	ITGAE	Del:1	Del:1	Del:1		Del:1
 17	ITGB3	Del:1	Del:1	Del:1	Del	Del:1
-17	ITGB4	Amp:9	Amp:8	Del:1, Amp:8	Del	
+17	ITGB4	Amp:9	Amp:8	Amp:8, Del:1	Del	
 17	JMJD6	Amp:4	Amp:4	Amp:4		
 17	JUP	Del:1	Del:1	Del:1	Del	Del:1
 17	KANSL1	Del:1	Del:1	Del:1	Del	Del:1
@@ -4918,7 +4918,7 @@
 17	LLGL1	Del:1	Del:1	Del:1		Del:1
 17	LLGL2	Amp:9	Amp:8	Amp:8	Del	
 17	LPO	Amp:4	Amp:4	Amp:3	Del	Del:1
-17	LRRC37A	Del:1	Del:1, Del:0	Del:1	Del	Del:1
+17	LRRC37A	Del:1	Del:0, Del:1	Del:1	Del	Del:1
 17	LRRC37A2	Del:1	Del:0, Del:1	Del:1	Del	Del:1
 17	LRRC37A3	Amp:3	Amp:4	Amp:4	Del	Amp:3
 17	LRRC37B				Del	Amp:3
@@ -4943,7 +4943,7 @@
 17	MBTD1	Amp:5	Amp:5	Amp:6	Del	Amp:3
 17	MED1	Del:1	Del:1	Del:1	Del	Del:1
 17	MED11	Del:1	Del:1	Del:1		Del:1
-17	MED13	Amp:3, Amp:17	Amp:20, Amp:4, Amp:14	Amp:4, Amp:14		Amp:3
+17	MED13	Amp:17, Amp:3	Amp:14, Amp:20, Amp:4	Amp:14, Amp:4		Amp:3
 17	MED24	Del:1	Del:1	Del:1	Del	Del:1
 17	MED31	Del:1	Del:1	Del:1		Del:1
 17	MED9	Del:1	Del:1	Del:1		Del:1
@@ -5086,7 +5086,7 @@
 17	PFN1	Del:1	Del:1	Del:1		Del:1
 17	PGAP3	Amp:17	Amp:16	Amp:16	Del	Del:1
 17	PGS1	Amp:4	Amp:4	Amp:4		
-17	PHB	Amp:17	Amp:18, Amp:8	Amp:18, Amp:10	Del	Amp:3
+17	PHB	Amp:17	Amp:18, Amp:8	Amp:10, Amp:18	Del	Amp:3
 17	PHF12	Amp:4	Amp:4	Amp:4	Del	
 17	PHF23	Del:1	Del:1	Del:1		Del:1
 17	PHOSPHO1	Amp:17	Amp:18	Amp:18	Del	Amp:3
@@ -5110,7 +5110,7 @@
 17	PMP22	Del:1	Del:1	Del:1		Del:1
 17	PNMT	Amp:17	Amp:16	Amp:16	Del	Del:1
 17	PNPO	Del:1	Del:1	Del:1	Del	Del:1
-17	POLDIP2	Amp:4	Amp:5, Amp:4	Amp:4		
+17	POLDIP2	Amp:4	Amp:4, Amp:5	Amp:4		
 17	POLG2	Amp:3	Amp:4	Amp:4	Del	Amp:3
 17	POLR2A	Del:1	Del:1	Del:1		Del:1
 17	PPM1D	Amp:17	Amp:14	Amp:14		Amp:3
@@ -5122,7 +5122,7 @@
 17	PRAC1	Amp:17	Amp:18	Amp:18	Del	Amp:3
 17	PRCD	Amp:4	Amp:4	Amp:4		
 17	PRKAR1A	Amp:4	Amp:4	Amp:4	Del	Amp:3
-17	PRKCA	Amp:5, Amp:3	Amp:5	Amp:4	Del	Amp:3
+17	PRKCA	Amp:3, Amp:5	Amp:5	Amp:4	Del	Amp:3
 17	PROCA1	Amp:4	Amp:4	Amp:4	Del	
 17	PRPF8	Del:1	Del:1	Del:1		Del:1
 17	PRPSAP1			Del:1	Del	
@@ -5140,7 +5140,7 @@
 17	PTGES3L	Del:1	Del:1	Del:1	Del	Del:1
 17	PTGES3L-AARSD1	Del:1	Del:1	Del:1	Del	Del:1
 17	PTRF	Del:1	Del:1	Del:1	Del	Del:1
-17	PTRH2	Amp:10	Amp:8	Amp:14	Del	Del:1, Amp:8
+17	PTRH2	Amp:10	Amp:8	Amp:14	Del	Amp:8, Del:1
 17	PYCR1			Del:1		
 17	PYY	Del:1	Del:1	Del:1	Del	Del:1
 17	QRICH2			Del:1	Del	
@@ -5198,7 +5198,7 @@
 17	RP11-527L4.2	Del:1	Del:1	Del:1	Del	Del:1
 17	RP11-599B13.6	Del:1	Del:1	Del:1		Del:1
 17	RP11-676J12.7	Del:1	Del:1	Del:1		Del:1
-17	RP11-81K2.1	Amp:17, Amp:8	Amp:18, Amp:8	Amp:18, Amp:10	Del	Amp:3
+17	RP11-81K2.1	Amp:17, Amp:8	Amp:18, Amp:8	Amp:10, Amp:18	Del	Amp:3
 17	RPA1	Del:1	Del:1	Del:1		Del:1
 17	RPAIN	Del:1	Del:1	Del:1		Del:1
 17	RPH3AL					Del:1
@@ -5226,7 +5226,7 @@
 17	SCPEP1		Amp:3	Amp:3	Del	Del:1
 17	SCRN2	Del:1	Del:1	Del:1	Del	Del:1
 17	SDF2	Amp:4	Amp:4	Amp:4	Del	
-17	SDK2	Amp:8, Amp:14	Amp:12	Del:1, Amp:9	Del	Amp:8
+17	SDK2	Amp:14, Amp:8	Amp:12	Amp:9, Del:1	Del	Amp:8
 17	SEC14L1	Amp:4	Amp:4	Amp:4		
 17	SECTM1			Del:1		
 17	SENP3	Del:1	Del:1	Del:1		Del:1
@@ -5245,7 +5245,7 @@
 17	SHPK	Del:1	Del:1	Del:1		Del:1
 17	SIRT7			Del:1		
 17	SKA2	Amp:4	Amp:4	Amp:3	Del	Del:1
-17	SKAP1	Del:1, Amp:17	Del:1	Del:1	Del	Del:1, Amp:17
+17	SKAP1	Amp:17, Del:1	Del:1	Del:1	Del	Amp:17, Del:1
 17	SLC13A2	Amp:4	Amp:5	Amp:4		
 17	SLC13A5	Del:1	Del:1	Del:1		Del:1
 17	SLC16A11	Del:1	Del:1	Del:1		Del:1
@@ -5302,7 +5302,7 @@
 17	SPACA3	Amp:4	Amp:3	Amp:3	Del	Amp:3
 17	SPAG5	Amp:4	Amp:4	Amp:4	Del	
 17	SPAG7	Del:1	Del:1	Del:1		Del:1
-17	SPAG9	Amp:5, Amp:10	Amp:5, Amp:10	Amp:10, Amp:6	Del	Amp:3
+17	SPAG9	Amp:10, Amp:5	Amp:10, Amp:5	Amp:10, Amp:6	Del	Amp:3
 17	SPATA20	Amp:12	Amp:10	Amp:10	Del	Amp:3
 17	SPATA22	Del:1	Del:1	Del:1		Del:1
 17	SPATA32	Del:1	Del:1	Del:1	Del	Del:1
@@ -5320,7 +5320,7 @@
 17	SRR	Del:1	Del:1	Del:1		Del:1
 17	SRSF1	Amp:4	Amp:4	Amp:3	Del	Del:1
 17	SRSF2	Amp:4	Amp:4	Amp:4		
-17	SSH2	Amp:5, Amp:3	Amp:3	Amp:4	Del	
+17	SSH2	Amp:3, Amp:5	Amp:3	Amp:4	Del	
 17	SSTR2			Del:1	Del	Amp:8
 17	ST6GALNAC1	Amp:4	Amp:4	Amp:4		
 17	ST6GALNAC2	Amp:4	Amp:4	Amp:4		
@@ -5361,7 +5361,7 @@
 17	TBKBP1	Del:1	Del:1	Del:1	Del	Del:1
 17	TBX2	Amp:17	Amp:14	Amp:14		Amp:3
 17	TBX21	Del:1	Del:1	Del:1	Del	Del:1
-17	TBX4	Amp:17	Amp:20, Amp:14	Amp:14		Amp:3
+17	TBX4	Amp:17	Amp:14, Amp:20	Amp:14		Amp:3
 17	TCAP	Amp:17	Amp:16	Amp:16	Del	Del:1
 17	TEFM				Del	
 17	TEKT1	Del:1	Del:1	Del:1		Del:1
@@ -5446,11 +5446,11 @@
 17	UBB	Del:1	Del:1	Del:1		Del:1
 17	UBBP4	Del:1	Del:1	Del:1		Del:1
 17	UBE2G1	Del:1	Del:1	Del:1		Del:1
-17	UBE2O	Amp:4	Amp:4	Del:1, Amp:4	Del	
+17	UBE2O	Amp:4	Amp:4	Amp:4, Del:1	Del	
 17	UBE2Z	Amp:17	Amp:18	Amp:18	Del	Amp:3
 17	UBTF	Del:1	Del:1	Del:1	Del	Del:1
 17	ULK2	Del:1	Del:1	Del:1		Del:1
-17	UNC119	Amp:4	Amp:5, Amp:4	Amp:4	Del	
+17	UNC119	Amp:4	Amp:4, Amp:5	Amp:4	Del	
 17	UNC13D			Del:1	Del	
 17	UNC45B	Amp:3, Del:1	Amp:3	Amp:3	Del	Amp:3
 17	UNK			Del:1	Del	
@@ -5466,7 +5466,7 @@
 17	VAT1	Del:1	Del:1	Del:1	Del	Del:1
 17	VEZF1	Amp:4	Amp:4	Amp:3	Del	Del:1
 17	VMO1	Del:1	Del:1	Del:1		Del:1
-17	VMP1	Amp:10, Amp:17	Amp:8, Amp:14	Amp:14	Del	Amp:3, Amp:8
+17	VMP1	Amp:10, Amp:17	Amp:14, Amp:8	Amp:14	Del	Amp:3, Amp:8
 17	VPS25	Del:1	Del:1	Del:1	Del	Del:1
 17	VPS53	Del:1	Del:1	Del:1		Del:1
 17	VTN	Amp:4	Amp:5	Amp:4		
@@ -7312,7 +7312,7 @@
 2	ACTR3		Del:1	Del:1		Del:1
 2	ACVR1			Del:1		Del:1
 2	ACVR1C			Del:1		Del:1
-2	ACVR2A	Del:0	Del:1, Del:0	Del:1		Del:1
+2	ACVR2A	Del:0	Del:0, Del:1	Del:1		Del:1
 2	ACYP2		Del:1	Del:1		Del:1
 2	ADAM17			Del:1		Del:1
 2	ADAM23			Del:1		Del:1
@@ -12635,7 +12635,7 @@
 7	SUN3					Del:1
 7	SVOPL	Amp:3	Amp:3	Amp:3		Del:1
 7	SYPL1	Amp:3	Amp:3	Amp:3		Del:1
-7	TAC1	Amp:3	Del:1, Amp:3	Amp:3		Del:1
+7	TAC1	Amp:3	Amp:3, Del:1	Amp:3		Del:1
 7	TAF6	Amp:3	Amp:3	Amp:3		Del:1
 7	TAS2R16	Amp:3	Amp:3	Amp:3		Del:1
 7	TAS2R3	Amp:3	Amp:3	Amp:3		Del:1
@@ -13359,7 +13359,7 @@
 8	SMIM19	Del:1	Del:1	Del:1		Del:1
 8	SNAI2	Amp:3	Amp:3	Amp:4		Amp:3
 8	SNTB1	Amp:4	Amp:4	Amp:4		Amp:3
-8	SNTG1	Amp:3, Amp:6, Amp:8	Amp:7, Amp:4	Amp:4		Amp:3
+8	SNTG1	Amp:3, Amp:6, Amp:8	Amp:4, Amp:7	Amp:4		Amp:3
 8	SNX16	Amp:4	Amp:4	Amp:4		Amp:3
 8	SNX31	Amp:4	Amp:4	Amp:4		Amp:3
 8	SORBS3	Del:1	Del:1	Del:1		Del:1
@@ -13561,7 +13561,7 @@ X	ARL13A		Amp:3	Amp:3		Del:1
 X	ARMCX1		Amp:3	Amp:3		Del:1
 X	ARMCX2		Amp:3	Amp:3		Del:1
 X	ARMCX3		Amp:3	Amp:3		Del:1
-X	ARMCX4		Del:1, Amp:3	Amp:3		Del:1
+X	ARMCX4		Amp:3, Del:1	Amp:3		Del:1
 X	ARMCX5		Amp:3	Amp:3		Del:1
 X	ARMCX6		Amp:3	Amp:3		Del:1
 X	ARR3		Amp:3	Amp:3		Del:1

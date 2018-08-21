@@ -185,6 +185,8 @@ In addition to that overall stats table, the tool will produce a per-gene table 
 ...
 ```
 
+The tools will write the report into `results_eval_cnv/report.tsv`, and the per-gene table into `results_eval_cnv/table.tsv`.
+
 ## Panel of normals
 
 Removing variants detected as germline in a set of unrelated normal tissue samples helps to reduce the FP rate when it was caused by unbalanced coverage in matching regions normals.
