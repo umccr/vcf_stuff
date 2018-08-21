@@ -240,7 +240,7 @@ rule table:
 #     return pd.DataFrame(data, columns=idx)
 
 def _stats_to_df(stat_by_sname):
-    idx = ['Sample', 'TP', 'FP', 'FN', 'Recall']
+    idx = ['Sample', 'TP', 'FP', 'FN', 'Recall', 'Prec']
     data = []
     s_truth = i_truth = None
     for sname, stats in stat_by_sname.items():
