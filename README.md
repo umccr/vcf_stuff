@@ -121,11 +121,11 @@ The following truth sets are supported:
 Usage: 
 
 ```
-eval_cnv -g GRCh37 -o results_eval_cnv
+eval_cnv -g GRCh37 -o results_eval_cnv \
     data/cnv/hcc2218/HCC2218_truthset_cnv_bcbio.tsv \
     data/cnv/hcc2218/HCC2218_cnvkit-call.cns purple.cnv.tsv \
     data/cnv/hcc2218/HCC2218_purple.cnv.tsv \
-    data/cnv/hcc2218/HCC2218_facets_cncf.tsv \    
+    data/cnv/hcc2218/HCC2218_facets_cncf.tsv
 ```
 
 The tool re-annotates all regions using the [BED annotation](https://github.com/vladsaveliev/TargQC/#bed-annotation) tool, and produces 3 tables with standard performance statistics:
