@@ -80,11 +80,32 @@ rule annotate_bed_truth:
         'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} -g GRCh37 --short -a best_all'
 
 
-def _read_gene_set(bed_fpath):
-    return set(r[3] for r in BedTool(bed_fpath))
+def _read_cns_by_gene(bed_fpath):
+    cns_by_gene = defaultdict(list)
+    for r in BedTool(bed_fpath):
+        genes = r[3].split(',')
+        cn = int(r[4].split('|')[1])
+        for g in genes:
+            if g != '.':
+                cns_by_gene[g].append(cn)
+    return cns_by_gene
 
-def _read_gene_cn_set(bed_fpath):
-    return set((r[3], int(r[4].split('|')[1])) for r in BedTool(bed_fpath))
+def _cns_by_gene_to_set(cns_by_gene):
+    gene_cn_set = set()
+    for gene, cns in cns_by_gene.items():
+        for cn in cns:
+            gene_cn_set.add((gene, cn))
+    return gene_cn_set
+
+# def _read_gene_set(bed_fpath):
+#     return set(r[3] for r in BedTool(bed_fpath))
+#
+# def _read_gene_cn_set(bed_fpath):
+#     return set((r[3], int(r[4].split('|')[1])) for r in BedTool(bed_fpath))
+
+def _aggr_cns(cns):
+    cns = sorted(cns, key=lambda cn: abs(cn - 2))
+    return cns[-1]
 
 def _cn_to_event(cn):
     if cn < 2: return 'Del'
@@ -113,14 +134,12 @@ rule table:
     run:
         cn_by_gene_by_sname = defaultdict(dict)
         for sample_bed, sname in zip([input.truth_bed] + input.sample_beds, ['truth'] + params.samples):
-            sample_gene_cn_set    = _read_gene_cn_set(sample_bed)
-            for gene, cn in sample_gene_cn_set:
-                cn_by_gene_by_sname[sname][gene] = cn
+            cn_by_gene_by_sname[sname] = {g: ','.join(map(str, cns)) for g, cns in _read_cns_by_gene(sample_bed).items()}
 
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
-        print(df.to_string(index=True))
+        print(df.to_string(index=True, na_rep='.'))
         with open(output[0], 'w') as out_f:
-            df.to_csv(out_f, sep='\t', index=False)
+            df.to_csv(out_f, sep='\t', index=True)
 
 
 def _stats_to_df(stat_by_sname):
@@ -170,14 +189,17 @@ rule report:
     run:
         stats_by_sname = dict()
         for sample_bed, sname in zip(input.sample_beds, params.samples):
-            sample_gene_cn_set    = _read_gene_cn_set(sample_bed)
-            truth_gene_cn_set     = _read_gene_cn_set(input.truth_bed)
+            sample_cns_by_gene    = _read_cns_by_gene(sample_bed)
+            truth_cns_by_gene     = _read_cns_by_gene(input.truth_bed)
 
-            sample_gene_set       = set(gene for gene, cn in sample_gene_cn_set)
-            truth_gene_set        = set(gene for gene, cn in truth_gene_cn_set)
+            sample_gene_cn_set    = _cns_by_gene_to_set(sample_cns_by_gene)
+            truth_gene_cn_set     = _cns_by_gene_to_set(truth_cns_by_gene)
 
-            sample_gene_event_set = set((gene, _cn_to_event(cn)) for gene, cn in sample_gene_cn_set)
-            truth_gene_event_set  = set((gene, _cn_to_event(cn)) for gene, cn in truth_gene_cn_set)
+            sample_gene_set       = set(sample_cns_by_gene.keys())
+            truth_gene_set        = set(truth_cns_by_gene.keys())
+
+            sample_gene_event_set = set((gene, _cn_to_event(cn)) for (gene, cn) in sample_gene_cn_set)
+            truth_gene_event_set  = set((gene, _cn_to_event(cn)) for (gene, cn) in truth_gene_cn_set)
 
             cn_metrics = _metrics_from_sets(truth_gene_cn_set, sample_gene_cn_set)
             event_metrics = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)

@@ -72,9 +72,9 @@ def dislay_stats_df(df):
             'display.max_rows', None,
             'display.max_columns', None,
             'display.width', None,
-            'display.float_format', lambda v: '{:,.2f}%'.format(100.0*v)
+            'display.float_format', lambda v: '{:,.2f}%'.format(100.0*v),
             ):
-        print(df.to_string(index=True))
+        print(df.to_string(index=True, na_rep='.'))
 
 
 ###################
