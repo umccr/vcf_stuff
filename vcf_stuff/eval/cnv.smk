@@ -94,6 +94,8 @@ def _read_cns_by_chrom_gene(bed_fpath):
     for r in BedTool(bed_fpath):
         genes = r[3].split(',')
         cn = int(r[4].split('|')[1])
+        if cn == 2 and config.get('check_gt') is not True:
+            continue
         for g in genes:
             if g and g != '.':
                 chrom = r[0]
@@ -143,7 +145,7 @@ def _aggr_cns(cns):
 def _cn_to_event(cn):
     if cn < 2: return 'Del'
     if cn > 2: return 'Amp'
-    return 'Norm'
+    return 'Mix'
 
 def _metrics_from_sets(truth_set, sample_set):
     tp = len(sample_set & truth_set)
