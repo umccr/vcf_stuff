@@ -128,7 +128,7 @@ eval_cnv -g GRCh37 -o results_eval_cnv \
     data/cnv/hcc2218/HCC2218_facets_cncf.tsv
 ```
 
-The tool re-annotates all regions using the [BED annotation](https://github.com/vladsaveliev/TargQC/#bed-annotation) tool, and produces 3 tables with standard performance statistics:
+The tool produces 3 tables with standard performance statistics (true/false positive, false negatic, recall and precision rates):
 
 ```
 Gene level comparison
@@ -186,6 +186,8 @@ In addition to that overall stats table, the tool will produce a per-gene table 
 ```
 
 The tools will write the report into `results_eval_cnv/report.tsv`, and the per-gene table into `results_eval_cnv/table.tsv`.
+
+To consistently determine the genes affected by events, the tools re-annotates all events with the [bed_annotation](https://github.com/vladsaveliev/bed_annotation) package that assigns gene names to Ensembl genomic regions.
 
 ## Panel of normals
 
