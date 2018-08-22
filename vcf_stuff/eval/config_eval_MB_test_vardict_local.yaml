@@ -1,5 +1,0 @@
-samples:
-    ori: /Users/vsaveliev/Analysis/snv_validation/vardict_filtering/MB_100vs50-vardict-annotated-pass.vcf.gz
-
-truth_variants:  GRCh37/validation/dream-syn3/truth_small_variants.vcf.gz
-reference_fasta: GRCh37/seq/GRCh37.fa

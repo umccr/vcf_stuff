@@ -2,13 +2,11 @@
 
 from os.path import dirname, abspath, join, basename, isfile
 import click
-import os
-import yaml
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import err, critical
-from ngs_utils.call_process import run_simple
+from ngs_utils.snakemake_utils import run_snakemake
 from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
-from vcf_stuff.eval import package_path, run_snakemake
+from vcf_stuff.eval_vcf import package_path
 from ngs_utils.utils import set_locale; set_locale()
 
 loc = find_loc()

@@ -1,7 +1,0 @@
-samples:
-    ensemble_decompose: ../24385-ensemble-annotated.vcf.gz
-    ensemble_ori:      ../24385-ensemble-annotated-beforedecompose.vcf.gz
-
-truth_variants: /home/563/vs2870/g/bcbio/genomes/Hsapiens/GRCh37/validation/giab-NA12878-NA24385-somatic/truth_small_variants.vcf.gz
-truth_regions:  /home/563/vs2870/g/bcbio/genomes/Hsapiens/GRCh37/validation/giab-NA12878-NA24385-somatic/truth_regions.bed
-reference_fasta: GRCh37/seq/GRCh37.fa

@@ -1,9 +1,5 @@
-import tempfile
 from os.path import dirname, abspath, join, basename, isfile
 import pandas as pd
-import yaml
-from ngs_utils.call_process import run_simple
-from ngs_utils.logger import critical
 
 
 def package_path():
@@ -75,31 +71,6 @@ def dislay_stats_df(df):
             'display.float_format', lambda v: '{:,.2f}%'.format(100.0*v),
             ):
         print(df.to_string(index=True, na_rep='.'))
-
-
-###################
-#### Snakemake ####
-###################
-
-def run_snakemake(smk_file, conf, jobs, output_dir, force_rerun=None, unlock=False):
-    f = tempfile.NamedTemporaryFile(mode='wt', delete=False)
-    yaml.dump(conf, f)
-    f.close()
-
-    cmd = (f'snakemake ' +
-           f'--snakefile {smk_file} ' +
-           f'--printshellcmds ' +
-          (f'--directory {output_dir} ' if output_dir else '') +
-           f'--configfile {f.name} ' +
-           f'--jobs {jobs} ' +
-          (f'--forcerun {force_rerun}' if force_rerun else '')
-           )
-
-    if unlock:
-        print('* Unlocking previous run... *')
-        run_simple(cmd + ' --unlock')
-        print('* Now rerunning *')
-    run_simple(cmd)
 
 
 
