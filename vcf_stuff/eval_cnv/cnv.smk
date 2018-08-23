@@ -63,7 +63,7 @@ rule cnv_to_bed_truth:
 """
 bedtools intersect -wao -a <(cut -f1-3 truth.bed) -b ../../../../vcf_stuff/eval_cnv/ensembl.grch37.bed | less #awk -F'\t' '{OFS="\t"} { print $1,$2,$3,$16 } ' | less
 """
-anno_cmd = 'annotate_bed.py {input} -o {output} --short --work-dir {params.work_dir} --short -a all' \
+anno_cmd = 'bed_annotation {input} -o {output} --short --work-dir {params.work_dir} --short -a all' \
            ' --coding-only -g ' + config['genome']
 
 rule annotate_bed_sample:

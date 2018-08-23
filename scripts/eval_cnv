@@ -6,7 +6,7 @@ from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
 from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
-from vcf_stuff.eval_vcf import package_path
+from vcf_stuff.eval_cnv import package_path
 from ngs_utils.utils import set_locale; set_locale()
 
 loc = find_loc()

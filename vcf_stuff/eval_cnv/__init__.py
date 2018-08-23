@@ -1,5 +1,5 @@
 import glob
-from os.path import join, basename, splitext, dirname
+from os.path import join, basename, splitext, dirname, abspath
 
 from ngs_utils.file_utils import safe_mkdir
 from ngs_utils.logger import critical, info
@@ -7,6 +7,11 @@ import numpy as np
 from pybedtools import BedTool
 import csv
 from cyvcf2 import VCF, Writer
+
+
+def package_path():
+    return dirname(abspath(__file__))
+
 
 """
 ==> HCC2218_cnvkit-call.cns <==

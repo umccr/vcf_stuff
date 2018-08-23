@@ -23,7 +23,7 @@ dependencies:
   - pandas
   - ngs_utils
   - nose
-  - bed_annotation>=1.7.1
+  - bed_annotation>=1.0
   #
   # Visualisation
   - jupyter
