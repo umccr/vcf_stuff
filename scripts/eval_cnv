@@ -30,6 +30,7 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in cnv_files},
         'genome': genome,
         'check_gt': check_gt,
+        'truth_variants': abspath(truth),
     }
     if regions:
         conf['sample_regions'] = abspath(regions)
