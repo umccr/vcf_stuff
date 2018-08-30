@@ -10,7 +10,7 @@ import csv
 
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
-from hpc_utils.hpc import get_loc
+from hpc_utils.hpc import find_loc
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.eval_vcf import stats_to_df, dislay_stats_df, f_measure
 
@@ -145,9 +145,10 @@ rule normalise_truth:
         make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
 
 TRICKY_TOML = ''
-if config.get('anno_tricky'):
+loc = find_loc()
+if config.get('anno_tricky') and loc:
     # Overlap normalised calls with tricky regions and annotate into INFO:
-    tricky_bed = os.path.join(get_loc().extras, 'GRCh37_tricky.bed.gz')
+    tricky_bed = os.path.join(loc.extras, 'GRCh37_tricky.bed.gz')
     TRICKY_TOML = f'''[[annotation]]
     file="{tricky_bed}"
     names=["TRICKY"]

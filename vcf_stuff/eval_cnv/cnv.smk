@@ -6,7 +6,6 @@ import pandas as pd
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from ngs_utils.bed_utils import get_chrom_order
-from hpc_utils.hpc import get_loc
 from vcf_stuff.eval_vcf import dislay_stats_df
 from vcf_stuff.eval_cnv import cnv_to_bed
 from pybedtools import BedTool
