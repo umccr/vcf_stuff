@@ -60,12 +60,10 @@ def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir):
         cmd += ' | bcftools view'
 
     if output_file:
-        run_simple(cmd + f' -Oz -o {output_file} && tabix {output_file}')
+        run_simple(cmd + f' -Oz -o {output_file}')
         sys.stderr.write(f'Saved to {output_file}\n')
     else:
         run_simple(cmd)
-
-    # run_simple(f'bcftools view -H {output_file}')
 
 
 if __name__ == '__main__':
