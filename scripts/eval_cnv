@@ -2,7 +2,7 @@
 
 from os.path import dirname, abspath, join, basename, isfile
 import click
-from ngs_utils.file_utils import splitext_plus
+from ngs_utils.file_utils import splitext_plus, verify_file
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
 from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
@@ -40,9 +40,12 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
     run_snakemake(join(package_path(), "cnv.smk"), conf, jobs, output_dir, force_rerun='table report', unlock=unlock)
 
     if output_dir:
-        out_file = join(output_dir, 'report.tsv')
-        if isfile(out_file):
-            print(f'Results are in "{output_dir}" folder. E.g. final report saved to "{output_dir}/report.tsv"')
+        out_file = verify_file(join(output_dir, 'report.tsv'), is_critical=True)
+        out_html = verify_file(join(output_dir, 'report.html'), is_critical=True)
+        assert isfile(out_file) and isfile(out_html)
+        print(f'Results are in "{output_dir}" folder.\n'
+              f'  Data in TSV: "{output_dir}/report.tsv"\n'
+              f'  HTML report: "{output_dir}/report.html"')
 
 # def get_ref(genome, conf, truth):
 #     genome_d = None

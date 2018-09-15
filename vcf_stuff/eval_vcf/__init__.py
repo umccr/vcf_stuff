@@ -1,20 +1,7 @@
-from os.path import dirname, abspath, join, basename, isfile
 import pandas as pd
 
 
-def package_path():
-    return dirname(abspath(__file__))
-
-
-###################
-##### Metrics #####
-###################
-
-def f_measure(b, prec, recall):
-    return (1 + b**2) * prec * recall / (b**2 * prec + recall) if prec + recall > 0 else 0
-
-
-def stats_to_df(stat_by_sname):
+def vcf_stats_to_df(stat_by_sname):
     idx = pd.MultiIndex.from_arrays([
         ['Sample', 'SNP', 'SNP', 'SNP', 'SNP'   , 'SNP',  'SNP', 'SNP', 'SNP', 'INDEL', 'INDEL', 'INDEL' , 'INDEL' , 'INDEL', 'INDEL', 'INDEL', 'SNP',],
         [''      , 'TP' , 'FP' , 'FN' , 'Recall', 'Prec', 'F1' , 'F2' , 'F3' , 'TP'   , 'FP'   , 'FN'    , 'Recall', 'Prec' , 'F1'   , 'F2'   , 'F3' ,]
@@ -59,45 +46,3 @@ def stats_to_df(stat_by_sname):
     #     ('INDEL', 'Recall'): 1.0
     # })
     return pd.DataFrame(data, columns=idx)
-
-
-def dislay_stats_df(df):
-    """ Pretty-printing the table on the screen
-    """
-    with pd.option_context(
-            'display.max_rows', None,
-            'display.max_columns', None,
-            'display.width', None,
-            'display.float_format', lambda v: '{:,.2f}%'.format(100.0*v),
-            ):
-        print(df.to_string(index=True, na_rep='.'))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

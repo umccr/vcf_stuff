@@ -6,7 +6,7 @@ import pandas as pd
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from ngs_utils.bed_utils import get_chrom_order
-from vcf_stuff.eval_vcf import dislay_stats_df
+from vcf_stuff.evaluation import dislay_stats_df, df_to_html
 from vcf_stuff.eval_cnv import cnv_to_bed
 from pybedtools import BedTool
 from collections import defaultdict
@@ -14,13 +14,16 @@ from collections import defaultdict
 
 rule all:
     input:
-        report = 'eval/report.tsv',
+        report_tsv = 'eval/report.tsv',
+        report_html = 'eval/report.html',
         table = 'eval/table.tsv'
     output:
-        report = 'report.tsv',
-        table = 'table.tsv'
+        report_tsv = 'report.tsv',
+        report_html = 'report.html',
+        table = 'table.tsv',
     shell:
-        'ln -s {input.report} {output.report} && '
+        'ln -s {input.report_tsv} {output.report_tsv} && '
+        'ln -s {input.report_html} {output.report_html} && '
         'ln -s {input.table} {output.table}'
 
 
@@ -269,7 +272,8 @@ rule report:
         truth_bed  = 'bed_anno/truth.bed',
         t = 'eval/table.tsv'   # we want to show the table before the report
     output:
-        'eval/report.tsv'
+        tsv = 'eval/report.tsv',
+        html = 'eval/report.html',
     params:
         samples = sorted(config['samples'].keys())
     run:
@@ -288,19 +292,48 @@ rule report:
             truth_gene_event_set  = _data_by_gene__to__gene_event_set(truth_data_by_gene)
             event_stats_by_sname[sname] = _metrics_from_sets(truth_gene_event_set, sample_gene_event_set)
 
+            ##############################
+            #### saving missed events
+            missed_truth_gene_event_set = truth_gene_event_set - sample_gene_event_set
+            with open(sample_bed + '_missed_events', 'w') as fh:
+                for r in BedTool(input.truth_bed):
+                    genes = r[3].split(',')
+                    g_cn_event = r[4].split('|')
+                    cn, event = None, None
+                    if len(g_cn_event) == 2:
+                        cn = g_cn_event[1]
+                        cn = int(cn) if cn else None
+                    if len(g_cn_event) == 3:
+                        event = g_cn_event[2]
+                    if cn is not None:
+                        if cn == 2 and config.get('check_gt') is not True:
+                            continue
+                    for g in genes:
+                        if g and g != '.':
+                            chrom = r[0]
+                            if event is None and cn is not None:
+                                event = _cn_to_event(cn)
+                            if (g, event) in missed_truth_gene_event_set:
+                                fh.write(str(r))
+            ##############################
+
             sample_gene_cn_set    = _data_by_gene__to__gene_cn_set(sample_data_by_gene)
             truth_gene_cn_set     = _data_by_gene__to__gene_cn_set(truth_data_by_gene)
             include_cn = all(cn is not None for (g, cn) in truth_gene_cn_set)
             if include_cn:
                 cn_stats_by_sname[sname] = _metrics_from_sets(truth_gene_cn_set, sample_gene_cn_set)
 
-        with open(output[0], 'a') as out_fh:
+        with open(output.tsv, 'a') as out_fh, open(output.html, 'a') as html_fh:
             df = _stats_to_df(gene_stats_by_sname)
             print('Gene level comparison')
             dislay_stats_df(df)
             out_fh.write('Gene level comparison\n')
             df.to_csv(out_fh, sep='\t', index=False)
             out_fh.write('\n')
+
+            html = df_to_html(df)
+            html_fh.write('<h1>Gene level comparison</h1>\n')
+            html_fh.write(html)
 
             df = _stats_to_df(event_stats_by_sname)
             print('\nEvent level comparison (Amp, Del)')
@@ -309,6 +342,10 @@ rule report:
             df.to_csv(out_fh, sep='\t', index=False)
             out_fh.write('\n')
 
+            html = df_to_html(df)
+            html_fh.write('<h1>Event level comparison (Amp, Del)</h1>\n')
+            html_fh.write(html)
+
             if cn_stats_by_sname:
                 df = _stats_to_df(cn_stats_by_sname)
                 print('\nCN level comparison')
@@ -316,6 +353,11 @@ rule report:
                 out_fh.write('\nCN level comparison\n')
                 df.to_csv(out_fh, sep='\t', index=False)
                 out_fh.write('\n')
+
+                html = df_to_html(df)
+                html_fh.write('<h1>CN level comparison</h1>\n')
+                html_fh.write(html)
+
 
 
 # ##########################

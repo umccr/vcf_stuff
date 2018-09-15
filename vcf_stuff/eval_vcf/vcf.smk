@@ -12,7 +12,8 @@ from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from hpc_utils.hpc import find_loc
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
-from vcf_stuff.eval_vcf import stats_to_df, dislay_stats_df, f_measure
+from vcf_stuff.evaluation import dislay_stats_df, f_measure
+from vcf_stuff.eval_vcf import vcf_stats_to_df
 
 
 rule all:
@@ -274,7 +275,7 @@ rule report:
         for stats_file, sname in zip(input.stats_files, params.samples):
             with open(stats_file) as f:
                 stats_by_sname[sname] = f.readlines()[1].strip().split('\t')
-        df = stats_to_df(stats_by_sname)
+        df = vcf_stats_to_df(stats_by_sname)
 
         dislay_stats_df(df)
 
