@@ -104,7 +104,8 @@ parse_row_by_caller = {
         start=r.get('Truth_bp1'),
         end  =r.get('Truth_bp2'),
         event={'DEL': 'Del', 'DUP': 'Amp'}[r.get('Truth_type')],
-    ) if r['Truth_chr1'] == r['Truth_chr2'] and r['Truth_type'] in ['DEL', 'DUP'] else None,
+    ) if r['Truth_chr1'] == r['Truth_chr2'] and r['Truth_type'] in ['DEL', 'DUP'] and r['Purple_type1'] != 'NA' else None,
+
     'colo829_craig_truth': lambda r: CnvCall(
         chrom=r['Chrom'],
         start=r['Start'].replace(',', ''),
