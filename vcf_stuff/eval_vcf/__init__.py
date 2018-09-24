@@ -1,4 +1,10 @@
+from os.path import dirname, abspath
+
 import pandas as pd
+
+
+def package_path():
+    return dirname(abspath(__file__))
 
 
 def vcf_stats_to_df(stat_by_sname):
