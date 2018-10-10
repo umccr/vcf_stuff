@@ -20,7 +20,7 @@ set_locale()
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('-h', 'hits_thresholds')
 @click.option('--ref-fa', 'ref_fa')
-@click.option('--panel-of-normals-dir', '--pon-dir', default=None)
+@click.option('--panel-of-normals-dir', '--pon-dir', 'pon_dir', default=None)
 def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, ref_fa=None, pon_dir=None):
     """
     Filter all VCF files `vcfs`: remove records with `PoN_CNT` > `hits_thresholds`

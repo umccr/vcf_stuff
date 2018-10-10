@@ -15,7 +15,7 @@ dependencies:
   - bedtools
   - vcfanno
   - vcflib  # for VCF normalization
-  - snakemake>=5.2.2vlad
+  - snakemake-minimal
   - pythonpy
   - click
   - cyvcf2>=0.10.0
@@ -23,7 +23,7 @@ dependencies:
   - pandas
   - ngs_utils
   - nose
-  - bed_annotation>=1.0
+  - bed_annotation>=1.0.8
   #
   # Visualisation
   - jupyter
