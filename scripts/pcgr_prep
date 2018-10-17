@@ -131,10 +131,9 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
             alt_counts = rec.format('AD')[:,1]  # AD=REF,ALT so 1 is the position of ALT
         # strelka2 somatic?
         elif rec.ALT[0] + 'U' in rec.FORMAT:
-            if rec.is_snp:
-                alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
-            else:
-                alt_counts = rec.format('TIR')[:,0]
+            alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
+        elif 'TIR' in rec.FORMAT:
+            alt_counts = rec.format('TIR')[:,0]
         # unknown caller?
         else:
             alt_counts = None
