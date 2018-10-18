@@ -10,7 +10,7 @@ import csv
 
 from ngs_utils.file_utils import add_suffix
 from ngs_utils.vcf_utils import get_tumor_sample_name
-from hpc_utils.hpc import find_loc
+from hpc_utils.hpc import get_loc, get_ref_file
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.evaluation import dislay_stats_df, f_measure
 from vcf_stuff.eval_vcf import vcf_stats_to_df
@@ -73,6 +73,8 @@ rule narrow_samples_to_regions_and_pass:
         regions = ('-T ' + regions) if regions else ''
         shell('bcftools view {input} {regions} -f .,PASS -Oz -o {output}')
 
+prev_rule = rules.narrow_samples_to_regions_and_pass
+
 if config.get('anno_dp_af'):
     # Propagate FORMAT fields into INFO (using NORMAL_ prefix for normal samples matches):
     rule anno_dp_af:
@@ -83,7 +85,7 @@ if config.get('anno_dp_af'):
         shell:
             'pcgr_prep {input} | bgzip -c > {output}'
 
-    anno_rule = rules.anno_dp_af
+    prev_rule = rules.anno_dp_af
 
 elif config.get('remove_anno'):
     rule remove_anno:
@@ -94,23 +96,20 @@ elif config.get('remove_anno'):
         shell:
             'bcftools annotate -x INFO,FORMAT {input} | bgzip -c > {output}'
 
-    anno_rule = rules.remove_anno
-
-else:
-    anno_rule = rules.narrow_samples_to_regions_and_pass
+    prev_rule = rules.remove_anno
 
 # Extract only tumor sample and tabix:
 rule narrow_samples_to_tumor_sample:
     input:
-        anno_rule.output[0]
+        prev_rule.output[0]
     output:
-        add_suffix(anno_rule.output[0], 'tumor')
+        add_suffix(prev_rule.output[0], 'tumor')
     run:
         sn = get_tumor_sample_name(input[0])
         assert sn
         shell('bcftools view -s {sn} {input} -Oz -o {output} && tabix -p vcf -f {output}')
 
-# Extract target, PASSed and tumor sample from the truth VCF:
+#### TRUTH: extract target, PASSed and tumor sample from the truth VCF:
 rule narrow_truth_to_target:
     input:
         config['truth_variants']
@@ -145,55 +144,92 @@ rule normalise_truth:
     shell:
         make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
 
-TRICKY_TOML = ''
-loc = find_loc()
-if config.get('anno_tricky') and loc:
+##########################
+####### Annotation #######
+prev_sample_rule = rules.normalise_sample
+prev_truth_rule = rules.normalise_truth
+if config.get('anno_pon'):
+    rule anno_pon_sample:
+        input:
+            rules.normalise_sample.output[0]
+        output:
+            'anno_pon/{sample}/{sample}.vcf.gz'
+        shell:
+            'pon_anno {input} -o {output} && tabix -p vcf {output}'
+    prev_sample_rule = rules.anno_pon_sample
+
+    rule anno_pon_truth:
+        input:
+            rules.normalise_truth.output[0]
+        output:
+            'anno_pon/truth.pon.vcf.gz'
+        shell:
+            'pon_anno {input} -o {output} && tabix -p vcf {output}'
+    prev_truth_rule = rules.anno_pon_truth
+
+if config.get('anno_tricky'):
     # Overlap normalised calls with tricky regions and annotate into INFO:
-    tricky_bed = os.path.join(loc.extras, 'GRCh37_tricky.bed.gz')
-    TRICKY_TOML = f'''[[annotation]]
-    file="{tricky_bed}"
-    names=["TRICKY"]
-    columns=[4]
-    ops=["self"]'''
+    loc = get_loc()
 
-rule prep_tricky_toml:
-    output:
-        'normalise/tricky_vcfanno.toml'
-    params:
-        toml_text = TRICKY_TOML.replace('\n', r'\\n').replace('"', r'\"'),
-    shell:
-        'printf "{params.toml_text}" > {output}'
+    rule prep_giab_bed:
+        input:
+            get_ref_file(config['genome'], ['truth_sets', 'giab', 'bed'])
+        output:
+            'anno_tricky_regions/giab_conf.bed.gz'
+        shell:
+            'cat {input} | bgzip -c > {output} && tabix -p bed {output}'
 
-rule anno_tricky_sample:
-    input:
-        vcf = rules.normalise_sample.output[0],
-        toml = rules.prep_tricky_toml.output
-    output:
-        vcf = 'normalise/{sample}/{sample}.tricky.vcf.gz',
-        tbi = 'normalise/{sample}/{sample}.tricky.vcf.gz.tbi'
-    shell:
-        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -p vcf -f {output.vcf}'
+    rule prep_tricky_toml:
+        input:
+            tricky_bed = os.path.join(loc.extras, 'GRCh37_tricky.bed.gz'),
+            giab_conf_bed = rules.prep_giab_bed.output[0]
+        output:
+            'anno_tricky_regions/tricky_vcfanno.toml'
+        params:
+            toml_text  = lambda wc, input, output: f'''
+[[annotation]]
+file="{input.tricky_bed}"
+names=["TRICKY"]
+columns=[4]
+ops=["self"]
 
-# Overlap normalised truth calls with tricky regions and annotate into INFO:
-rule anno_tricky_truth:
-    input:
-        vcf = rules.normalise_truth.output[0],
-        toml = rules.prep_tricky_toml.output
-    output:
-        vcf = 'normalise/truth_variants.tricky.vcf.gz',
-        tbi = 'normalise/truth_variants.tricky.vcf.gz.tbi'
-    shell:
-        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -p vcf -f {output.vcf}'
+[[annotation]]
+file="{input.giab_conf_bed}"
+names=["GIAB_CONF"]
+columns=[3]
+ops=["flag"]
+'''.replace('\n', r'\\n').replace('"', r'\"'),
+        shell:
+            'printf "{params.toml_text}" > {output}'
+
+    rule anno_tricky_sample:
+        input:
+            vcf = prev_sample_rule.output[0],
+            toml = rules.prep_tricky_toml.output
+        output:
+            'anno_tricky_regions/{sample}/{sample}.vcf.gz'
+        shell:
+            'vcfanno {input.toml} {input.vcf} | bgzip -c > {output} && tabix -p vcf -f {output}'
+    prev_sample_rule = rules.anno_tricky_sample
+
+    # Overlap normalised truth calls with tricky regions and annotate into INFO:
+    rule anno_tricky_truth:
+        input:
+            vcf = prev_truth_rule.output[0],
+            toml = rules.prep_tricky_toml.output
+        output:
+            'anno_tricky_regions/truth_variants.vcf.gz'
+        shell:
+            'vcfanno {input.toml} {input.vcf} | bgzip -c > {output} && tabix -p vcf -f {output}'
+    prev_truth_rule = rules.anno_tricky_truth
 
 ############################
 ######### EVALUATE #########
 # Run bcftools isec to get separate VCFs with TP, FN and FN:
 rule bcftools_isec:
     input:
-        sample_vcf = rules.anno_tricky_sample.output.vcf if config.get('anno_tricky') else rules.normalise_sample.output.vcf,
-        sample_tbi = rules.anno_tricky_sample.output.tbi if config.get('anno_tricky') else rules.normalise_sample.output.tbi,
-        truth_vcf = rules.anno_tricky_truth.output.vcf   if config.get('anno_tricky') else rules.normalise_truth.output.vcf,
-        truth_tbi = rules.anno_tricky_truth.output.tbi   if config.get('anno_tricky') else rules.normalise_truth.output.tbi
+        sample_vcf = prev_sample_rule.output[0],
+        truth_vcf = prev_truth_rule.output[0]
     params:
         output_dir = 'eval/{sample}_bcftools_isec'
     output:
