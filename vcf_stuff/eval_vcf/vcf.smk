@@ -8,9 +8,10 @@ import os
 import gzip
 import csv
 
-from ngs_utils.file_utils import add_suffix
+from ngs_utils.file_utils import add_suffix, open_gzipsafe
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from hpc_utils.hpc import get_loc, get_ref_file
+from vcf_stuff.filtering import get_gnomad_lua
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.evaluation import dislay_stats_df, f_measure
 from vcf_stuff.eval_vcf import vcf_stats_to_df
@@ -62,7 +63,8 @@ def merge_regions():
 
 ##########################
 ######### NARROW #########
-# Extracts target regions and PASSed calls:
+# Extracts target regions and PASSed calls, and removing fields from bcbio that cause errors like:
+# "Error: wrong number of fields in INFO/af_exac_all at 1:26646611, expected 2, found 1"
 rule narrow_samples_to_regions_and_pass:
     input:
         lambda wildcards: config['samples'][wildcards.sample]
@@ -71,7 +73,20 @@ rule narrow_samples_to_regions_and_pass:
     run:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
-        shell('bcftools view {input} {regions} -f .,PASS -Oz -o {output}')
+        max_aaf_all_defined = False
+        with open_gzipsafe(input[0]) as f:
+            for l in f:
+                if l.startswith('##'):
+                    if 'max_aaf_all' in l:
+                        max_aaf_all_defined = True
+                        break
+                if not l.startswith('#'):
+                    max_aaf_all_defined = False
+                    break
+        rm_cmd = ''
+        if max_aaf_all_defined:
+            rm_cmd = ' -Ov | bcftools annotate -x INFO/ac_exac_all,INFO/an_exac_all,INFO/ac_adj_exac_afr,INFO/an_adj_exac_afr,INFO/ac_adj_exac_amr,INFO/an_adj_exac_amr,INFO/ac_adj_exac_eas,INFO/an_adj_exac_eas,INFO/ac_adj_exac_fin,INFO/an_adj_exac_fin,INFO/ac_adj_exac_nfe,INFO/an_adj_exac_nfe,INFO/ac_adj_exac_oth,INFO/an_adj_exac_oth,INFO/ac_adj_exac_sas,INFO/an_adj_exac_sas,INFO/num_exac_Het,INFO/num_exac_Hom,INFO/rs_ids,INFO/fitcons,INFO/encode_consensus_gm12878,INFO/encode_consensus_h1hesc,INFO/encode_consensus_helas3,INFO/encode_consensus_hepg2,INFO/encode_consensus_huvec,INFO/encode_consensus_k562,INFO/rmsk,INFO/hapmap1,INFO/hapmap2,INFO/stam_mean,INFO/stam_names,INFO/af_exac_all,INFO/af_adj_exac_afr,INFO/af_adj_exac_amr,INFO/af_adj_exac_eas,INFO/af_adj_exac_fin,INFO/af_adj_exac_nfe,INFO/af_adj_exac_oth,INFO/af_adj_exac_sas,INFO/max_aaf_all'
+        shell('bcftools view {input} {regions} -f .,PASS ' + rm_cmd + ' -Oz -o {output}')
 
 prev_rule = rules.narrow_samples_to_regions_and_pass
 
@@ -222,6 +237,44 @@ ops=["flag"]
         shell:
             'vcfanno {input.toml} {input.vcf} | bgzip -c > {output} && tabix -p vcf -f {output}'
     prev_truth_rule = rules.anno_tricky_truth
+
+if config.get('anno_gnomad'):
+    rule prep_gn_toml:
+        input:
+            gnomad_vcf = get_ref_file(config['genome'], 'gnomad'),
+            giab_conf_bed = rules.prep_giab_bed.output[0]
+        output:
+            'anno_gnomad/gnomad_vcfanno.toml'
+        params:
+            toml_text = lambda wc, input, output: f'''
+[[annotation]]
+file="{input.gnomad_vcf}"
+fields = ["AF",]
+names = ["gnomAD_AF"]
+ops=["self"] 
+'''.replace('\n', r'\\n').replace('"', r'\"'),
+        shell:
+            'printf "{params.toml_text}" > {output}'
+
+    rule anno_gnomad_sample:
+        input:
+            toml = rules.prep_gn_toml.output[0],
+            vcf = prev_sample_rule.output[0]
+        output:
+            'anno_gnomad/{sample}/{sample}.vcf.gz'
+        shell:
+            'vcfanno {input.toml} {input.vcf} | bgzip -c > {output} && tabix -p vcf {output}'
+    prev_sample_rule = rules.anno_gnomad_sample
+
+    rule anno_gnomad_truth:
+        input:
+            toml = rules.prep_gn_toml.output[0],
+            vcf = prev_truth_rule.output[0]
+        output:
+            'anno_gnomad/truth_variants.vcf.gz'
+        shell:
+            'vcfanno {input.toml} {input.vcf} | bgzip -c > {output} && tabix -p vcf -f {output}'
+    prev_truth_rule = rules.anno_gnomad_truth
 
 ############################
 ######### EVALUATE #########
