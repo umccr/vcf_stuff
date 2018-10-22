@@ -25,8 +25,9 @@ loc = find_loc()
 @click.option('--remove-anno', 'remove_anno', is_flag=True)
 @click.option('--anno-pon', 'anno_pon', is_flag=True)
 @click.option('--anno-gnomad', 'anno_gnomad', is_flag=True)
+@click.option('--unlock', 'unlock', is_flag=True)
 def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, jobs=1, anno_tricky=False, anno_dp_af=False,
-         remove_anno=False, anno_pon=False, anno_gnomad=False):
+         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None):
     if not vcfs:
         raise click.BadParameter('Provide at least one VCF file')
 
@@ -47,7 +48,7 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
 
     get_ref(genome, conf, truth, ref_fasta)
 
-    run_snakemake(join(package_path(), "vcf.smk"), conf, jobs, output_dir)
+    run_snakemake(join(package_path(), "vcf.smk"), conf, jobs, output_dir, unlock=unlock)
 
     if output_dir:
         out_file = join(output_dir, 'report.tsv')
