@@ -73,19 +73,60 @@ rule narrow_samples_to_regions_and_pass:
     run:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
-        max_aaf_all_defined = False
+        anno_to_remove = [
+            'ac_exac_all',
+            'an_exac_all',
+            'ac_adj_exac_afr',
+            'an_adj_exac_afr',
+            'ac_adj_exac_amr',
+            'an_adj_exac_amr',
+            'ac_adj_exac_eas',
+            'an_adj_exac_eas',
+            'ac_adj_exac_fin',
+            'an_adj_exac_fin',
+            'ac_adj_exac_nfe',
+            'an_adj_exac_nfe',
+            'ac_adj_exac_oth',
+            'an_adj_exac_oth',
+            'ac_adj_exac_sas',
+            'an_adj_exac_sas',
+            'num_exac_Het',
+            'num_exac_Hom',
+            'rs_ids',
+            'fitcons',
+            'encode_consensus_gm12878',
+            'encode_consensus_h1hesc',
+            'encode_consensus_helas3',
+            'encode_consensus_hepg2',
+            'encode_consensus_huvec',
+            'encode_consensus_k562',
+            'rmsk',
+            'hapmap1',
+            'hapmap2',
+            'stam_mean',
+            'stam_names',
+            'af_exac_all',
+            'af_adj_exac_afr',
+            'af_adj_exac_amr',
+            'af_adj_exac_eas',
+            'af_adj_exac_fin',
+            'af_adj_exac_nfe',
+            'af_adj_exac_oth',
+            'af_adj_exac_sas',
+            'max_aaf_all',
+        ]
+        anno_to_remove_found = []
         with open_gzipsafe(input[0]) as f:
             for l in f:
                 if l.startswith('##'):
-                    if 'max_aaf_all' in l:
-                        max_aaf_all_defined = True
-                        break
+                    for to_rm in anno_to_remove:
+                        if '##INFO=<ID=' + to_rm in l:
+                            anno_to_remove_found.append(to_rm)
                 if not l.startswith('#'):
-                    max_aaf_all_defined = False
                     break
         rm_cmd = ''
-        if max_aaf_all_defined:
-            rm_cmd = ' -Ov | bcftools annotate -x INFO/ac_exac_all,INFO/an_exac_all,INFO/ac_adj_exac_afr,INFO/an_adj_exac_afr,INFO/ac_adj_exac_amr,INFO/an_adj_exac_amr,INFO/ac_adj_exac_eas,INFO/an_adj_exac_eas,INFO/ac_adj_exac_fin,INFO/an_adj_exac_fin,INFO/ac_adj_exac_nfe,INFO/an_adj_exac_nfe,INFO/ac_adj_exac_oth,INFO/an_adj_exac_oth,INFO/ac_adj_exac_sas,INFO/an_adj_exac_sas,INFO/num_exac_Het,INFO/num_exac_Hom,INFO/rs_ids,INFO/fitcons,INFO/encode_consensus_gm12878,INFO/encode_consensus_h1hesc,INFO/encode_consensus_helas3,INFO/encode_consensus_hepg2,INFO/encode_consensus_huvec,INFO/encode_consensus_k562,INFO/rmsk,INFO/hapmap1,INFO/hapmap2,INFO/stam_mean,INFO/stam_names,INFO/af_exac_all,INFO/af_adj_exac_afr,INFO/af_adj_exac_amr,INFO/af_adj_exac_eas,INFO/af_adj_exac_fin,INFO/af_adj_exac_nfe,INFO/af_adj_exac_oth,INFO/af_adj_exac_sas,INFO/max_aaf_all'
+        if anno_to_remove_found:
+            rm_cmd = ' -Ov | bcftools annotate -x ' + ','.join(f'INFO/{to_rm}' for to_rm in anno_to_remove_found)
         shell('bcftools view {input} {regions} -f .,PASS ' + rm_cmd + ' -Oz -o {output}')
 
 prev_rule = rules.narrow_samples_to_regions_and_pass
