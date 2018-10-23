@@ -127,7 +127,7 @@ rule narrow_samples_to_regions_and_pass:
         rm_cmd = ''
         if anno_to_remove_found:
             rm_cmd = ' -Ov | bcftools annotate -x ' + ','.join(f'INFO/{to_rm}' for to_rm in anno_to_remove_found)
-        shell('bcftools view {input} {regions} -f .,PASS ' + rm_cmd + ' -Oz -o {output}')
+        shell('bcftools view {input} {regions} -f.,PASS ' + rm_cmd + ' -Oz -o {output}')
 
 prev_rule = rules.narrow_samples_to_regions_and_pass
 
@@ -140,7 +140,6 @@ if config.get('anno_dp_af'):
             'narrow/{sample}.regions.pass.anno.vcf.gz'
         shell:
             'pcgr_prep {input} | bgzip -c > {output}'
-
     prev_rule = rules.anno_dp_af
 
 elif config.get('remove_anno'):
@@ -151,7 +150,6 @@ elif config.get('remove_anno'):
             'narrow/{sample}.regions.pass.clean.vcf.gz'
         shell:
             'bcftools annotate -x INFO,FORMAT {input} | bgzip -c > {output}'
-
     prev_rule = rules.remove_anno
 
 # Extract only tumor sample and tabix:
@@ -203,7 +201,6 @@ rule normalise_truth:
 ##########################
 ####### Annotation #######
 prev_sample_rule = rules.normalise_sample
-prev_truth_rule = rules.normalise_truth
 if config.get('anno_pon'):
     rule anno_pon_sample:
         input:
@@ -334,16 +331,16 @@ rule bcftools_isec:
         shell('bcftools isec {input.sample_vcf} {input.truth_vcf} -p {params.output_dir}')
 
 def count_variants(vcf):
-    snps = 0
-    indels = 0
+    snps = set()
+    indels = set()
     with (gzip.open(vcf) if vcf.endswith('.gz') else open(vcf)) as f:
         for l in [l for l in f if not l.startswith('#')]:
-            _, _, _, ref, alt = l.split('\t')[:5]
+            chrom, pos, _, ref, alt = l.split('\t')[:5]
             if len(ref) == len(alt) == 1:
-                snps += 1
+                snps.add((chrom, pos, ref, alt))
             else:
-                indels += 1
-    return snps, indels
+                indels.add((chrom, pos, ref, alt))
+    return len(snps), len(indels)
 
 # Count TP, FN and FN VCFs to get stats for each sample:
 rule eval:
