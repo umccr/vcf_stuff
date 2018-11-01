@@ -7,53 +7,39 @@ VCF Stuff
 
 ## Installation
 
-Clone the repository
-
 ```
-git clone https://github.com/umccr/vcf_stuff
+conda install -c vladsaveliev -conda-forge -c bioconda vcf_utils
 ```
 
-Install conda
+If conda is not installed on your computer, preliminary run before the above:
 
 ```
-wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh   # Linux
+# wget https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh -O miniconda.sh  # macOS
 bash miniconda.sh -b -p ./miniconda && rm miniconda.sh
 . miniconda/etc/profile.d/conda.sh
 ```
 
-Install vcf_stuff
+## Development
+
+Clone source and install on top of conda:
 
 ```
-conda env create -p $(pwd)/miniconda/envs/vcf_stuff --file environment.yml
-conda  activate $(pwd)/miniconda/envs/vcf_stuff
+git clone https://github.com/umccr/vcf_stuff
+cd vcf_stuff
 pip install -e .
 ```
 
-To automate sourcing in the future, you can create a loader script
+If you want to explore Jupyter notebooks, install additionally:
 
 ```
-cat <<EOT > load_vcfstuff.sh
-SCRIPTPATH=\$(readlink -e $(pwd))
-. \$SCRIPTPATH/miniconda/etc/profile.d/conda.sh
-conda activate \$SCRIPTPATH/miniconda/envs/vcf_stuff
-EOT
-```
-
-## Updating
-
-```
-source load_vcfstuff.sh
-git pull                                                             # if the code base changed
-conda env update -f environment.yml                                  # if dependencies changed
-./setup.py develop && source deactivate && source load_vcfstuff.sh   # if added/renamed packages or scripts
+conda install -y jupyter matplotlib matplotlib-venn
 ```
 
 ## Testing
 ```
-source load_vcfstuff.sh
 nosetests -s tests/test.py
 ```
-
 
 ## Variant calling evaluataion
 

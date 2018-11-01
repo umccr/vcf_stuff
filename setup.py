@@ -3,9 +3,11 @@ import sys
 import os
 from os.path import join, isfile, abspath, dirname
 from setuptools import setup
+from ngs_utils import setup_utils
 
-version = '0.2-dev'
 name = 'vcf_stuff'
+
+version = setup_utils.get_cur_version(name)
 
 setup(
     name=name,

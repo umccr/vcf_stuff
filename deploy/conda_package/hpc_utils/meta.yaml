@@ -1,0 +1,45 @@
+{% set version=load_setup_py_data().get('version') %}
+
+package:
+  name: vcf_stuff
+  version: "{{ version }}"
+
+source:
+  path: ../../../
+
+build:
+  number: 0
+
+requirements:
+  build:
+    - python ==3.6
+    - ngs_utils >=2.3.16
+  run:
+    - python ==3.6
+    - ngs_utils >=2.3.16
+    - bcftools
+    - tabix
+    - bedops
+    - bedtools
+    - vcfanno
+    - vcflib  # for VCF normalization
+    - snakemake-minimal
+    - pythonpy
+    - click
+    - cyvcf2 >=0.10.0
+    - numpy >=1.15.0
+    - pandas
+    - ngs_utils
+    - nose
+    - bed_annotation >=1.0.8
+    - hpc_utils
+
+test:
+  imports:
+    - vcf_stuff.eval_cnv
+
+about:
+  home: https://github.com/umccr/vcf_stuff
+  license: GNU General Public License v3 (GPLv3)
+  summary: '📊Evaluating, filtering, comparing, and visualising variant calls'
+  license_family: GPL3
