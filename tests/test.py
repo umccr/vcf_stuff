@@ -66,7 +66,7 @@ class TestEvalVcf(BaseTestCase):
     def test_custom_ref(self):
         out_dir = join(TestEvalVcf.results_dir, 'custom_ref')
         cmdl = f'eval_vcf {TestEvalVcf.ref_vcf} {input_ensemble_vcf} {input_vardict_vcf} ' \
-               f'-g {ref_fa} -o {out_dir} -j4'
+               f'--ref-fasta {ref_fa} -o {out_dir} -j4'
         self._run_cmd(cmdl, [TestEvalVcf.ref_vcf, input_ensemble_vcf, input_vardict_vcf], out_dir)
         self._check_file_throws(join(out_dir, 'report.tsv'), ignore_matching_lines=vcf_ignore_lines)
 

@@ -201,6 +201,7 @@ rule normalise_truth:
 ##########################
 ####### Annotation #######
 prev_sample_rule = rules.normalise_sample
+prev_truth_rule = rules.normalise_truth
 if config.get('anno_pon'):
     rule anno_pon_sample:
         input:

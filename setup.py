@@ -22,7 +22,7 @@ setup(
         name: setup_utils.find_package_files('', name)
     },
     packages=find_packages(),
+    scripts=[join('scripts', fn) for fn in os.listdir('scripts')],
     include_package_data=True,
     zip_safe=False,
-    scripts=[join('scripts', fn) for fn in os.listdir('scripts')],
 )
