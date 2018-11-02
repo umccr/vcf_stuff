@@ -3,10 +3,8 @@ from os.path import join, basename, splitext, dirname, abspath
 
 from ngs_utils.file_utils import safe_mkdir
 from ngs_utils.logger import critical, info
-import numpy as np
-from pybedtools import BedTool
 import csv
-from cyvcf2 import VCF, Writer
+from cyvcf2 import VCF
 
 
 def package_path():
