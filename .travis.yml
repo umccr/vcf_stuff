@@ -23,17 +23,14 @@ install:
   - conda build deploy/conda_package/${PACKAGE_NAME}
   - conda install --use-local ${PACKAGE_NAME}
 
-env:
-  - TEST=test.py:TestEvalVcf.test_preset_ref
-  - TEST=test.py:TestEvalVcf.test_custom_ref
-  - TEST=test.py:TestEvalCnv
-  - TEST=test.py:TestPonAnno
-  - TEST=test.py:TestPoNPipeline
-  - TEST=test.py:TestNormVcf
-  - TEST=test.py:TestPcgrPrep
-
 script: 
-  - nosetests --nocapture tests/$TEST
+  - nosetests --nocapture tests/test.py:TestEvalVcf.test_preset_ref
+  - nosetests --nocapture tests/test.py:TestEvalVcf.test_custom_ref
+  - nosetests --nocapture tests/test.py:TestEvalCnv
+  - nosetests --nocapture tests/test.py:TestPonAnno
+  - nosetests --nocapture tests/test.py:TestPoNPipeline
+  - nosetests --nocapture tests/test.py:TestNormVcf
+  - nosetests --nocapture tests/test.py:TestPcgrPrep
 
 deploy:
   # Deploy to Anaconda.org
