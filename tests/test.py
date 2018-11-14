@@ -1,9 +1,8 @@
 from os.path import dirname, join, exists, isfile, splitext, basename, isdir, relpath, getctime, getsize, abspath, expanduser
-
+from nose.plugins.attrib import attr
 from ngs_utils.testing import BaseTestCase, check_call, vcf_ignore_lines, swap_output
 from ngs_utils.file_utils import safe_mkdir, add_suffix, get_ungz_gz
 
-from nose.plugins.attrib import attr
 
 
 """ Prepare test data:

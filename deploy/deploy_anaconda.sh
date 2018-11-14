@@ -19,7 +19,7 @@ if [ -z $ANACONDA_TOKEN ] ; then
     exit 1
 fi
 
-echo "Converting for macOS..."
+echo "Converting for macOS..."  # todo: convert and upload in conda-build
 conda convert --platform osx-64 $HOME/miniconda/conda-bld/linux-64/${PACKAGE_NAME}-*.tar.bz2 --output-dir $HOME/miniconda/conda-bld/
 
 echo "Deploying to Anaconda.org..."

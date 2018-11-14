@@ -3,14 +3,15 @@ import sys
 import os
 from os.path import join, isfile, abspath, dirname
 from setuptools import setup, find_packages
-from ngs_utils import setup_utils
+import releazit
 
-name = 'vcf_stuff'
+import vcf_stuff
+pkg = vcf_stuff.__name__
 
-version = setup_utils.get_cur_version(name)
+version = releazit.get_version(pkg)
 
 setup(
-    name=name,
+    name=pkg,
     version=version,
     author='Vlad Saveliev',
     author_email='vladislav.sav@gmail.com',
@@ -18,10 +19,10 @@ setup(
     keywords='bioinformatics',
     url='https://github.com/umccr/vcf-stuff',
     license='GPLv3',
-    package_data={
-        name: setup_utils.find_package_files('', name)
-    },
     packages=find_packages(),
+    package_data={
+        pkg: releazit.find_package_files('', pkg)
+    },
     scripts=[join('scripts', fn) for fn in os.listdir('scripts')],
     include_package_data=True,
     zip_safe=False,
