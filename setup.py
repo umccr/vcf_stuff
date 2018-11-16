@@ -3,12 +3,12 @@ import sys
 import os
 from os.path import join, isfile, abspath, dirname
 from setuptools import setup, find_packages
-import releazit
+import versionpy
 
 import vcf_stuff
 pkg = vcf_stuff.__name__
 
-version = releazit.get_version(pkg)
+version = versionpy.get_version(pkg)
 
 setup(
     name=pkg,
@@ -21,7 +21,7 @@ setup(
     license='GPLv3',
     packages=find_packages(),
     package_data={
-        pkg: releazit.find_package_files('', pkg)
+        pkg: versionpy.find_package_files('', pkg)
     },
     scripts=[join('scripts', fn) for fn in os.listdir('scripts')],
     include_package_data=True,
