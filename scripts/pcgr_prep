@@ -21,11 +21,6 @@ def main(input_file, output_file=None):
     """
     vcf = VCF(input_file, gts012=True)
 
-    if output_file:
-        w = Writer(output_file, vcf)
-    else:
-        w = None
-
     tumor_index, control_index = get_sample_ids(input_file)
 
     tumor_prefix = 'TUMOR_'
@@ -41,17 +36,20 @@ def main(input_file, output_file=None):
                 normal_tag = normal_prefix + tag
 
                 new_header.append(f'##INFO=<ID={tumor_tag},Number=1,Type={type},Description="{tag} in tumor sample">')
-                # Add headers to original cyvcf2 header just to avoid errors
                 vcf.add_info_to_header({'ID': tumor_tag, 'Description': '', 'Type': type, 'Number': '1'})
                 if control_index is not None:
                     new_header.append(f'##INFO=<ID={normal_tag},Number=1,Type={type},Description="{tag} in control sample">')
-                    # Add headers to original cyvcf2 header just to avoid errors
                     vcf.add_info_to_header({'ID': normal_tag, 'Description': '', 'Type': type, 'Number': '1'})
 
         if not any(h.startswith(f'##INFO=<ID={p+tag},') for tag in ['AF', 'DP', 'MQ'] for p in [tumor_prefix, normal_prefix]):
             new_header.append(h)
 
-    sys.stdout.write('\n'.join(new_header))
+    if output_file:
+        w = Writer(output_file, vcf)
+        w.write_header()
+    else:
+        w = None
+        sys.stdout.write('\n'.join(new_header))
 
     # Go through each record and add new INFO fields
     for rec in vcf:
