@@ -18,7 +18,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-h', '--filter-hits', type=click.INT, default=None)
 @click.option('-g', '--genome', default='GRCh37')
 @click.option('-d', '--debug', is_flag=True)
-@click.option('--panel-of-normals-dir', '--pon-dir', 'pon_dir', default=None)
+@click.option('--pon-dir', 'pon_dir', default=None)
 @click.option('--work-dir', default=None)
 def main(vcf, output_file=None, filter_hits=None, genome=None, debug=False, pon_dir=None, work_dir=None):
     """
