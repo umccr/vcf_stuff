@@ -5,15 +5,17 @@ import os
 import glob
 import re
 from os.path import join
+import csv
+from cyvcf2 import VCF, Writer
 
 from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix
 from ngs_utils.bcbio import BcbioProject, NoConfigDirException, NoDateStampsException, MultipleDateStampsException
 from ngs_utils.logger import warn
 
-from hpc_utils import hpc
 from vcf_stuff.panel_of_normals import get_normals_csv_path
-from cyvcf2 import VCF, Writer
-import csv
+
+from hpc_utils import hpc
+loc = hpc.get_loc()
 
 
 def str_to_lua_variable_name(name):
@@ -28,7 +30,7 @@ do_merge_multiallelic = True  # True if want to compare SITE, False if ALT
 
 
 # basename of the resulting file (will be generated 2: with .snps and .indels suffixes)
-PON_FILE = f'panel_of_normals.vcf.gz'
+PON_FILE = f'GRCh37/panel_of_normals.vcf.gz'
 
 
 def _load_data():
@@ -36,7 +38,7 @@ def _load_data():
 
     # TODO: iterate through Run folders and select normal samples
 
-    if hpc.get_loc().name == 'spartan':
+    if loc.name == 'spartan':
         with open(get_normals_csv_path()) as f:
             # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
 
@@ -92,7 +94,7 @@ def _load_data():
               f'For {not_found_vcf} sample(s), could not find normal VCFs; '
               f'For {found_multiple_vcfs} sample(s), found multiple normal VCFs.')
 
-    if hpc.get_loc().name == 'vlad':
+    if loc.name == 'vlad':
         vcf_by_sample = {
             'MB_normal_50x': '/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test/test-2.vcf.gz',
             'MB': '/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test/test-benchmark.vcf.gz',
@@ -122,7 +124,9 @@ vcf_by_sample = _load_data()
 rule all:
     input:
         add_suffix(PON_FILE, 'snps'),
-        add_suffix(PON_FILE, 'indels')
+        add_suffix(PON_FILE, 'indels'),
+        add_suffix(PON_FILE, 'snps').replace('GRCh37', 'hg38'),
+        add_suffix(PON_FILE, 'indels').replace('GRCh37', 'hg38'),
 
 
 rule clean_vcf:
@@ -211,12 +215,39 @@ rule split_snps_indels:
         'bcftools view -v snps {input} -Oz -o {output.snps_vcf} && tabix -p vcf {output.snps_vcf} && '
         'bcftools view -V snps {input} -Oz -o {output.inds_vcf} && tabix -p vcf {output.inds_vcf}'
 
+rule to_hg19:  # need to do that before converting to hg38
+    input:
+        vcf = add_suffix(PON_FILE, '{type}'),
+    output:
+        vcf = add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg19'),
+    shell: '''
+gunzip -c {input.vcf} \
+| py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" \
+| py -x "x.replace('chrMT', 'chrM')" \
+| grep -v chrG \
+| gzip -c > {output.vcf}
+'''
 
+rule to_hg38_unsorted:
+    input:
+        vcf = rules.to_hg19.output.vcf,
+        chain = loc.hg19ToHg38,
+        hg38_fa = hpc.get_ref_file('hg38', loc=loc)
+    output:
+        vcf = temp(add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38') + '.unsorted')
+    shell:
+        'CrossMap.py vcf {input.chain} {input.vcf} {input.hg38_fa} {output.vcf}'
 
-
-
-
-
+rule to_hg38:
+    input:
+        vcf = temp(rules.to_hg38_unsorted.output.vcf),
+        hg38_noalt_bed = join(loc.extras, 'hg38_noalt.bed'),
+    output:
+        vcf = add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38')
+    shell:
+        'bcftools view {input.vcf} -T {input.hg38_noalt_bed}' \
+        ' | bcftools sort -Oz -o {output.vcf}' \
+        ' && tabix -p vcf {output.vcf}'
 
 
 

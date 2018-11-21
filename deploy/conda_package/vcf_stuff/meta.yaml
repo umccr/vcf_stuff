@@ -33,6 +33,7 @@ requirements:
     - nose
     - bed_annotation >=1.0.8
     - hpc_utils
+    - crossmap
 
 test:
   imports:
