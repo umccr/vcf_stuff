@@ -7,8 +7,6 @@ from ngs_utils.vcf_utils import get_sample_ids
 
 def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
     vcf = VCF(input_file, gts012=True)
-    tumor_index, control_index = get_sample_ids(input_file)
-
     if proc_hdr is not None:
         proc_hdr(vcf)
 
@@ -18,7 +16,7 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
 
     for rec in vcf:
         if proc_rec:
-            rec_res = proc_rec(rec, tumor_index=tumor_index, control_index=control_index)
+            rec_res = proc_rec(rec)
             if rec_res is not None:
                 w.write_record(rec_res)
 
@@ -30,8 +28,6 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
 def iter_vcf__pysam(input_file, proc_rec=None, proc_hdr=None, output_file=None):
     import pysam
     import sys
-
-    tumor_index, control_index = get_sample_ids(input_file)
 
     vcf = pysam.VariantFile(input_file)
     if output_file:
@@ -47,7 +43,7 @@ def iter_vcf__pysam(input_file, proc_rec=None, proc_hdr=None, output_file=None):
     # Records
     for rec in vcf:
         if proc_rec:
-            rec_res = proc_rec(rec, tumor_index=tumor_index, control_index=control_index)
+            rec_res = proc_rec(rec)
             if rec_res is not None:
                 print(rec_res)
                 w.write(str(rec_res))

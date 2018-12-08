@@ -26,7 +26,7 @@ def _add_cyvcf2_filter(rec, filt):
     return rec
 
 
-def _somatic_vcf_filter_rec(rec, tumor_index=None, control_index=None):
+def _somatic_vcf_filter_rec(rec):
     t = rec.INFO['PCGR_TIER']
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
     # Keeping all variants with tier 1, 2, 3:
@@ -87,7 +87,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'AF10', 'Description': 'AF<10%'})
 
 
-def _somatic_vcf_filter_rec__pysam(rec, tumor_index=None, control_index=None):
+def _somatic_vcf_filter_rec__pysam(rec):
     """ using pysam
     """
     t = rec.info['PCGR_TIER']
