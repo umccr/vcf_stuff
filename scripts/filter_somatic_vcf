@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+import click
+
+from ngs_utils.utils import set_locale; set_locale()
+from vcf_stuff import iter_vcf
+
+
+@click.command()
+@click.argument('input_file', type=click.Path(exists=True))
+@click.option('-o', 'output_file', type=click.Path())
+@click.option('-g', 'genome', default='GRCh37')
+@click.option('-f', '--ref-fasta', 'ref_fasta', type=click.Path(exists=True))
+def main(input_file, output_file, genome=None, ref_fasta=None):
+
+    iter_vcf(input_file, output_file,
+             proc_rec=_somatic_vcf_filter_rec,
+             proc_hdr=_somatic_vcf_filter_hdr)
+
+
+def _add_cyvcf2_filter(rec, filt):
+    filters = rec.FILTER.split(';') if rec.FILTER else []
+    filters.append(filt)
+    f = ';'.join(filters)
+    rec.FILTER = str(f)
+    return rec
+
+
+def _somatic_vcf_filter_rec(rec, tumor_index=None, control_index=None):
+    t = rec.INFO['PCGR_TIER']
+    int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
+    # Keeping all variants with tier 1, 2, 3:
+    # Tier 1 - variants of strong clinical significance
+    # Tier 2 - variants of potential clinical significance
+    # Tier 3 - variants of unknown clinical significance
+    if 1 >= int_tier >= 3:
+        return rec
+    # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
+    # Tier 4 - other coding variants
+    # Noncoding variants
+    # Remove gnomad_AF >0.01
+    # Remove PoN_CNT>0         # {0 if issnp else 1}'
+    # Remove indels in "bad_promoter" tricky regions
+    # Remove DP<30 and AF<10% in tricky regions:
+    #        gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp,
+    #        non-GIAB confident,
+    #    unless coding in cancer genes
+    # Remove DP<25 and AF<5%
+    else:
+        if rec.INFO['TUMOR_AF'] < 0.1:
+            _add_cyvcf2_filter(rec, 'AF10')
+
+        if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
+            _add_cyvcf2_filter(rec, 'gnomAD_common')
+
+        # second round of panel of normals
+        pon = rec.INFO.get('PoN_CNT')
+        if pon is not None and pon >= 1:
+            _add_cyvcf2_filter(rec, 'PoN')
+
+        # removing indels in bad promoter regions
+        tricky_set = set(rec.INFO.get('TRICKY', '').split(','))
+        if not rec.is_snp and 'bad_promoter' in tricky_set:
+            _add_cyvcf2_filter(rec, 'bad_promoter')
+
+        # removing low AF and low DP variants in low complexity regions
+        if rec.INFO['TUMOR_DP'] < 30 and rec.INFO['TUMOR_AF'] < 0.1:
+            if tricky_set & {'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'low_complexity_51to200bp',
+                             'low_complexity_gt200bp'}:
+                _add_cyvcf2_filter(rec, 'LowAF_TRICKY')
+            if not rec.INFO.get('GIAB_CONF'):
+                _add_cyvcf2_filter(rec, 'LowAF_GIAB_LCR')
+
+        if rec.INFO['TUMOR_DP'] < 25 and rec.INFO['TUMOR_AF'] < 0.05:
+            _add_cyvcf2_filter(rec, 'LowAF')
+
+    return rec
+
+
+def _somatic_vcf_filter_hdr(vcf):
+    vcf.add_filter_to_header({'ID': 'gnomAD_common', 'Description': 'Occurs in gnomAD with frequency above 1%'})
+    vcf.add_filter_to_header({'ID': 'PoN', 'Description': 'Panel of normals hits 1 or more'})
+    vcf.add_filter_to_header({'ID': 'bad_promoter', 'Description': 'Indel overlapping bad promoter tricky region'})
+    vcf.add_filter_to_header({'ID': 'LowAF_TRICKY', 'Description': 'DP<30 & AF<10%, and: GC<=15% or GC>=70 or low complexity region >51bp long'})
+    vcf.add_filter_to_header({'ID': 'LowAF_GIAB_LCR', 'Description': 'DP<30 & AF<10%, and does not overlap GiaB high confidence regions'})
+    vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
+    vcf.add_filter_to_header({'ID': 'AF10', 'Description': 'AF<10%'})
+
+
+def _somatic_vcf_filter_rec__pysam(rec, tumor_index=None, control_index=None):
+    """ using pysam
+    """
+    t = rec.info['PCGR_TIER']
+    int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
+    # Keeping all variants with tier 1, 2, 3:
+    # Tier 1 - variants of strong clinical significance
+    # Tier 2 - variants of potential clinical significance
+    # Tier 3 - variants of unknown clinical significance
+    if 1 >= int_tier >= 3:
+        return rec
+    # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
+    # Tier 4 - other coding variants
+    # Noncoding variants
+    # Remove gnomad_AF >0.01
+    # Remove PoN_CNT>0         # {0 if issnp else 1}'
+    # Remove indels in "bad_promoter" tricky regions
+    # Remove DP<30 and AF<10% in tricky regions:
+    #        gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp,
+    #        non-GIAB confident,
+    #    unless coding in cancer genes
+    # Remove DP<25 and AF<5%
+    else:
+        if rec.info['TUMOR_AF'] < 0.1:
+            rec.filter.add('AF10')
+
+        if rec.info.get('gnomAD_AF', 0.) >= 0.01:
+            rec.filter.add('gnomAD_common')
+
+        # second round of panel of normals
+        pon = rec.info.get('PoN_CNT')
+        if pon is not None and pon >= 1:
+            rec.filter.add('PoN')
+
+        # removing indels in bad promoter regions
+        tricky_set = set(rec.info.get('TRICKY', '').split(','))
+        if len(rec.ref) != len(rec.alts[0]) and 'bad_promoter' in tricky_set:
+            rec.filter.add('bad_promoter')
+
+        # removing low AF and low DP variants in low complexity regions
+        if rec.info['TUMOR_DP'] < 30 and rec.info['TUMOR_AF'] < 0.1:
+            if tricky_set & {'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'low_complexity_51to200bp',
+                             'low_complexity_gt200bp'}:
+                rec.filter.add('LowAF_TRICKY')
+            if not rec.info.get('GIAB_CONF'):
+                rec.filter.add('LowAF_GIAB_LCR')
+
+        if rec.info['TUMOR_DP'] < 25 and rec.info['TUMOR_AF'] < 0.05:
+            rec.filter.add('LowAF')
+
+    return rec
+
+
+def _somatic_vcf_filter_hdr__pysam(vcf):
+    vcf.header.filters.add('AF10', None, None, 'AF<10%')
+    vcf.header.filters.add('gnomAD_common', None, None, 'Occurs in gnomAD with frequency above 1%')
+    vcf.header.filters.add('PoN', None, None, 'Panel of normals hits 1 or more')
+    vcf.header.filters.add('bad_promoter', None, None, 'Indel overlapping bad promoter tricky region')
+    vcf.header.filters.add('LowAF_TRICKY', None, None, 'DP<30 & AF<10%, and: GC<=15% or GC>=70 or low complexity region >51bp long')
+    vcf.header.filters.add('LowAF_GIAB_LCR', None, None, 'DP<30 & AF<10%, and does not overlap GiaB high confidence regions')
+    vcf.header.filters.add('LowAF', None, None, 'DP<25 & AF<5%')
+
+
+if __name__ == '__main__':
+    main()
