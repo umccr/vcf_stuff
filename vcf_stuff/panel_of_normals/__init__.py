@@ -13,9 +13,3 @@ def get_snps_toml_path():
 def get_indels_toml_path():
     return verify_file(join(package_path(), 'vcfanno_indels.toml'))
 
-
-def get_normals_yaml_path():
-    return verify_file(join(package_path(), 'normals.yaml'))
-
-def get_normals_csv_path():
-    return verify_file(join(package_path(), 'normals.tsv'))

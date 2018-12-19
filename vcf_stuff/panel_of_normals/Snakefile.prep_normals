@@ -7,12 +7,10 @@ import re
 from os.path import join
 import csv
 from cyvcf2 import VCF, Writer
-
-from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix
+from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix, verify_file
 from ngs_utils.bcbio import BcbioProject, NoConfigDirException, NoDateStampsException, MultipleDateStampsException
 from ngs_utils.logger import warn
-
-from vcf_stuff.panel_of_normals import get_normals_csv_path
+from vcf_stuff.panel_of_normals import package_path
 
 from hpc_utils import hpc
 loc = hpc.get_loc()
@@ -36,13 +34,12 @@ PON_FILE = f'GRCh37/panel_of_normals.vcf.gz'
 def _load_data():
     vcf_by_sample = dict()
 
-    # TODO: iterate through Run folders and select normal samples
-
     if loc.name == 'spartan':
-        with open(get_normals_csv_path()) as f:
+        with open(verify_file(join(package_path(), 'normals.tsv'))) as f:
             # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
 
             total_bcbio_runs = 0
+            total_samples = 0
             cannot_read_project = 0
             found_normals = 0
             not_found_vcf = 0
@@ -50,7 +47,9 @@ def _load_data():
 
             for line in f:
                 total_bcbio_runs += 1
-                bcbio_path = line.strip()
+                bcbio_path, sample_ids = line.strip().split('\t')
+                sample_ids = set(sample_ids.split(','))
+                total_samples += len(sample_ids)
 
                 try:
                     bcbio = BcbioProject(bcbio_path, silent=True)
@@ -67,7 +66,12 @@ def _load_data():
                     normals = []
                     for b in bcbio.batch_by_name.values():
                         if b.normal:
-                            normals.append(b.normal)
+                            if b.normal.name not in sample_ids:
+                                print(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio_path}: {sample_ids}')
+                            else:
+                                normals.append(b.normal)
+                                if b.normal.name == 'PRJ180156_1567_8073315T':
+                                    print('Found PRJ180156_1567_8073315T in normals in project ', bcbio_path)
                     if not normals:
                         warn(f'WARN: not found normals in run {bcbio_path}')
                     for n in normals:
@@ -89,7 +93,7 @@ def _load_data():
                     #     warn(f'WARN: Not found sample "{row["SampleName"]}"/"{row["SampleID"]}" for run {row["Results"]}')
                     #     not_found_in_run += 1
 
-        print(f'Done. From {total_bcbio_runs} bcbio runs, found {found_normals} normal VCFs. '
+        print(f'Done. From {total_bcbio_runs} bcbio, found {found_normals} normal VCFs from {total_samples} samples in normals.csv. '
               f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
               f'For {not_found_vcf} sample(s), could not find normal VCFs; '
               f'For {found_multiple_vcfs} sample(s), found multiple normal VCFs.')
