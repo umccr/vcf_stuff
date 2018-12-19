@@ -96,7 +96,7 @@ def _somatic_vcf_filter_rec__pysam(rec):
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
     # Tier 3 - variants of unknown clinical significance
-    if int_tier in [1, 2, 3]:
+    if int_tier in [1, 2, 3] or rec.info.get('HMF_HOTSPOT', False) is True:
         return rec
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
     # Tier 4 - other coding variants
@@ -118,7 +118,7 @@ def _somatic_vcf_filter_rec__pysam(rec):
 
         # second round of panel of normals
         pon = rec.info.get('PoN_CNT')
-        if pon is not None and pon >= 1:
+        if pon is not None and pon >= 2:
             rec.filter.add('PoN')
 
         # removing indels in bad promoter regions
@@ -131,7 +131,7 @@ def _somatic_vcf_filter_rec__pysam(rec):
             if tricky_set & {'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'low_complexity_51to200bp',
                              'low_complexity_gt200bp'}:
                 rec.filter.add('LowAF_TRICKY')
-            if not rec.info.get('GIAB_CONF'):
+            if not rec.info.get('GIAB_CONF') or not rec.info.get('HMF_GIAB_CONF'):
                 rec.filter.add('LowAF_GIAB_LCR')
 
         if rec.info['TUMOR_DP'] < 25 and rec.info['TUMOR_AF'] < 0.05:
