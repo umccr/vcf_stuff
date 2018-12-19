@@ -11,7 +11,6 @@ import csv
 from ngs_utils.file_utils import add_suffix, open_gzipsafe
 from ngs_utils.vcf_utils import get_tumor_sample_name
 from hpc_utils.hpc import get_loc, get_ref_file
-from vcf_stuff.filtering import get_gnomad_lua
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.evaluation import dislay_stats_df, f_measure
 from vcf_stuff.eval_vcf import vcf_stats_to_df
