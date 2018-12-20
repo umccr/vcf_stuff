@@ -5,8 +5,7 @@ from os.path import join, isfile, abspath, dirname
 from setuptools import setup, find_packages
 import versionpy
 
-import vcf_stuff
-pkg = vcf_stuff.__name__
+pkg = 'vcf_stuff'
 
 version = versionpy.get_version(pkg)
 
