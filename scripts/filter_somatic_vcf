@@ -87,6 +87,9 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'AF10', 'Description': 'AF<10%'})
 
 
+PON_HITS = 2
+
+
 def _somatic_vcf_filter_rec__pysam(rec):
     """ using pysam
     """
@@ -110,15 +113,15 @@ def _somatic_vcf_filter_rec__pysam(rec):
     #    unless coding in cancer genes
     # Remove DP<25 and AF<5%
     else:
-        if rec.info['TUMOR_AF'] < 0.1:
-            rec.filter.add('AF10')
+        # if rec.info['TUMOR_AF'] < 0.1:
+        #     rec.filter.add('AF10')
 
         if rec.info.get('gnomAD_AF', 0.) >= 0.01:
             rec.filter.add('gnomAD_common')
 
         # second round of panel of normals
         pon = rec.info.get('PoN_CNT')
-        if pon is not None and pon >= 2:
+        if pon is not None and pon >= PON_HITS:
             rec.filter.add('PoN')
 
         # removing indels in bad promoter regions
@@ -141,9 +144,9 @@ def _somatic_vcf_filter_rec__pysam(rec):
 
 
 def _somatic_vcf_filter_hdr__pysam(vcf):
-    vcf.header.filters.add('AF10', None, None, 'AF<10%')
+    # vcf.header.filters.add('AF10', None, None, 'AF<10%')
     vcf.header.filters.add('gnomAD_common', None, None, 'Occurs in gnomAD with frequency above 1%')
-    vcf.header.filters.add('PoN', None, None, 'Panel of normals hits 1 or more')
+    vcf.header.filters.add('PoN', None, None, f'Panel of normals: {PON_HITS} or more hits')
     vcf.header.filters.add('bad_promoter', None, None, 'Indel overlapping bad promoter tricky region')
     vcf.header.filters.add('LowAF_TRICKY', None, None, 'DP<30 & AF<10%, and: GC<=15% or GC>=70 or low complexity region >51bp long')
     vcf.header.filters.add('LowAF_GIAB_LCR', None, None, 'DP<30 & AF<10%, and does not overlap GiaB high confidence regions')
