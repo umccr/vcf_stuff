@@ -30,13 +30,13 @@ def _add_cyvcf2_filter(rec, filt):
 
 
 def _somatic_vcf_filter_rec(rec):
-    t = rec.INFO['PCGR_TIER']
+    t = rec.INFO.get('PCGR_TIER', '')
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
     # Keeping all variants with tier 1, 2, 3:
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
     # Tier 3 - variants of unknown clinical significance
-    if int_tier in [1, 2, 3] or rec.info.get('HMF_HOTSPOT', False) is True:
+    if int_tier in [1, 2, 3] or rec.INFO.get('HMF_HOTSPOT', False) is True:
         return rec
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
     # Tier 4 - other coding variants
