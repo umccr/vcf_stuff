@@ -1,3 +1,5 @@
+import sys
+
 from cyvcf2 import VCF, Writer
 
 from ngs_utils.call_process import run_simple
@@ -10,19 +12,27 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
     if proc_hdr is not None:
         proc_hdr(vcf)
 
-    out_ungz, out_gz = get_ungz_gz(output_file)
-    w = Writer(out_ungz, vcf)
-    w.write_header()
+    w = None
+    if output_file is not None:
+        out_ungz, out_gz = get_ungz_gz(output_file)
+        w = Writer(out_ungz, vcf)
+        w.write_header()
+    else:
+        sys.stdout.write(vcf.raw_header)
 
     for rec in vcf:
         if proc_rec:
             rec_res = proc_rec(rec)
             if rec_res is not None:
-                w.write_record(rec_res)
+                if w is not None:
+                    w.write_record(rec_res)
+                else:
+                    print(rec_res)
 
-    w.close()
     vcf.close()
-    run_simple(f'bgzip -f {out_ungz} && tabix -f -p vcf {out_gz}')
+    if w is not None:
+        run_simple(f'bgzip -f {out_ungz} && tabix -f -p vcf {out_gz}')
+        w.close()
 
 
 def iter_vcf__pysam(input_file, proc_rec=None, proc_hdr=None, output_file=None):
