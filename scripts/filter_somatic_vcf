@@ -74,15 +74,17 @@ def _somatic_vcf_filter_rec(rec):
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
-            'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
+            'gc15', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
             'low_complexity_51to200bp', 'low_complexity_gt200bp',
             'LCR'}
+
         if rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 3:  # fewer than 3 reads supporting the variant
             if lcr:
                 _add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
                 _add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
-            if rec.INFO.get('HMF_MAPPABILITY', 1.0) < 1.0:
+            mpbl = max(map(float, rec.INFO.get('HMF_MAPPABILITY', '1.0').split(',')))
+            if mpbl < 1.0:
                 _add_cyvcf2_filter(rec, 'LowAF_LowMappability')
 
         # if rec.INFO['TUMOR_AF'] < 0.01:
