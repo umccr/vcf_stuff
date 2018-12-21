@@ -7,6 +7,8 @@ from os.path import isfile, join
 from cyvcf2 import VCF, Writer
 import re
 import numpy as np
+
+from ngs_utils.logger import warn
 from ngs_utils.vcf_utils import get_sample_ids
 
 from ngs_utils.utils import set_locale
@@ -128,6 +130,8 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
         if 'AD' in rec.FORMAT:
             alt_counts = rec.format('AD')[:,1]  # AD=REF,ALT so 1 is the position of ALT
         # strelka2 somatic?
+        elif len(rec.ALT) == 0:
+            alt_counts = None
         elif rec.ALT[0] + 'U' in rec.FORMAT:
             alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
         elif 'TIR' in rec.FORMAT:
