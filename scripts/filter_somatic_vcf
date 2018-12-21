@@ -48,14 +48,16 @@ def _somatic_vcf_filter_rec(rec):
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
     # Tier 4 - other coding variants
     # Noncoding variants
-    # Remove gnomad_AF >0.01
-    # Remove PoN_CNT>0         # {0 if issnp else 1}'
+    # Remove gnomad_AF>0.01
+    # Remove PoN_CNT>=2         # {0 if issnp else 1}'
     # Remove indels in "bad_promoter" tricky regions
-    # Remove DP<30 and AF<10% in tricky regions:
+    # Remove DP*AF<3
+    # Remove DP*AF<5 in tricky regions:
     #        gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp,
     #        non-GIAB confident,
-    #    unless coding in cancer genes
-    # Remove DP<25 and AF<5%
+    #        LCR,
+    #        ENCODE,
+    #        mappability<1
     else:
         # if rec.INFO['TUMOR_AF'] < 0.1:
         #     _add_cyvcf2_filter(rec, 'AF10')
@@ -74,18 +76,21 @@ def _somatic_vcf_filter_rec(rec):
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
-            'gc15', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
+            'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
             'low_complexity_51to200bp', 'low_complexity_gt200bp',
             'LCR'}
 
         if rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 3:  # fewer than 3 reads supporting the variant
+            _add_cyvcf2_filter(rec, 'lowVD')
+
+        elif rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 5:  # fewer than 5 reads supporting an LCR variant
             if lcr:
                 _add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
                 _add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
             mpbl = max(map(float, rec.INFO.get('HMF_MAPPABILITY', '1.0').split(',')))
             if mpbl < 1.0:
-                _add_cyvcf2_filter(rec, 'LowAF_LowMappability')
+                _add_cyvcf2_filter(rec, 'LowVD_LowMappability')
 
         # if rec.INFO['TUMOR_AF'] < 0.01:
         #     _add_cyvcf2_filter(rec, 'LowAF')
@@ -97,9 +102,10 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
     vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
     vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
-    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and does not overlap GiaB high confidence regions'})
-    vcf.add_filter_to_header({'ID': 'LowAF_LowMappability', 'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and overlaps a low mappability region'})
+    vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant)'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
+    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
     vcf.add_info_to_header({'ID': 'TRICKY','Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
