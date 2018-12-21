@@ -31,8 +31,8 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
 
     vcf.close()
     if w is not None:
-        run_simple(f'bgzip -f {out_ungz} && tabix -f -p vcf {out_gz}')
         w.close()
+        run_simple(f'bgzip -f {out_ungz} && tabix -f -p vcf {out_gz}')
 
 
 def iter_vcf__pysam(input_file, proc_rec=None, proc_hdr=None, output_file=None):
