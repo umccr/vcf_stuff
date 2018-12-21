@@ -36,6 +36,13 @@ def _somatic_vcf_filter_rec(rec):
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
     # Tier 3 - variants of unknown clinical significance
+
+    tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
+    if tricky_flags:
+        rec.INFO['TRICKY'] = ','.join(tricky_flags)
+    for f in tricky_flags:
+        del rec.INFO[f'TRICKY_{f}']
+
     if int_tier in [1, 2, 3] or rec.INFO.get('HMF_HOTSPOT', False) is True:
         return rec
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
@@ -61,12 +68,6 @@ def _somatic_vcf_filter_rec(rec):
         if pon is not None and pon >= PON_HITS:
             _add_cyvcf2_filter(rec, 'PoN')
 
-        # import pdb; pdb.set_trace()
-        tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
-        rec.INFO['TRICKY'] = ','.join(tricky_flags)
-        for f in tricky_flags:
-            del rec.INFO[f'TRICKY_{f}']
-
         # removing indels in bad promoter regions
         if not rec.is_snp and 'bad_promoter' in tricky_flags:
             _add_cyvcf2_filter(rec, 'bad_promoter')
@@ -74,17 +75,15 @@ def _somatic_vcf_filter_rec(rec):
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
             'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
-            'low_complexity_51to200bp', 'low_complexity_gt200bp', 'LCR'}
-        if rec.INFO['TUMOR_AF'] < 0.1:
+            'low_complexity_51to200bp', 'low_complexity_gt200bp',
+            'LCR'}
+        if rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 3:  # fewer than 3 reads supporting the variant
             if lcr:
-                _add_cyvcf2_filter(rec, 'LowAF_LCR')
+                _add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
-                _add_cyvcf2_filter(rec, 'LowAF_GIAB_LCR')
-        if rec.INFO['TUMOR_DP'] < 20:
-            if lcr:
-                _add_cyvcf2_filter(rec, 'LowDP_LCR')
-            if not rec.INFO.get('HMF_GIAB_CONF'):
-                _add_cyvcf2_filter(rec, 'LowDP_GIAB_LCR')
+                _add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
+            if rec.INFO.get('HMF_MAPPABILITY', 1.0) < 1.0:
+                _add_cyvcf2_filter(rec, 'LowAF_LowMappability')
 
         # if rec.INFO['TUMOR_AF'] < 0.01:
         #     _add_cyvcf2_filter(rec, 'LowAF')
@@ -93,18 +92,15 @@ def _somatic_vcf_filter_rec(rec):
 
 
 def _somatic_vcf_filter_hdr(vcf):
-    vcf.add_filter_to_header({'ID': 'gnomAD_common', 'Description': 'Occurs in gnomAD with frequency above 1%'})
-    vcf.add_filter_to_header({'ID': 'PoN', 'Description': 'Panel of normals hits 1 or more'})
-    vcf.add_filter_to_header({'ID': 'bad_promoter', 'Description': 'Indel overlapping bad promoter tricky region'})
-    vcf.add_filter_to_header({'ID': 'LowAF_LCR',      'Description': 'AF<10% and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
-    vcf.add_filter_to_header({'ID': 'LowAF_GIAB_LCR', 'Description': 'AF<10% and does not overlap GiaB high confidence regions'})
-    vcf.add_filter_to_header({'ID': 'LowDP_LCR',      'Description': 'DP<20x and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
-    vcf.add_filter_to_header({'ID': 'LowDP_GIAB_LCR', 'Description': 'DP<20x and does not overlap GiaB high confidence regions'})
+    vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
+    vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
+    vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
+    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and does not overlap GiaB high confidence regions'})
+    vcf.add_filter_to_header({'ID': 'LowAF_LowMappability', 'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant), and overlaps a low mappability region'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
-    vcf.add_info_to_header({'ID': 'TRICKY', 'Description':
-        'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR',
-        'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'TRICKY','Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
 # def _somatic_vcf_filter_rec__pysam(rec):
 #     """ using pysam
