@@ -80,10 +80,12 @@ def _somatic_vcf_filter_rec(rec):
             'low_complexity_51to200bp', 'low_complexity_gt200bp',
             'LCR'}
 
-        if rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 3:  # fewer than 3 reads supporting the variant
+        vd = round(rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'])
+
+        if vd < 3:  # fewer than 3 reads supporting the variant
             _add_cyvcf2_filter(rec, 'lowVD')
 
-        elif rec.INFO['TUMOR_AF'] * rec.INFO['TUMOR_DP'] < 5:  # fewer than 5 reads supporting an LCR variant
+        elif vd < 5:  # fewer than 5 reads supporting an LCR variant
             if lcr:
                 _add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
