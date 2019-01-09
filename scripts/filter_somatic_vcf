@@ -35,7 +35,7 @@ def _somatic_vcf_filter_rec(rec):
     # Keeping all variants with tier 1, 2, 3:
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
-    # Tier 3 - variants of unknown clinical significance
+    # Tier 3 - variants of unknown clinical significance [UPD: excluded this tier as it often contains unknown variants, but in known onco/ts genes)
 
     tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
     if tricky_flags:
@@ -43,7 +43,13 @@ def _somatic_vcf_filter_rec(rec):
     for f in tricky_flags:
         del rec.INFO[f'TRICKY_{f}']
 
-    if int_tier in [1, 2, 3] or rec.INFO.get('HMF_HOTSPOT', False) is True:
+    is_hs = rec.INFO.get('HMF_HOTSPOT', False) or \
+            rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or \
+            rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or \
+            any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ["pathogenic", "uncertain"]) or \
+            rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5
+
+    if int_tier in [1, 2] or is_hs:
         return rec
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
     # Tier 4 - other coding variants
@@ -70,9 +76,17 @@ def _somatic_vcf_filter_rec(rec):
         if pon is not None and pon >= PON_HITS:
             _add_cyvcf2_filter(rec, 'PoN')
 
-        # removing indels in bad promoter regions
-        if not rec.is_snp and 'bad_promoter' in tricky_flags:
-            _add_cyvcf2_filter(rec, 'bad_promoter')
+        # specieal treatment for indels
+        if not rec.is_snp:
+            # removing indels in bad promoter regions - all of those are artefacts in MB benchmark
+            if 'bad_promoter' in tricky_flags:
+                _add_cyvcf2_filter(rec, 'bad_promoter')
+            # removing indels in homopolymers
+            hp_len = rec.INFO.get('MSILEN')
+            if hp_len is not None:
+                hp_repeated = rec.INFO.get('MSI')
+                if hp_repeated > 5:
+                    _add_cyvcf2_filter(rec, 'HP>5')
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
@@ -104,6 +118,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
     vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
     vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
+    vcf.add_filter_to_header({'ID': 'HP>5',                 'Description': 'Indel in a homopolymer region of length >5 elements (i.e. INFO/MSI>5)'})
     vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant)'})
     vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
     vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
