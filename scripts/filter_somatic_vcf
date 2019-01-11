@@ -98,7 +98,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, **kwargs):
             rec = _check_msi(rec, af)
 
         # filter strand biased variants in vardict
-        rec = vardict_strand_bias(rec, tumor_index)
+        rec = _vardict_strand_bias(rec, tumor_index)
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
@@ -134,6 +134,9 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
     vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
     vcf.add_filter_to_header({'ID': 'StrandBias',           'Description': 'Strand bias as reported by VarDict'})
+    vcf.add_filter_to_header({'ID': 'StrandBias1:1',        'Description': 'Strand bias as reported by VarDict'})
+    vcf.add_filter_to_header({'ID': 'StrandBias2:0',        'Description': 'Strand bias as reported by VarDict'})
+    vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
     vcf.add_info_to_header({'ID': 'TRICKY','Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
@@ -241,10 +244,14 @@ def _check_msi(rec, af, _coef=40):
     return rec
 
 
-def vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
+def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
     """
-    Filter VarDict variants with single strand support for ALT, while REF has both;
-    or REF and ALT have opposite supporting strands.
+    Filter VarDict variants with single strand support for ALT, while REF has
+    both; or REF and ALT have opposite supporting strands.
+
+    BIAS is in format X:Y, where X is the number of strands supporting REF,
+    and Y is the number of strands supporting ALT. 0 represents a too low
+    P value to call support.
     """
 
     if 'BIAS' not in rec.FORMAT or 'SBF' not in rec.FORMAT:
@@ -253,23 +260,25 @@ def vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
     bias = rec.format('BIAS')[tumor_index]
     sbf = float(rec.format('SBF')[tumor_index])
 
-    if bias != '2:2' and sbf is not None:
-        if bias == '2:1' and sbf < damage_p_value * 10:
-            # Has only single strand support 2:1 while reference has both
-            _add_cyvcf2_filter(rec, 'StrandBias')
+    ref, alt = map(int, bias.split(','))
 
-        if bias == '2:0' and sbf < damage_p_value:
-            # Has only single strand support 2:0 and p-value < {self.damage_p_value}' + while reference has both
-            _add_cyvcf2_filter(rec, 'StrandBias')
+    if ref < 2 or alt < 2 and sbf is not None:
+        if ref == 2 and alt == 1 and sbf < damage_p_value * 10:
+            # ALT has only single strand support, while REF has both
+            _add_cyvcf2_filter(rec, 'StrandBias2:1')
 
-        if bias == '1:1' and sbf < damage_p_value / 10:
+        if ref == 2 and alt == 0 and sbf < damage_p_value:
+            # ALT has only single strand support and p-value is low, while reference has both
+            _add_cyvcf2_filter(rec, 'StrandBias2:0')
+
+        if ref == alt == 1 and sbf < damage_p_value / 10:
             # Filter variants with opposite supporting strands for REF and ALT
-            _add_cyvcf2_filter(rec, 'StrandBias')
+            _add_cyvcf2_filter(rec, 'StrandBias1:1')
 
         if 'ALD' in rec.FORMAT:
-            #  Has only single strand support ({frd}, {rrd}) while reference has both
+            # Has only single strand support ({frd}, {rrd}) while reference has both
             frd, rrd = rec.format('ALD')[tumor_index,:]
-            if bias.startswith('2') and float(frd) * float(rrd) == 0 and float(frd) + float(rrd) >= 4:
+            if ref == 2 and float(frd) * float(rrd) == 0 and float(frd) + float(rrd) >= 4:
                 _add_cyvcf2_filter(rec, 'StrandBias')
 
     return rec
