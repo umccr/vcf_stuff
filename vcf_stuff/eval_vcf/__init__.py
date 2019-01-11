@@ -9,8 +9,8 @@ def package_path():
 
 def vcf_stats_to_df(stat_by_sname):
     idx = pd.MultiIndex.from_arrays([
-        ['Sample', 'SNP', 'SNP', 'SNP', 'SNP'   , 'SNP',  'SNP', 'SNP', 'SNP', 'INDEL', 'INDEL', 'INDEL' , 'INDEL' , 'INDEL', 'INDEL', 'INDEL', 'SNP',],
-        [''      , 'TP' , 'FP' , 'FN' , 'Recall', 'Prec', 'F1' , 'F2' , 'F3' , 'TP'   , 'FP'   , 'FN'    , 'Recall', 'Prec' , 'F1'   , 'F2'   , 'F3' ,]
+        ['Sample', 'SNP', 'SNP', 'SNP', 'SNP'   , 'SNP',  'SNP', 'SNP', 'SNP', 'INDEL', 'INDEL', 'INDEL' , 'INDEL' , 'INDEL', 'INDEL', 'INDEL', 'INDEL',],
+        [''      , 'TP' , 'FP' , 'FN' , 'Recall', 'Prec', 'F1' , 'F2' , 'F3' , 'TP'   , 'FP'   , 'FN'    , 'Recall', 'Prec' , 'F1'   , 'F2'   , 'F3'   ,]
         ],
         names=['1', '2'])
 
