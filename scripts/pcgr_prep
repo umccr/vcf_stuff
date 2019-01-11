@@ -59,7 +59,8 @@ def main(input_file, output_file=None):
 
         for t, v in zip(['AF', 'DP', 'MQ'], [af, dp, mq]):
             if v is not None:
-                rec.INFO[tumor_prefix + t] = str(v[tumor_index])
+                if v[tumor_index] is not None:
+                    rec.INFO[tumor_prefix + t] = str(v[tumor_index])
                 if control_index is not None:
                     if len(v) <= control_index:
                         sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {control_index} of control sample. Record {v}\n')
