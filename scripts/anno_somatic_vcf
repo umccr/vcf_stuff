@@ -2,7 +2,7 @@
 import sys
 from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
-from ngs_utils.file_utils import which, safe_mkdir
+from ngs_utils.file_utils import which, safe_mkdir, splitext_plus
 from ngs_utils.logger import critical
 from ngs_utils.snakemake_utils import run_snakemake
 from vcf_stuff.filtering import package_path
@@ -29,14 +29,15 @@ def main(vcf, genome, output_file, work_dir=None, unlock=None):
         raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
 
     conf = {
-        'input_vcf': vcf,
-        'output_vcf': output_file,
+        'input_vcf': abspath(vcf),
+        'output_vcf': abspath(output_file),
+        'sample': basename(splitext_plus(output_file)[0]),
         'genome': genome,
     }
 
-    if work_dir:
-        safe_mkdir(work_dir)
-        conf['work_dir'] = work_dir
+    if not work_dir:
+        work_dir = output_file + '_work'
+    safe_mkdir(work_dir)
 
     # Checking that pcgr.py is available, or if running in umccrise envirnoment so _pcgr env is there
     if not which('pcgr.py'):
@@ -47,7 +48,7 @@ def main(vcf, genome, output_file, work_dir=None, unlock=None):
             critical('pcgr.py not found in PATH. Install pcgr with conda, or use umccrise environment')
         conf['pcgr_env_path'] = pcgr_env_path
 
-    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, unlock=unlock)
+    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, output_dir=work_dir, unlock=unlock)
 
 
 if __name__ == '__main__':
