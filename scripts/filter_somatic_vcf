@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import math
 import click
 
 from ngs_utils.utils import set_locale; set_locale()
@@ -46,8 +46,10 @@ def _somatic_vcf_filter_rec(rec):
     is_hs = rec.INFO.get('HMF_HOTSPOT', False) or \
             rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or \
             rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or \
-            any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ["pathogenic", "uncertain"]) or \
-            rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5
+            any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or \
+            rec.INFO.get('COSMIC_CNT', 0) >= 5 or \
+            rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or \
+            rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 2
 
     if int_tier in [1, 2] or is_hs:
         return rec
@@ -86,7 +88,7 @@ def _somatic_vcf_filter_rec(rec):
             if hp_len is not None:
                 hp_repeated = rec.INFO.get('MSI')
                 if hp_repeated > 5:
-                    _add_cyvcf2_filter(rec, 'HP>5')
+                    _add_cyvcf2_filter(rec, 'HP5')
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
@@ -118,11 +120,11 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
     vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
     vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
-    vcf.add_filter_to_header({'ID': 'HP>5',                 'Description': 'Indel in a homopolymer region of length >5 elements (i.e. INFO/MSI>5)'})
-    vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP<3 (i.e. fewer than 3 reads support the variant)'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC<=15% or GC>=70, or low complexity region >51bp long, or ENCODE low mappability'})
-    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP<5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
+    vcf.add_filter_to_header({'ID': 'HP5',                 'Description': 'Indel in a homopolymer region longer than 5 elements (i.e. INFO/MSI is above 5)'})
+    vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP below 3 (i.e. fewer than 3 reads support the variant)'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC=0-15% or GC=70-100%, or a low complexity region longer than 50bp long, or ENCODE low mappability'})
+    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
     vcf.add_info_to_header({'ID': 'TRICKY','Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
