@@ -7,7 +7,7 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.vcf_utils import get_sample_ids
 
 
-def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
+def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, **kwargs):
     vcf = VCF(input_file, gts012=True)
     if proc_hdr is not None:
         proc_hdr(vcf)
@@ -25,7 +25,7 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None):
 
     for rec in vcf:
         if proc_rec:
-            rec_res = proc_rec(rec)
+            rec_res = proc_rec(rec, **kwargs)
             if rec_res is not None:
                 # if w is not None:
                 #     sys.stderr.write('Writing record', rec_res, '\n')
