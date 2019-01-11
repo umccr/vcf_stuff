@@ -70,31 +70,14 @@ def _somatic_vcf_filter_rec(rec):
         # if rec.INFO['TUMOR_AF'] < 0.1:
         #     _add_cyvcf2_filter(rec, 'AF10')
 
+        # common in gnomAD => likely germline
         if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
             _add_cyvcf2_filter(rec, 'gnomAD_common')
 
-        # second round of panel of normals
+        # in panel of normals => likely an artefact
         pon = rec.INFO.get('PoN_CNT')
         if pon is not None and pon >= PON_HITS:
             _add_cyvcf2_filter(rec, 'PoN')
-
-        # specieal treatment for indels
-        if not rec.is_snp:
-            # removing indels in bad promoter regions - all of those are artefacts in MB benchmark
-            if 'bad_promoter' in tricky_flags:
-                _add_cyvcf2_filter(rec, 'bad_promoter')
-            # removing indels in homopolymers
-            hp_len = rec.INFO.get('MSILEN')
-            if hp_len is not None:
-                hp_repeated = rec.INFO.get('MSI')
-                if hp_repeated > 5:
-                    _add_cyvcf2_filter(rec, 'HP5')
-
-        # removing low AF and low DP variants in low complexity regions
-        lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
-            'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
-            'low_complexity_51to200bp', 'low_complexity_gt200bp',
-            'LCR'}
 
         af = rec.INFO.get('TUMOR_AF')
         dp = rec.INFO.get('TUMOR_DP')
@@ -102,6 +85,20 @@ def _somatic_vcf_filter_rec(rec):
             vd = round(af * dp)
         else:
             vd = math.inf
+
+        # specieal treatment for indels
+        if not rec.is_snp:
+            # removing indels in bad promoter regions - all of those are artefacts in MB benchmark
+            if 'bad_promoter' in tricky_flags:
+                _add_cyvcf2_filter(rec, 'bad_promoter')
+            # filtering indels in homopolymers
+            rec = _check_msi(rec, af)
+
+        # removing low AF and low DP variants in low complexity regions
+        lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
+            'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
+            'low_complexity_51to200bp', 'low_complexity_gt200bp',
+            'LCR'}
 
         if vd < 3:  # fewer than 3 reads supporting the variant
             _add_cyvcf2_filter(rec, 'lowVD')
@@ -125,7 +122,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
     vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
     vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
-    vcf.add_filter_to_header({'ID': 'HP5',                 'Description': 'Indel in a homopolymer region longer than 5 elements (i.e. INFO/MSI is above 5)'})
+    vcf.add_filter_to_header({'ID': 'HP',                   'Description': 'Low AF indel in a homopolymer region (AF lt (INFO/MSI - 1)/0.4%'})
     vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP below 3 (i.e. fewer than 3 reads support the variant)'})
     vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC=0-15% or GC=70-100%, or a low complexity region longer than 50bp long, or ENCODE low mappability'})
     vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
@@ -196,6 +193,45 @@ def _somatic_vcf_filter_hdr(vcf):
 #     vcf.header.filters.add('LowAF_GIAB_LCR', None, None, 'DP<30 & AF<10%, and does not overlap GiaB high confidence regions')
 #     vcf.header.filters.add('LowAF', None, None, 'DP<25 & AF<5%')
 #     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
+
+
+def _check_msi(rec, af, _coef=40):
+    """
+    Dynamic threshold for indels in homopolymers.
+    Motivation:
+
+               Sample    SNP                                               INDEL
+                                    TP   FP   FN Recall    Prec     F1     F2     F3    TP    FP   FN Recall    Prec     F1     F2     F3
+         MB: no filtering         1183  540   80 93.67%  68.66% 79.24% 87.31% 90.37%   318  1378   29 91.64%  18.75% 31.13% 51.56% 65.99%
+         MB: static cutoff HP<=5  1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%    69    44  278 19.88%  61.06% 30.00% 22.98%
+         MB: AF>=10%, no HP filt   948   68  315 75.06%  93.31% 83.19% 78.11% 76.56%   232    93  115 66.86%  71.38% 69.05% 67.72% 67.29%
+         MB: _coef=40             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   226    80  121 65.13%  73.86% 69.22% 66.71% 65.91%
+         MB: _coef=50             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   231    91  116 66.57%  71.74% 69.06% 67.54% 67.05%
+         MB: _coef=60             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   233   100  114 67.15%  69.97% 68.53% 67.69% 67.42%
+         MB: _coef=Inf (no filt)  1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   233   265  114 67.15%  46.79% 55.15% 61.77% 64.35%
+
+    AF>10% for homopolymers looks like a better idea, though
+    """
+
+    hp_len = rec.INFO.get('MSILEN')
+    if hp_len is None:
+        return rec
+
+    hp_repeated = rec.INFO.get('MSI')
+    af_threshold = (hp_repeated - 1) / _coef
+    # HP  AF
+    # 1   0
+    # 2   2,5%
+    # 3   5%
+    # 4   7,5%
+    # 5  10%
+    # 6  12,5%
+    # 7  15%
+    # 8  17,5%
+    # 9  20%
+    if af < af_threshold:
+        _add_cyvcf2_filter(rec, 'HP')
+    return rec
 
 
 if __name__ == '__main__':
