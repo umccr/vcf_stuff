@@ -2,7 +2,7 @@
 import sys
 from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
-from ngs_utils.file_utils import which
+from ngs_utils.file_utils import which, safe_mkdir
 from ngs_utils.logger import critical
 from ngs_utils.snakemake_utils import run_snakemake
 from vcf_stuff.filtering import package_path
@@ -13,8 +13,9 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.argument('vcf', type=click.Path(exists=True))
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-o', 'output_file', type=click.Path())
+@click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--unlock', 'unlock', is_flag=True)
-def main(vcf, genome, output_file, unlock=None):
+def main(vcf, genome, output_file, work_dir=None, unlock=None):
 
     if not vcf.endswith('.vcf.gz'):
         raise click.BadParameter('VCF must be bgzip compresed')
@@ -27,21 +28,24 @@ def main(vcf, genome, output_file, unlock=None):
     if not genome:
         raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
 
+    conf = {
+        'input_vcf': vcf,
+        'output_vcf': output_file,
+        'genome': genome,
+    }
+
+    if work_dir:
+        safe_mkdir(work_dir)
+        conf['work_dir'] = work_dir
+
     # Checking that pcgr.py is available, or if running in umccrise envirnoment so _pcgr env is there
-    pcgr_env_path = None
     if not which('pcgr.py'):
         py_path = sys.executable  # /miniconda/envs/umccrise/bin/python
         env_path = dirname(dirname(py_path))  # /miniconda/envs/umccrise
         pcgr_env_path = env_path + '_pcgr'
         if not isdir(pcgr_env_path):
             critical('pcgr.py not found in PATH. Install pcgr with conda, or use umccrise environment')
-
-    conf = {
-        'input_vcf': vcf,
-        'output_vcf': output_file,
-        'genome': genome,
-        'pcgr_env_path': pcgr_env_path
-    }
+        conf['pcgr_env_path'] = pcgr_env_path
 
     run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, unlock=unlock)
 

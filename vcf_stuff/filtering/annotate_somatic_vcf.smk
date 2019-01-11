@@ -1,18 +1,20 @@
 from os.path import isfile, join, basename
-from ngs_utils.file_utils import get_ungz_gz
-from ngs_utils.reference_data import get_key_genes_set
-from ngs_utils.file_utils import splitext_plus
-from umccrise import package_path
 import cyvcf2
 import toml
 import csv
 from ngs_utils.file_utils import which
-from vcf_stuff import iter_vcf
+from ngs_utils.file_utils import get_ungz_gz
+from ngs_utils.reference_data import get_key_genes_set
+from ngs_utils.file_utils import splitext_plus
 from hpc_utils.hpc import get_ref_file, get_loc
+from vcf_stuff import iter_vcf
 
 
 localrules: prep_anno_toml, prep_giab_bed, annotate
 
+
+#############################
+#### Reading parameters #####
 
 GENOME = config['genome']
 INPUT_VCF = config['input_vcf']
@@ -20,16 +22,20 @@ OUTPUT_VCF = config['output_vcf']
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
 assert INPUT_VCF.endswith('.vcf.gz'), INPUT_VCF
 
-PCGR_ENV_PATH = config['pcgr_env_path']
-conda_cmd = ('export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; ') if PCGR_ENV_PATH else ''
+WORK_DIR = config.get('work_dir', OUTPUT_VCF + '_work')
 
+PCGR_ENV_PATH = config.get('pcgr_env_path')
+conda_cmd = ''
+if PCGR_ENV_PATH:
+    conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
+
+#############################
 
 
 rule all:
     input:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi'
-
 
 
 # Call variants with 1%
@@ -55,8 +61,8 @@ rule somatic_vcf_prep:
     input:
         vcf = INPUT_VCF
     output:
-        vcf = OUTPUT_VCF + '_work/somatic-ensemble-prep.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/somatic-ensemble-prep.vcf.gz.tbi'
+        vcf = WORK_DIR + '/somatic-ensemble-prep.vcf.gz',
+        tbi = WORK_DIR + '/somatic-ensemble-prep.vcf.gz.tbi'
     shell:
         'pcgr_prep {input.vcf} | bcftools view -f.,PASS -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}'
 
@@ -69,8 +75,8 @@ rule somatic_vcf_pon_anno:
         pon_hits = 3,
         pon_dir = get_ref_file(GENOME, 'panel_of_normals_dir')
     output:
-        vcf = OUTPUT_VCF + '_work/pon_anno/somatic-ensemble.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/pon_anno/somatic-ensemble.vcf.gz.tbi',
+        vcf = WORK_DIR + '/pon_anno/somatic-ensemble.vcf.gz',
+        tbi = WORK_DIR + '/pon_anno/somatic-ensemble.vcf.gz.tbi',
     shell:
         'pon_anno {input.vcf} --pon-dir {params.pon_dir} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
@@ -80,7 +86,7 @@ rule somatic_vcf_keygenes:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
     output:
-        vcf = OUTPUT_VCF + '_work/keygenes/somatic-ensemble.vcf.gz',
+        vcf = WORK_DIR + '/keygenes/somatic-ensemble.vcf.gz',
     run:
         genes = get_key_genes_set()
         def func(rec):
@@ -93,8 +99,8 @@ rule somatic_vcf_pcgr_ready:
         full_vcf = rules.somatic_vcf_pon_anno.output.vcf,
         keygenes_vcf = rules.somatic_vcf_keygenes.output.vcf,
     output:
-        vcf = OUTPUT_VCF + '_work/pcgr_input/somatic-ensemble.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/pcgr_input/somatic-ensemble.vcf.gz.tbi',
+        vcf = WORK_DIR + '/pcgr_input/somatic-ensemble.vcf.gz',
+        tbi = WORK_DIR + '/pcgr_input/somatic-ensemble.vcf.gz.tbi',
     run:
         total_vars = int(subprocess.check_output(f'bcftools view -H {input.full_vcf} | wc -l', shell=True).strip())
         vcf = input.full_vcf if total_vars <= 500_000 else input.keygenes_vcf  # to avoid PCGR choking on too many variants
@@ -109,9 +115,9 @@ rule somatic_vcf_pcgr_round1:
         vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
         pcgr_data = get_loc().pcgr_data,
     output:
-        tiers = OUTPUT_VCF + '_work/pcgr_round1/somatic.pcgr.snvs_indels.tiers.tsv',
+        tiers = WORK_DIR + '/pcgr_round1/somatic.pcgr.snvs_indels.tiers.tsv',
     params:
-        output_dir = OUTPUT_VCF + '_work/pcgr_round1',
+        output_dir = WORK_DIR + '/pcgr_round1',
         genome = GENOME,
         sample_name = 'somatic',
         opt='--no-docker' if not which('docker') else '',
@@ -127,8 +133,8 @@ rule somatic_vcf_pcgr_anno:
         vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
         tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
     output:
-        vcf = OUTPUT_VCF + '_work/annotation/pcgr/somatic-ensemble.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/annotation/pcgr/somatic-ensemble.vcf.gz.tbi',
+        vcf = WORK_DIR + '/annotation/pcgr/somatic-ensemble.vcf.gz',
+        tbi = WORK_DIR + '/annotation/pcgr/somatic-ensemble.vcf.gz.tbi',
     run:
         pcgr_fields_by_snp = dict()
         cosmic_by_snp = dict()
@@ -208,8 +214,8 @@ rule prep_giab_bed:
     input:
         get_ref_file(GENOME, ['truth_sets', 'giab', 'bed'])
     output:
-        bed = OUTPUT_VCF + '_work/giab_conf.bed.gz',
-        tbi = OUTPUT_VCF + '_work/giab_conf.bed.gz.tbi'
+        bed = WORK_DIR + '/giab_conf.bed.gz',
+        tbi = WORK_DIR + '/giab_conf.bed.gz.tbi'
     shell:
         'cat {input} | bgzip -c > {output.bed} && tabix -f -p bed {output.bed}'
 
@@ -217,10 +223,10 @@ rule prep_hmf_hotspots:
     input:
         get_ref_file(GENOME, key='hmf_hotspot'),
     output:
-        vcf = OUTPUT_VCF + '_work/hmf_hotspot.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/hmf_hotspot.vcf.gz.tbi',
+        vcf = WORK_DIR + '/hmf_hotspot.vcf.gz',
+        tbi = WORK_DIR + '/hmf_hotspot.vcf.gz.tbi',
     params:
-        ungz = OUTPUT_VCF + '_work/hmf_hotspot.vcf'
+        ungz = WORK_DIR + '/hmf_hotspot.vcf'
     shell: """
 echo "##fileformat=VCFv4.2" >> {params.ungz} &&
 echo "#CHROM\\tPOS\\tID\\tREF\\tALT\\tQUAL\\tFILTER\\tINFO" >> {params.ungz} &&
@@ -240,7 +246,7 @@ rule prep_anno_toml:
         hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
         hmf_mappability = get_ref_file(GENOME, key='hmf_mappability'),
     output:
-        OUTPUT_VCF + '_work/tricky_vcfanno.toml'
+        WORK_DIR + '/tricky_vcfanno.toml'
     run:
         with open(output[0], 'w') as f:
             f.write(f"""
@@ -307,16 +313,16 @@ rule somatic_vcf_regions_anno:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         toml = rules.prep_anno_toml.output[0]
     output:
-        vcf = OUTPUT_VCF + '_work/annotation/regions/somatic-ensemble.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/annotation/regions/somatic-ensemble.vcf.gz.tbi',
+        vcf = WORK_DIR + '/annotation/regions/somatic-ensemble.vcf.gz',
+        tbi = WORK_DIR + '/annotation/regions/somatic-ensemble.vcf.gz.tbi',
     shell:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
 
 
 rule annotate:
     input:
-        vcf = OUTPUT_VCF + '_work/annotation/regions/somatic-ensemble.vcf.gz',
-        tbi = OUTPUT_VCF + '_work/annotation/regions/somatic-ensemble.vcf.gz.tbi',
+        vcf = WORK_DIR + '/annotation/regions/somatic-ensemble.vcf.gz',
+        tbi = WORK_DIR + '/annotation/regions/somatic-ensemble.vcf.gz.tbi',
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
