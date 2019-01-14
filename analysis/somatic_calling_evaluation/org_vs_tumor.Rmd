@@ -1,3 +1,9 @@
+---
+title: "Organoid vs tumor"
+output: html_notebook
+---
+
+```{r libraries}
 library(tidyr)
 library(dplyr)
 library(ggplot2)
@@ -8,10 +14,14 @@ library(plyranges)
 library(readr)
 library(purrr)
 library(crayon)
+```
 
+Loading files:
+```
+bcftools view o6.vcf.gz | bcftools query -H -f "%CHROM \t %POS \t %REF \t %ALT \t %FILTER \t %GIAB_CONF \t %HMF_GIAB_CONF \t %TUMOR_DP \t %TUMOR_AF \t %NORMAL_DP \t %NORMAL_AF \t %PCGR_TIER \t %PCGR_CLINVAR_CLNSIG \t %PCGR_CONSEQUENCE \t %PCGR_INTOGEN_DRIVER_MUT \t %PCGR_MUTATION_HOTSPOT \t %PCGR_TCGA_PANCANCER_COUNT \t %PoN_CNT \t %HMF_HOTSPOT \t %PCGR_SYMBOL \t %TRICKY \t %ENCODE \t %HMF_MAPPABILITY \t %MSI \t %MSILEN \t %LSEQ \t %RSEQ \n" > o6.tsv
+```
 
-####################
-### Load data
+```{r merged}
 load_vars <- function(fname, purity) {
   raw <- read_tsv(
     str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.tsv'), 
@@ -29,12 +39,10 @@ load_vars <- function(fname, purity) {
     )
 }
 
-
 # t <- str_split(c("1,2", "3"), ",")
 # m <- map(t, as.double)
 # class(m)
 # t6 %>% select(HMF_HOTSPOT, HMF_MAPPABILITY)
-
 
 # N: CCR180147_MH18B001P062
 # T: CCR180148_MH18F001P062, batch: 2016_249_18_MH_P062_1, purity: 37% - 44%
@@ -48,30 +56,11 @@ merged <- full_join(o6, t6,
          'PCGR_TIER', 'PCGR_CLINVAR_CLNSIG', 'PCGR_CONSEQUENCE', 'PCGR_INTOGEN_DRIVER_MUT', 'PCGR_MUTATION_HOTSPOT', 'PCGR_TCGA_PANCANCER_COUNT', 'PCGR_SYMBOL', 
          'MSI', 'MSILEN', 'LSEQ', 'RSEQ'), 
   suffix = c('.o', '.t'))
+```
 
-### Load Purple
-read_purple <- function(fname) {
-  # #chromosome  start      end        copyNumber  bafCount  observedBAF  actualBAF 
-  # 1            1          2038216    2.1435      123       0.5422       0.5327    
-  # segmentStartSupport  segmentEndSupport  method              depthWindowCount  gcContent  minStart   maxStart
-  # TELOMERE             DEL                BAF_WEIGHTED        579               0.5759     1          1
-  raw <- read_tsv(str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.purple.cnv'), col_types = 'ciididdcccidii') %>% 
-    dplyr::transmute(
-      start, 
-      end,
-      seqnames = `#chromosome`,
-      CN = round(copyNumber), 
-      BAF = actualBAF,
-      # seg = str_c(segmentStartSupport, '-', segmentEndSupport),
-      GC = gcContent) %>%
-    dplyr::select(seqnames, start, end, CN, BAF, GC) %>% 
-    as_granges()
-}
-t6_purple <- read_purple('t6')
-o6_purple <- read_purple('o6')
+Processing: fixing AF/DP/VD values, mappability, hotspot and other fields.
 
-###################
-### Processing: fixing AF/DP/VD values
+```{r data}
 data <- merged %>%
   mutate(
     vt = ifelse(str_length(REF) == str_length(ALT), "SNP", "Indel"),
@@ -109,6 +98,31 @@ data <- merged %>%
     -HMF_HOTSPOT, -PCGR_INTOGEN_DRIVER_MUT, -PCGR_MUTATION_HOTSPOT, -PCGR_TCGA_PANCANCER_COUNT, -PCGR_CLINVAR_CLNSIG,
     -HMF_GIAB_CONF)
 
+data %>% select(HMF_MAPPABILITY) %>% datatable()
+```
+
+Adding Purple
+
+```{r data_p}
+read_purple <- function(fname) {
+  # #chromosome  start      end        copyNumber  bafCount  observedBAF  actualBAF 
+  # 1            1          2038216    2.1435      123       0.5422       0.5327    
+  # segmentStartSupport  segmentEndSupport  method              depthWindowCount  gcContent  minStart   maxStart
+  # TELOMERE             DEL                BAF_WEIGHTED        579               0.5759     1          1
+  raw <- read_tsv(str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.purple.cnv'), col_types = 'ciididdcccidii') %>% 
+    dplyr::transmute(
+      start, 
+      end,
+      seqnames = `#chromosome`,
+      CN = round(copyNumber), 
+      BAF = actualBAF,
+      # seg = str_c(segmentStartSupport, '-', segmentEndSupport),
+      GC = gcContent) %>%
+    dplyr::select(seqnames, start, end, CN, BAF, GC) %>% 
+    as_granges()
+}
+t6_purple <- read_purple('t6')
+o6_purple <- read_purple('o6')
 
 ### Add purple
 data_p <- data %>% 
@@ -119,10 +133,11 @@ data_p <- data %>%
   as_tibble() %>% 
   dplyr::select(-seqnames, -start, -end, -width, -strand)
 
+```
 
-#################
-### Exploring
+Exploring
 
+```{r exploring}
 # TP
 (matching <- data_p %>% 
    filter(!is.na(FIL.o), !is.na(FIL.t)))
@@ -228,8 +243,11 @@ tumor_snps %>%
   geom_histogram(aes(x = AF.t), binwidth = 1) +
   facet_wrap(~Organoid, ncol = 1) +
   xlim(0, 100)
+```
 
+Exploring homopolymers
 
+```{r homopolymers}
 ### HP
 # Checking flanking sequences of MSI variants
 data_p %>% 
@@ -261,6 +279,7 @@ data_p %>%
   select(-LSEQ, -RSEQ))
 
 novel_indels %>% 
+  filter(AF.t / 100 < HP_REPEATED / 50) %>% 
   mutate(
     CH_len = cut(CH_len, c(-Inf, 0, 1, 2, 3, 4, 5, Inf))
   ) %>% 
@@ -272,9 +291,9 @@ novel_indels %>%
     AF = cut(AF, c(0, 10, 20, 30, 40, 100))
     ) %>% 
   ggplot() +
-  geom_point(aes(x = HP_ELEMENT, y = HP_REPEATED, color = VD, size = n)) +
-  facet_wrap(~CH_len, nrow = 1) + 
-  scale_color_gradientn(colours = rainbow(5))
+  geom_point(aes(x = HP_ELEMENT, y = HP_REPEATED, color = AF, size = n)) +
+  facet_wrap(~CH_len, nrow = 1) 
+#  scale_color_gradientn(colours = rainbow(5))
 
 
 # Exploring CH len
@@ -307,38 +326,24 @@ novel_indels %>%
 # All these changes are either a junction of 2 HP, or just a very low complexity region.
 
 # Conclusion: filter out indels HP_REPEATED > 5
-  
-  
-# %>% 
-#   ggplot() +
-#   geom_point(aes(x = HP_ELEMENT, y = HP_REPEATED, color = VD, size = n))
-
 
 novel_indels %>% 
   filter(MSI >= 5) %>% 
 #  filter(CH_len == 1) %>% 
-  select(C, POSITION, CH, ALT, REF, vt, AF.t, VD.t, AF.o, VD.o, MSI, MSILEN, LSEQ, RSEQ, PCGR_TIER, everything()) %>% 
+  select(C, POSITION, CH, ALT, REF, vt, AF.t, VD.t, AF.o, VD.o, MSI, MSILEN, LSEQ, RSEQ, PCGR_TIER, 
+         everything()) %>% 
   mutate(SEQ = str_c(LSEQ, "-", REF, "-", RSEQ),
          CH_len = abs(str_length(REF) - str_length(ALT)),
   ) %>% 
   select(-LSEQ, -RSEQ, -ALT, -REF, -CH_len)
 
-
-
 # Exploring different MSI lengths
-
 data_p %>% 
 group_by(MSI, MSILEN)
 
-
-  
   filter(CH_len == 1) %>% 
   select(-LSEQ, -RSEQ, -ALT, -REF, -CH_len) %>% 
   filter(MSI < 5)
-  
-
-  # filter(MSI <= 4 & VD.t < 5) %>% 
-  # filter(MSI <= 5 & VD.t < 6)
 
 # MSI_FAIL if:
 # msi <=  2 and af < 0.005,
@@ -351,31 +356,181 @@ group_by(MSI, MSILEN)
 # msi == 12 and af < 0.3,
 # msi >  12 and af < 0.35])  
 # change_len == 3 and msi >= 5 and af < 0.1:  # ignore low AF in 3nt MSI region
-
-
-
-
-data_p %>% filter(POSITION > 32698781 & POSITION < 32698821)
   
+# Zhongwu's rules:
+zh <- tribble(
+  ~hp, ~af,
+  2, 0.005,
+  4, 0.01,
+  7, 0.03,
+  8, 0.06,
+  9, 0.125,
+  10, 0.175,
+  11, 0.25,
+  12, 0.3,
+  13, 0.35
+)
+zh %>% 
+  mutate(
+    af = af * 10,
+    dhp = hp / lag(hp),
+    daf = af / lag(af),
+    d = hp / af,
+    est_af = hp / 40,
+  )
+library(modelr)
+ml <- loess(af ~ hp, zh)
+zh <- add_predictions(zh, ml, var = "pred_af")
+ggplot(zh) + geom_point(aes(hp, af)) + geom_point(aes(hp, pred_af), color = "red")
+zh %>% mutate(pred_af = )
 
-?View
+tibble(hp = 1:20,
+       (hp - 1) / 2 * 0.05)
+```
 
+How AZ blacklisted genes overlap with the noise
 
+```{r genes}
+# def _read_list(reason, fpath):
+#     gene_d = list()
+#     df <- read_tsv(fpath)
+#     # for l in iter_lines(fpath):
+#     #     fs = l.split('\t')
+#     #     gene_name = l.split('\t')[0]
+#     #     meta_info = l.split('\t')[1] if len(fs) == 2 else ''
+#     #     gene_d[gene_name] = meta_info
+#     df
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+load_gene_blacklists <- function() {
+  folder <- "/Users/vsaveliev/git/NGS_Reporting/variant_filtering/reference_data/incidentalome"
+  files <- list()
+  files['Freq mut gene in HGMD'] = 'published/flags_in_hgmd.txt'
+  files['Freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
+  files['Freq mut gene'] = 'published/flags.txt'
+  files['Incidentalome gene'] = 'published/incidentalome.txt'
+  files['MutSigCV gene'] = 'published/mutsigcv.txt'
+  files['Low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
+  files['Repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
+  files['Low GC gene'] = 'low_complexity/low_gc.txt'
+  files['High GC gene'] = 'low_complexity/high_gc.txt'
+  files['Gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
   
+  tbl = tibble(gene = "", blacklist = "")
+  for (reason in names(files)) {
+    fp <- file.path(folder, files[[reason]])
+    gs <- read_tsv(fp, col_types = "c")
+    for (g in gs) {
+      tbl <- add_row(tbl, gene = g, blacklist = reason)
+    }
+  }
+  tbl %>% 
+    group_by(gene) %>% 
+    summarise(blacklists = str_c(blacklist, collapse = ", "))
+}
+
+blacklists <- load_gene_blacklists()
+
+with_bl <- data_p %>%
+  left_join(blacklists, by = c("PCGR_SYMBOL" = "gene"))
+
+names(with_bl)
+with_bl %>% 
+  filter(FIL.t != "PASS" | !is.na(blacklists)) %>% 
+  select(C, POSITION, CH, FIL.t, HS, GIAB_CONF, PoN_CNT, PCGR_SYMBOL, TRICKY, ENCODE, HMF_MAPPABILITY, HP_ELEMENT, GC.t, blacklists) %>% 
+  datatable()
+
+with_bl %>% 
+  mutate(in_bl = !is.na(blacklists),
+         status = ifelse(is.na(FIL.t), "-", ifelse(FIL.t == "PASS", "PASS", "called"))
+         ) %>% 
+  count(in_bl, status)
+  
+```
+
+```{r test, echo=TRUE}
+lists <- list(
+  bl1 = c("G1", "G2"),
+  bl2 = c("G2", "G3"),
+  bl3 = c("G3")
+)
+
+# genes = list()
+tbl = tibble(gene = "", blacklist = "")
+for (reason in names(lists)) {
+  gs <- lists[reason]
+  for (g in gs) {
+    tbl <- add_row(tbl, gene = g, blacklist = reason)
+  }
+}
+tbl %>% 
+  group_by(gene) %>% 
+  summarise(blacklists <- str_c(blacklist, collapse = ", "))
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
