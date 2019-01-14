@@ -121,3 +121,6 @@ tests/results/
 src/
 
 analysis/somatic_calling_evaluation/org_vs_tumor.nb.html
+
+vcf_stuff/panel_of_normals/~$pon_eval_colo.xlsx
+analysis/somatic_calling_evaluation/~$high_af_missed_by_tumor.xlsx
