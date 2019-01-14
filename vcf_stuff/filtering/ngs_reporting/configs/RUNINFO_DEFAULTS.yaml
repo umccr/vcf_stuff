@@ -1,0 +1,36 @@
+# If a novel variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples,
+# it will be to be considered too common to be functional and filtered out.
+# Don't use it if the cohort is homogeneous! Use only for heterogeneous cohorts.
+max_ratio:         0.4    # -R   1.0 means no filtering
+max_sample_cnt:    5      # -n
+
+min_freq:          0.075  # -f
+                          # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                          # likely false poitive, unless it is actionable.
+act_min_freq:      0.025  # -F
+                          # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
+                          # Default: 0.01 or half [min_freq], whichever is less.
+germline_min_freq: 0.15
+
+damage_p_value:    0.01   # If set, filter all variants with strand bias "2:0" and p-value < double, useful for plasma ctDNA sequencing.
+                          # Suggest to start with 0.01.
+
+min_gmaf:          0.0025 # --gmaf
+                          # When the GMAF is greater than specified, it's considered common SNP and filtered out.
+
+min_p_mean:        5      # PMEAN.  -p            The minimum mean position in reads for variants.
+min_q_mean:       23      # QUAL.   -q            The minimum mean base quality phred score for variant.
+
+filt_depth:        3      # DP.     -D            The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+filt_q_mean:       0      # QUAL.   -Q            The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+filt_p_mean:       0      # PMEAN.  -P            The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
+
+min_mq:           10      # MQ.     -M            The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
+min_vd:            3      # VD.     -V            The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
+
+signal_noise:      1.5    # SN.     -o            Signal/noise value.
+bias:              no     #         -b            Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
+
+keep_hla:          no     # --keep-hla            By default, all mutations in HLA-* genes are hard-filtered. Set this option to treat HLA like other genes.
+keep_utr_intronic: no     # --keep-utr-intronic   By default, all UTR and intronic variants are hard-filterd. Set this option to keep all intronic and UTR in the output.
+keep_whole_genome: no     # --keep-whole-genome   By default, all non-exonic variants are hard-filterd. Set this option to keep all intronic, UTR, and intergenic variants in the output.

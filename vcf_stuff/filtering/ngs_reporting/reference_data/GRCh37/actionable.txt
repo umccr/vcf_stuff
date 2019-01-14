@@ -1,0 +1,164 @@
+Gene 	Chr	Start	Ref	Alt	SNV	genotype	germline	Protein_Change	dbSNP	COSMIC	Note
+BRCA1	17	41197859	A	T	SNV	genotype	germline	 	rs80358151	 	Intronic. Source: BIC.
+BRCA1	17	41215888	T	G	SNV	genotype	germline	 	rs80358124	 	Intronic. Source: BIC.
+BRCA1	17	41222939	A	G	SNV	genotype	germline	 	rs80358086	 	Intronic. Source: BIC.
+BRCA1	17	41222939	A	C	SNV	genotype	germline	 	rs80358086	 	Intronic. Source: BIC.
+BRCA1	17	41222941	T	G	SNV	genotype	germline	 	rs80358087	 	Intronic. Source: BIC.
+BRCA1	17	41222941	T	A	SNV	genotype	germline	 	rs80358087	 	Intronic. Source: BIC.
+BRCA1	17	41222942	C	G	SNV	genotype	germline	 	rs80358023	 	Intronic. Source: BIC.
+BRCA1	17	41226345	T	A	SNV	genotype	germline	 	rs80358082	 	Intronic. Source: BIC.
+BRCA1	17	41256281	G	C	SNV	genotype	germline	 	rs80358051	 	Intronic. Source: BIC.
+BRCA1	17	41256976	G	C	SNV	genotype	germline	 	rs80358119	 	Intronic. Source: BIC.
+BRCA1	17	41256984	A	C	SNV	genotype	germline	 	rs80358061	 	Intronic. Source: BIC.
+BRCA1	17	41256985	T	C	SNV	genotype	germline	 	rs80358163	 	Intronic. Source: BIC.
+BRCA1	17	41258470	T	C	SNV	genotype	germline	 	rs80358083	 	Intronic. Source: BIC.
+BRCA1	17	41209164	C	T	SNV	genotype	germline	 	rs80358079	 	Intronic. Source: Mayo.
+BRCA1	17	41267740	T	G	SNV	genotype	germline	 	rs80358064	 	Intronic. Source: Utah.
+BRCA2	13	32950932	A	G	SNV	genotype	germline	 	rs81002893	 	Intronic. Source: Mayo.
+BRCA1	17	41209069	C	T	SNV	genotype	germline	K1759K	rs80356854	 	Silent. Source: BIC. Exon edge splicing
+BRCA1	17	41242961	C	T	SNV	genotype	germline	Q1395Q	rs80356857	 	Silent. Source: BIC. Exon edge splicing
+BRCA1	17	41199660	C	T	SNV	genotype	germline	A1823T	rs80357212	 	Missense. Source: BIC.
+BRCA1	17	41201181	C	A	SNV	genotype	germline	G1788V	rs80357069	 	Missense. Source: BIC.
+BRCA1	17	41201181	C	T	SNV	genotype	germline	G1788D	rs80357069	 	Missense. Source: BIC.
+BRCA1	17	41215920	G	T	SNV	genotype	germline	A1708E	rs28897696	 	Missense. Source: BIC.
+BRCA1	17	41215948	G	A	SNV	genotype	germline	R1699W	rs55770810	 	Missense. Source: BIC.
+BRCA1	17	41219625	C	T	SNV	genotype	germline	D1692N	rs80187739	 	Missense. Source: BIC.
+BRCA1	17	41219625	C	A	SNV	genotype	germline	D1692Y	rs80187739	 	Missense. Source: BIC.
+BRCA1	17	41219625	C	G	SNV	genotype	germline	D1692H	rs80187739	 	Missense. Source: BIC.
+BRCA1	17	41226348	C	T	SNV	genotype	germline	E1559K	rs80356988	 	Missense. Source: BIC.
+BRCA1	17	41226348	C	G	SNV	genotype	germline	E1559Q	rs80356988	 	Missense. Source: BIC.
+BRCA1	17	41228505	C	A	SNV	genotype	germline	R1495M	rs80357389	 	Missense. Source: BIC.
+BRCA1	17	41228505	C	T	SNV	genotype	germline	R1495K	rs80357389	 	Missense. Source: BIC.
+BRCA1	17	41258473	C	T	SNV	genotype	germline	R71K	rs80356913	 	Missense. Source: BIC.
+BRCA1	17	41258474	T	C	SNV	genotype	germline	R71G	rs80357382	 	Missense. Source: BIC.
+BRCA1	17	41258494	C	T	SNV	genotype	germline	C64Y	rs55851803	 	Missense. Source: BIC.
+BRCA1	17	41258504	A	C	SNV	genotype	germline	C61G	rs28897672	 	Missense. Source: BIC.
+BRCA1	17	41276111	C	A	SNV	genotype	germline	M1I	rs80357475	 	Missense. Source: BIC.
+BRCA1	17	41276112	A	G	SNV	genotype	germline	M1T	rs80357111	 	Missense. Source: BIC.
+BRCA1	17	41276112	A	C	SNV	genotype	germline	M1R	rs80357111	 	Missense. Source: BIC.
+BRCA1	17	41276113	T	C	SNV	genotype	germline	M1V	rs80357287	 	Missense. Source: BIC.
+BRCA2	13	32953884	C	G	SNV	genotype	germline	 	rs81002844	 	Intronic. Source: BIC.
+BRCA2	13	32953884	C	T	SNV	genotype	germline	 	rs81002844	 	Intronic. Source: BIC.
+BRCA2	13	32890599	T	G	SNV	genotype	germline	M1R	rs80358547	 	Missense. Source: BIC.
+BRCA2	13	32890600	G	T	SNV	genotype	germline	M1I	rs80358650	 	Missense. Source: BIC.
+BRCA2	13	32890600	G	A	SNV	genotype	germline	M1I	rs80358650	 	Missense. Source: BIC.
+BRCA2	13	32900287	G	A	SNV	genotype	germline	V159M	rs80358702	 	Missense. Source: BIC.
+BRCA2	13	32900750	G	A	SNV	genotype	germline	V211I	rs80358871	 	Missense. Source: BIC.
+BRCA2	13	32900750	G	C	SNV	genotype	germline	V211L	rs80358871	 	Missense. Source: BIC.
+BRCA2	13	32921033	G	A	SNV	genotype	germline	R2336H	rs28897743	 	Missense. Source: BIC.
+BRCA2	13	32921033	G	C	SNV	genotype	germline	R2336P	rs28897743	 	Missense. Source: BIC.
+BRCA2	13	32921033	G	T	SNV	genotype	germline	R2336L	rs28897743	 	Missense. Source: BIC.
+BRCA2	13	32937348	C	T	SNV	genotype	germline	S2670L	rs80359035	 	Missense. Source: BIC.
+BRCA2	13	32950928	G	A	SNV	genotype	germline	E2918E	rs80359803	 	Silent. Source: BIC. Exon edge splicing
+BRCA2	13	32954050	G	A	SNV	genotype	germline	P3039P	rs28897756	 	Silent. Source: BIC. Exon edge splicing
+BRCA2	13	32969070	G	A	SNV	genotype	germline	E3167E	rs80359808	 	Silent. Source: BIC. Exon edge splicing
+ATM	11	108128198	T	G	SNV	genotype	germline				Intronic. PMID:10330348
+ATM	11	108164028	A	G	SNV	genotype	germline				Intronic. PMID:10330348
+ATM	11	108182168	A	G	SNV	genotype	germline				Intronic. PMID:10330348
+ATM	11	108196028	G	A	SNV	genotype	germline				Intronic. PMID:9463314
+ATM	11	108173694	GCTT	G	Deletion	genotype	germline				Inframe del. PMID:9463314
+ATM	11	108151710	T	A	SNV	genotype	germline				Intronic. PMID:9463314
+ATM	11	108179837	A	G	SNV	genotype	germline				Intronic. PMID:9463314
+ATM	11	108199936	CCTTAGG	C	Deletion	genotype	germline				Inframe del. PMID:9463314
+ATM	11	108204668	TGTT	T	Deletion	genotype	germline				Inframe del. PMID:9463314
+ATM	11	108204674	TGTC	T	Deletion	genotype	germline				Inframe del. PMID:9463314
+ATM	11	108202611	CTCTAGAATT	C	Deletion	genotype	germline				Inframe del. PMID:9463314
+ATM	11	108216616	TG	AA	MNV	genotype	germline				Inframe complex SV2855delinsRI. PMID:9463314
+ATM	11	108216616	TG	GA	MNV	genotype	germline				Inframe complex SV2855delinsRI. PMID:9463314
+ATM	11	108186728	TTTCTT	T	Deletion	genotype	germline				c.6096-9del5 Skipping of exon 44 PMID:9887333
+ATM	11	108141876	A	T	SNV	genotype	germline				c.2921+3A>T Skipping of exon 21 PMID:9887333
+EZH2	7	148508727	T	A	SNV	genotype	somatic	Y646F	rs267601394	COSM220731	255 in ClnSNP
+EZH2	7	148508727	T	C	SNV	genotype	somatic	Y646C	 	COSM37032	Not in ClnSNP
+EZH2	7	148508728	A	T	SNV	genotype	somatic	Y646N	 	COSM37031	Not in ClnSNP
+MYD88	3	38182032	C	G	SNV	genotype	somatic	S219C	 	COSM85944	Missed by Compendia's Hotspot
+MYD88	3	38182641	T	C	SNV	genotype	somatic	L265P	rs387907272	COSM85940	255 in ClnSNP
+KRAS	12	25398281	C	*	SNV	rule	somatic	G13			KRAS G13 mutations
+KRAS	12	25398282	C	*	SNV	rule	somatic	G13			KRAS G13 mutations
+KRAS	12	25398284	C	*	SNV	rule	somatic	G12			KRAS G12 mutations
+KRAS	12	25398285	C	*	SNV	rule	somatic	G12			KRAS G12 mutations
+KRAS	12	25380271	C	T	SNV	genotype	somatic	E63K			KRAS E63K mutations
+KRAS	12	25380275	T	G	SNV	genotype	somatic	Q61H			KRAS Q61H mutations
+KRAS	12	25380275	T	A	SNV	genotype	somatic	Q61H			KRAS Q61H mutations
+KRAS	12	25380276	T	*	SNV	rule	somatic	Q61			KRAS Q61 mutations
+KRAS	12	25380277	G	C	SNV	genotype	somatic	Q61E			KRAS Q61E mutations
+KRAS	12	25380277	G	T	SNV	genotype	somatic	Q61K			KRAS Q61K mutations
+EGFR	7	55242454	55242510	3	inframe-del	rule	somatic	Ex19del			EGFR Exon19 deletion
+EGFR	7	55241674	55241688	3	inframe-del	rule	somatic	Ex18del			EGFR Exon18 deletion
+BRAF	7	140477838	140477855	3	inframe-del	rule	somatic	Ex12del			BRAF Exon12 deletion
+EGFR	7	55242436	55242510	6	inframe-ins	rule	somatic	Ex19ins			EGFR Exon19 insertion
+EGFR	7	55248989	55249063	3	inframe-ins	rule	somatic	Ex20ins			EGFR Exon20 insertion
+ERBB2	17	37880978	37881029	3	inframe-ins	rule	somatic	Ex20ins			ERBB2 Exon20 insertion
+MET	7	116411711	116411900	3	del	rule	somatic	Ex14-skipping			MET Intron 13 deletion resulting in exon 14 skipping
+MET	7	116411582	116411707	12	inframe-ins	rule	somatic	MET-ITD			MET Exon 13 ITD
+FLT3	13	28608222	28608351	12	inframe-ins	rule	somatic	FLT3-ITD			FLT3 Exon 14 ITD
+PDGFRA	4	55141011	55141137	12	inframe-ins	rule	somatic	PDGFRA-ITD			PDGFRA Exon 12 ITD
+PDGFRA	4	55152086	55152118	3	inframe-del	rule	somatic	PDGFRA-Exon18del			PDGFRA Exon 18 deletion
+KIT	4	55593582	55593708	3	inframe-del	rule	somatic	KIT-Exon11			KIT Exon 11 indels 
+KIT	4	55593582	55593708	3	inframe-ins	rule	somatic	KIT-Exon11			KIT Exon 11 indels 
+KIT	4	55592177	55592188	3	inframe-ins	rule	somatic	KIT-Exon9ins			KIT Exon 9 insertion 
+BRCA1	17	41267797	CT	C	Deletion	genotype	germline	c.81-2delA			Intronic
+BRCA1	17	41267802	A	T	SNV	genotype	germline	c.81-6T>A			Intronic
+BRCA1	17	41267740	TA	T	Deletion	genotype	germline	c.134+2delT			Intronic
+BRCA1	17	41267736	AACTT	A	Deletion	genotype	germline	c.134+3_134+6del4			Intronic
+BRCA1	17	41256279	CT	C	Deletion	genotype	germline	c.302-2delA			Intronic
+BRCA1	17	41243449	T	C	SNV	genotype	germline	c.4096+3A>G			Intronic
+BRCA1	17	41234415	A	G	SNV	genotype	germline	c.4357+6T>C			Intronic
+BRCA1	17	41234419	AC	A	Deletion	genotype	germline	c.4357+1delG			Intronic
+BRCA1	17	41228503	AC	A	Deletion	genotype	germline	c.4484+1delG			Intronic
+BRCA1	17	41222941	T	C	SNV	genotype	germline	c.4986+4A>G			Intronic
+BRCA1	17	41222940	C	T	SNV	genotype	germline	c.4986+5G>A			Intronic
+BRCA1	17	41219717	A	T	SNV	genotype	germline	c.4987-5T>A			Intronic
+BRCA1	17	41219715	G	C	SNV	genotype	germline	c.4987-3C>G			Intronic
+BRCA1	17	41219622	T	C	SNV	genotype	germline	c.5074+3A>G			Intronic
+BRCA1	17	41215886	C	T	SNV	genotype	germline	c.5152+5G>A			Intronic
+BRCA1	17	41215391	CT	C	Deletion	genotype	germline	c.5153-2delA			Intronic
+BRCA1	17	41215348	AC	A	Deletion	genotype	germline	c.5193+1delG			Intronic
+BRCA1	17	41215347	TA	T	Deletion	genotype	germline	c.5193+2delT			Intronic
+BRCA1	17	41203135	CT	C	Deletion	genotype	germline	c.5278-2delA			Intronic
+BRCA1	17	41203078	AC	A	Deletion	genotype	germline	c.5332+1delG			Intronic
+BRCA1	17	41201217	A	C	SNV	genotype	germline	c.5333-6T>G			Intronic
+BRCA1	17	41201135	T	A	SNV	genotype	germline	c.5406+3A>T			Intronic
+BRCA1	17	41201134	T	C	SNV	genotype	germline	c.5406+4A>G			Intronic
+BRCA1	17	41201133	C	T	SNV	genotype	germline	c.5406+5G>A			Intronic
+BRCA1	17	41201133	C	G	SNV	genotype	germline	c.5406+5G>C			Intronic
+BRCA1	17	41201134	TTAC	T	Deletion	genotype	germline	c.5406+1_5406+3delGTA			Intronic
+BRCA2	13	32893467	G	A	SNV	genotype	germline	c.316+5G>A			Intronic
+BRCA2	13	32893467	G	C	SNV	genotype	germline	c.316+5G>C			Intronic
+BRCA2	13	32900290	A	G	SNV	genotype	germline	c.475+3A>G			Intronic
+BRCA2	13	32900419	G	GG	Insertion	genotype	germline	c.516+1dupG			Intronic
+BRCA2	13	32905167	GG	G	Deletion	genotype	germline	c.793+1delG			Intronic
+BRCA2	13	32915333	GG	G	Deletion	genotype	germline	c.6841+1delG			Intronic
+BRCA2	13	32919384	T	G	SNV	genotype	germline	c.6937+594T>G			Intronic
+BRCA2	13	32918791	GT	G	Deletion	genotype	germline	c.6937+2delT			Intronic
+BRCA2	13	32936651	T	G	SNV	genotype	germline	c.7806-9T>G			Intronic
+BRCA2	13	32937313	TA	T	Deletion	genotype	germline	c.7977-2delA			Intronic
+BRCA2	13	32944697	A	G	SNV	genotype	germline	c.8487+3A>G			Intronic
+BRCA2	13	32950931	G	C	SNV	genotype	germline	c.8754+3G>C			Intronic
+BRCA2	13	32950933	G	A	SNV	genotype	germline	c.8754+5G>A			Intronic
+BRCA2	13	32953872	T	G	SNV	genotype	germline	c.8954-15T>G			Intronic
+BRCA2	13	32953882	A	G	SNV	genotype	germline	c.8954-5A>G			Intronic
+BRCA2	13	32969073	A	T	SNV	genotype	germline	c.9501+3A>T			Intronic
+BRCA1	17	41246029	TCCTTTTACGCTTTAA	T	Deletion	genotype	germline	L502_R506del			InFrame
+BRCA1	17	41245699	TAGA	T	Deletion	genotype	germline	S616del			InFrame
+BRCA1	17	41244899	TGCA	T	Deletion	genotype	germline	C882_A883delins*			InFrame
+BRCA1	17	41244435	TCTTTAA	T	Deletion	genotype	germline	F1036_E1038delins*			InFrame
+BRCA1	17	41243513	TTCA	T	Deletion	genotype	germline	D1344del			InFrame
+BRCA1	17	41242960	CCTG	C	Deletion	genotype	germline	Q1396del			InFrame
+BRCA1	17	41219634	TAAC	T	Deletion	genotype	germline	V1688del			InFrame
+BRCA1	17	41215962	TCAG	T	Deletion	genotype	germline	A1693del			InFrame
+BRCA1	17	41209130	TCTC	T	Deletion	genotype	germline	G1738del			InFrame
+BRCA2	13	32910962	TTAAATG	T	Deletion	genotype	germline	L824_E826delins*			InFrame
+BRCA2	13	32912349	AAAA	A	Deletion	genotype	germline	K1286del			InFrame
+BRCA2	13	32912391	TGAC	T	Deletion	genotype	germline	M1300_T1301delinsI			InFrame
+BRCA2	13	32912395	TACT	T	Deletion	genotype	germline	T1302del			InFrame
+BRCA2	13	32913709	TTTAAGT	T	Deletion	genotype	germline	L1740_S1741del			InFrame
+BRCA2	13	32913790	TAAACTTGAT	T	Deletion	genotype	germline	K1767_D1769del			InFrame
+BRCA2	13	32937567	GCAGACTGACAGTTGG	G	Deletion	genotype	germline	R2744_G2748del			InFrame
+BRCA2	13	32937587	AAGA	A	Deletion	genotype	germline	K2750del			InFrame
+BRCA2	13	32937596	CTTC	C	Deletion	genotype	germline	L2753del			InFrame
+BRCA2	13	32944643	AGGA	A	Deletion	genotype	germline	G2813del			InFrame
+TERT	5	1295228	G	A	SNV	genotype	somatic	c.-124C>T			Promoter
+TERT	5	1295228	G	T	SNV	genotype	somatic	c.-124C>A			Promoter
+TERT	5	1295250	G	A	SNV	genotype	somatic	c.-146C>T			Promoter
+TERT	5	1295242	GG	AA	MNV	genotype	somatic	c.-138CC>TT			Promoter
+TERT	5	1295161	T	G	SNV	genotype	somatic	c.-57A>C			Promoter

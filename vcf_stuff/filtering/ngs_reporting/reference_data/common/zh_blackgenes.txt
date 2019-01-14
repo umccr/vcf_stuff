@@ -1,0 +1,561 @@
+ABCA13	FLAGS
+ABCA4	FLAGS in OMIM/HGMD
+ABCA7	FLAGS
+AHNAK	FLAGS
+AHNAK2	FLAGS
+AKAP13	FLAGS
+ALDH3B1	Incidentalome
+ALMS1	FLAGS in OMIM
+ANK2	MutSigCV
+ANK3	FLAGS in OMIM/HGMD
+##APOB	FLAGS in OMIM/HGMD
+ASPHD1	Incidentalome
+ASPM	FLAGS in OMIM/HGMD
+BSN	FLAGS
+C12orf51	MutSigCV
+C4A	Incidentalome
+CD3EAP	Incidentalome
+CDC27	Incidentalome
+CDH23	FLAGS in OMIM/HGMD
+CELSR1	FLAGS
+CMYA5	FLAGS
+CNTN5	MutSigCV
+CNTNAP2	MutSigCV
+CNTNAP4	MutSigCV
+CNTNAP5	MutSigCV
+COL1A2	MutSigCV
+COL4A2	MutSigCV
+COL6A3	FLAGS in OMIM/HGMD
+COL7A1	FLAGS in OMIM/HGMD
+CSMD1	FLAGS
+CSMD3	MutSigCV
+CUBN	FLAGS in OMIM/HGMD
+DNAH1	FLAGS
+DNAH10	FLAGS
+DNAH11	FLAGS in OMIM
+DNAH17	FLAGS
+DNAH2	FLAGS
+DNAH3	FLAGS
+DNAH5	FLAGS in OMIM/HGMD
+DNAH7	FLAGS
+DNAH8	FLAGS
+DNAH9	FLAGS
+DST	FLAGS in OMIM/HGMD
+DYNC1H1	MutSigCV
+DYNC2H1	FLAGS in OMIM/HGMD
+EPPK1	FLAGS
+EVPL	Incidentalome
+FAM83AG	Incidentalome
+##FAT1	FLAGS
+FAT2	FLAGS
+##FAT3	FLAGS
+FAT4	FLAGS in OMIM
+FBN3	FLAGS
+FCGBP	FLAGS
+FERD3L	Incidentalome
+FKBP15	Incidentalome
+FLG	FLAGS in OMIM/HGMD
+FMNL2	Incidentalome
+FRAS1	FLAGS in OMIM/HGMD
+FREM2	FLAGS in OMIM/HGMD
+FSIP2	MutSigCV
+GBP1	Incidentalome
+GPR98	FLAGS in OMIM/HGMD
+HELZ2	FLAGS
+HERC2	FLAGS in OMIM/HGMD
+HMCN1	FLAGS in OMIM/HGMD
+HOXB1	Incidentalome
+HRNR	FLAGS in OMIM/HGMD
+HSPG2	FLAGS in OMIM/HGMD
+HYDIN	Incidentalome
+IGSF3	Incidentalome
+KCNJ12	Incidentalome
+KHDRBS2	MutSigCV
+##KMT2C	FLAGS (Only partial regions need to be masked)
+##KMT2D	FLAGS (sequence are quite uniq)
+KRT40	Incidentalome
+LAMA1	FLAGS in HGMD
+LAMA2	FLAGS in OMIM/HGMD
+LAMA3	FLAGS in OMIM/HGMD
+LAMA5	FLAGS
+LAMC3	Incidentalome
+LOC165186	Incidentalome
+LOC72775	Incidentalome
+LOC728806	Incidentalome
+LOC73242	Incidentalome
+##LRP1	FLAGS (Sequences are quite uniq)
+##LRP1B	FLAGS (Sequences are quite uniq)
+##LRP2	FLAGS in OMIM/HGMD (Sequences are quite uniq)
+LRRC37A	Incidentalome
+LSR	Incidentalome
+MACF1	FLAGS
+MDN1	FLAGS
+MKI67	FLAGS
+MUC16	FLAGS
+MUC17	FLAGS
+MUC2	FLAGS
+MUC4	MutSigCV
+MUC5B	FLAGS in OMIM
+MUC6	Incidentalome
+MYO15A	FLAGS in OMIM/HGMD
+MYOM2	FLAGS
+NEB	FLAGS in OMIM/HGMD
+NR1H2	Incidentalome
+NRXN1	MutSigCV
+OBSCN	FLAGS
+OR51A2	Incidentalome
+OR51I2	Incidentalome
+OR5T1	MutSigCV
+OTOP1	Incidentalome
+PARK2	MutSigCV
+PAX8	Incidentalome
+PCLO	FLAGS
+PCNT	FLAGS in OMIM/HGMD
+PDE4DIP	FLAGS
+PECAM1	Incidentalome
+PKD1	FLAGS in OMIM/HGMD
+PKD1L1	FLAGS
+PKHD1	FLAGS in HGMD
+PKHD1L1	FLAGS
+PLEC	FLAGS in HGMD
+PRAGMIN	Incidentalome
+PRIM2	Incidentalome
+RAB11FIP1	Incidentalome
+RBM12	Incidentalome
+RNF213	FLAGS in OMIM
+RP1L1	FLAGS in OMIM/HGMD
+RYR1	FLAGS in OMIM/HGMD
+RYR2	MutSigCV
+RYR3	FLAGS
+SACS	FLAGS in OMIM/HGMD
+SEC22B	Incidentalome
+SERINC2	Incidentalome
+SHFM1	MutSigCV
+SPTBN5	FLAGS
+SRRM2	FLAGS
+SSPO	Incidentalome
+STAB1	FLAGS
+STAB2	FLAGS
+SYNE1	FLAGS in OMIM/HGMD
+SYNE2	FLAGS in OMIM
+TACC2	FLAGS
+TDRD3	Incidentalome
+TEP1	FLAGS
+TG	FLAGS in OMIM/HGMD
+TOPORS	Incidentalome
+TTN	FLAGS in OMIM
+UBR4	FLAGS
+USH2A	FLAGS in OMIM/HGMD
+USP42	Incidentalome
+UTRN	FLAGS
+VPS13B	FLAGS in OMIM/HGMD
+VPS13C	FLAGS
+VPS13D	FLAGS
+VWF	FLAGS in OMIM/HGMD
+XIRP2	FLAGS
+ZAN	FLAGS
+ZFHX3	FLAGS in OMIM
+ZNF407	MutSigCV
+MST1	low complexity, entire gene
+MST1L	low complexity, entire gene
+NBPF1	low complexity, entire gene
+NBPF10	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF11	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF12	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF14	low complexity, entire gene
+NBPF15	low complexity, entire gene
+NBPF20	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF24	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF25P	low complexity, entire gene (OVERLAPS MANY GENES)
+NBPF8	low complexity, entire gene
+NBPF9	low complexity, entire gene
+CD160	low complexity, entire gene
+GPR89A	low complexity, entire gene
+GPR89C	low complexity, entire gene
+PDZK1	low complexity, entire gene
+NBPF24	low complexity, entire gene
+NBPF25P	low complexity, entire gene
+RNF115	low complexity in first exon (and 15 kb intron)
+C4B	low complexity entire gene, C4-genes overlap, Chr 6 p 21 duplication
+C4_B2	low complexityentire gene, C4-genes overlap, Chr 6 p 21 duplication
+CYP21A2	low complexity entire gene, Chr 6 p 21 duplication
+CYP21A1P	low complexity entire gene, Chr 6 p 21 duplication
+TNXB	low complexity entire gene, TNXA/B genes overlap, Chr 6 p 21
+duplication
+TNXA	low complexity, TNXA/B genes overlap, Chr 6 p 21 duplication
+KLRC1	low complexity in some exons (paralogs)
+KLRC3	low complexity in some exons (paralogs)
+KLRC4	low complexity in some exons (paralogs)
+CTBP2	low complexity in some exons
+RHD	low complexity in some exons
+OPN1LW	repetitive, low-GC, low complexity, too many COSMIC mutations
+OPN1MW	repetitive, low-GC, low complexity, too many COSMIC mutations
+OPN1SW	repetitive, low-GC, low complexity, too many COSMIC mutations
+OPN3	repetitive, low-GC, too many COSMIC mutations
+OPN4	repetitive, low-GC, too many COSMIC mutations
+OPN5	repetitive, low-GC, too many COSMIC mutations
+PCDHACT	Clustered protocadherin family (chr5 q31)
+PCDHAC1	Clustered protocadherin family (chr5 q31)
+PCDHAC2	Clustered protocadherin family (chr5 q31)
+PCDHA1	Clustered protocadherin family (chr5 q31)
+PCDHA2	Clustered protocadherin family (chr5 q31)
+PCDHA3	Clustered protocadherin family (chr5 q31)
+PCDHA4	Clustered protocadherin family (chr5 q31)
+PCDHA5	Clustered protocadherin family (chr5 q31)
+PCDHA6	Clustered protocadherin family (chr5 q31)
+PCDHA7	Clustered protocadherin family (chr5 q31)
+PCDHA8	Clustered protocadherin family (chr5 q31)
+PCDHA9	Clustered protocadherin family (chr5 q31)
+PCDHA10	Clustered protocadherin family (chr5 q31)
+PCDHA11	Clustered protocadherin family (chr5 q31)
+PCDHA12	Clustered protocadherin family (chr5 q31)
+PCDHA13	Clustered protocadherin family (chr5 q31)
+PCDHA14	Clustered protocadherin family (chr5 q31)
+PCDHB1	Clustered protocadherin family (chr5 q31)
+PCDHB2	Clustered protocadherin family (chr5 q31)
+PCDHB3	Clustered protocadherin family (chr5 q31)
+PCDHB4	Clustered protocadherin family (chr5 q31)
+PCDHB5	Clustered protocadherin family (chr5 q31)
+PCDHB6	Clustered protocadherin family (chr5 q31)
+PCDHB7	Clustered protocadherin family (chr5 q31)
+PCDHB8	Clustered protocadherin family (chr5 q31)
+PCDHB9	Clustered protocadherin family (chr5 q31)
+PCDHB10	Clustered protocadherin family (chr5 q31)
+PCDHB11	Clustered protocadherin family (chr5 q31)
+PCDHB12	Clustered protocadherin family (chr5 q31)
+PCDHB13	Clustered protocadherin family (chr5 q31)
+PCDHB14	Clustered protocadherin family (chr5 q31)
+PCDHB15	Clustered protocadherin family (chr5 q31)
+PCDHB16	Clustered protocadherin family (chr5 q31)
+PCDHB17P	Clustered protocadherin family (chr5 q31)
+PCDHB18P	Clustered protocadherin family (chr5 q31)
+PCDHB19P	Clustered protocadherin family (chr5 q31)
+PCDHGA1	Clustered protocadherin family (chr5 q31)
+PCDHGA2	Clustered protocadherin family (chr5 q31)
+PCDHGA3	Clustered protocadherin family (chr5 q31)
+PCDHGA4	Clustered protocadherin family (chr5 q31)
+PCDHGA5	Clustered protocadherin family (chr5 q31)
+PCDHGA6	Clustered protocadherin family (chr5 q31)
+PCDHGA7	Clustered protocadherin family (chr5 q31)
+PCDHGA8	Clustered protocadherin family (chr5 q31)
+PCDHGA9	Clustered protocadherin family (chr5 q31)
+PCDHGA10	Clustered protocadherin family (chr5 q31)
+PCDHGA11	Clustered protocadherin family (chr5 q31)
+PCDHGA12	Clustered protocadherin family (chr5 q31)
+PCDHGB1	Clustered protocadherin family (chr5 q31)
+PCDHGB2	Clustered protocadherin family (chr5 q31)
+PCDHGB3	Clustered protocadherin family (chr5 q31)
+PCDHGB4	Clustered protocadherin family (chr5 q31)
+PCDHGB5	Clustered protocadherin family (chr5 q31)
+PCDHGB6	Clustered protocadherin family (chr5 q31)
+PCDHGB7	Clustered protocadherin family (chr5 q31)
+PCDHGB8P	Clustered protocadherin family (chr5 q31)
+PCDHGB9P	Clustered protocadherin family (chr5 q31)
+PCDHGCT	Clustered protocadherin family (chr5 q31)
+PCDHGC3	Clustered protocadherin family (chr5 q31)
+PCDHGC4	Clustered protocadherin family (chr5 q31)
+PCDHGC5	Clustered protocadherin family (chr5 q31)
+KRTAP1-1	KRTAP-family, repetitive single exon gene
+KRTAP1-3	KRTAP-family, repetitive single exon gene
+KRTAP1-4	KRTAP-family, repetitive single exon gene
+KRTAP1-5	KRTAP-family, repetitive single exon gene
+KRTAP10-1	KRTAP-family, repetitive single exon gene
+KRTAP10-2	KRTAP-family, repetitive single exon gene
+KRTAP10-3	KRTAP-family, repetitive single exon gene
+KRTAP10-4	KRTAP-family, repetitive single exon gene
+KRTAP10-5	KRTAP-family, repetitive single exon gene
+KRTAP10-6	KRTAP-family, repetitive single exon gene
+KRTAP10-7	KRTAP-family, repetitive single exon gene
+KRTAP10-8	KRTAP-family, repetitive single exon gene
+KRTAP10-9	KRTAP-family, repetitive single exon gene
+KRTAP10-10	KRTAP-family, repetitive single exon gene
+KRTAP10-11	KRTAP-family, repetitive single exon gene
+KRTAP10-12	KRTAP-family, repetitive single exon gene
+KRTAP11-1	KRTAP-family, repetitive single exon gene
+KRTAP12-1	KRTAP-family, repetitive single exon gene
+KRTAP12-2	KRTAP-family, repetitive single exon gene
+KRTAP12-3	KRTAP-family, repetitive single exon gene
+KRTAP12-4	KRTAP-family, repetitive single exon gene
+KRTAP13-1	KRTAP-family, repetitive single exon gene
+KRTAP13-2	KRTAP-family, repetitive single exon gene
+KRTAP13-3	KRTAP-family, repetitive single exon gene
+KRTAP13-4	KRTAP-family, repetitive single exon gene
+KRTAP15-1	KRTAP-family, repetitive single exon gene
+KRTAP16-1	KRTAP-family, repetitive single exon gene
+KRTAP17-1	KRTAP-family, repetitive single exon gene
+KRTAP19-1	KRTAP-family, repetitive single exon gene
+KRTAP19-2	KRTAP-family, repetitive single exon gene
+KRTAP19-3	KRTAP-family, repetitive single exon gene
+KRTAP19-4	KRTAP-family, repetitive single exon gene
+KRTAP19-5	KRTAP-family, repetitive single exon gene
+KRTAP19-6	KRTAP-family, repetitive single exon gene
+KRTAP19-7	KRTAP-family, repetitive single exon gene
+KRTAP19-8	KRTAP-family, repetitive single exon gene
+KRTAP20-1	KRTAP-family, repetitive single exon gene
+KRTAP20-2	KRTAP-family, repetitive single exon gene
+KRTAP20-3	KRTAP-family, repetitive single exon gene
+KRTAP20-4	KRTAP-family, repetitive single exon gene
+KRTAP21-1	KRTAP-family, repetitive single exon gene (low complexity
+region)
+KRTAP21-2	KRTAP-family, repetitive single exon gene
+KRTAP21-3	KRTAP-family, repetitive single exon gene
+KRTAP22-1	KRTAP-family, repetitive single exon gene
+KRTAP22-2	KRTAP-family, repetitive single exon gene
+KRTAP23-1	KRTAP-family, repetitive single exon gene
+KRTAP24-1	KRTAP-family, repetitive single exon gene
+KRTAP25-1	KRTAP-family, repetitive single exon gene
+KRTAP26-1	KRTAP-family, repetitive single exon gene
+KRTAP27-1	KRTAP-family, repetitive single exon gene
+EMCN	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+OVGP1	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC1	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC3A	MUC FAMILY; HUGE GENE, gene fragment (50 kb missing)
+MUC5AC	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC7	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC12	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC13	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC15	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC19	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC20	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC21	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MUC22	MUC FAMILY; HUGE GENE, TOO MANY COSMIC MUTATIONS
+MAGEA1	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA10	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA11	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA12	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA13P	MAGE FAMILY MEMBER; repetitive single exon gene, too many
+COSMIC mutations
+MAGEA2	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA2B	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA3	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA4	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA5	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA6	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA7P	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA8	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA9	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEA9B	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB1	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB10	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB16	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB16	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB17	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB18	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB2	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB3	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB4	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB5	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEB6	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEC1	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEC1	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEC2	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGEC3	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGED1	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGED2	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGED4	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+MAGED4B	MAGE FAMILY MEMBER; repetitive single exon gene, too many COSMIC
+mutations
+USP17L2	USP17-like family, entire gene
+USP17L3	USP17-like family, entire gene
+USP17L4	USP17-like family, entire gene
+USP17L5	USP17-like family, entire gene
+USP17L7	USP17-like family, entire gene
+USP17L8	USP17-like family, entire gene
+USP17L10	USP17-like family, entire gene
+USP17L11	USP17-like family, entire gene
+USP17L12	USP17-like family, entire gene
+USP17L13	USP17-like family, entire gene
+USP17L15	USP17-like family, entire gene
+USP17L17	USP17-like family, entire gene
+USP17L19	USP17-like family, entire gene
+USP17L20	USP17-like family, entire gene
+USP17L24	USP17-like family, entire gene
+USP17L27	USP17-like family, entire gene
+USP17L28	USP17-like family, entire gene
+USP17L30	USP17-like family, entire gene
+POTEA	POTE ankyrin family, low complexity entire gene
+POTEB	POTE ankyrin family, low complexity entire gene
+POTEC	POTE ankyrin family, low complexity entire gene
+POTED	POTE ankyrin family, low complexity entire gene
+POTEE	POTE ankyrin family, low complexity entire gene
+POTEF	POTE ankyrin family, low complexity entire gene
+POTEG	POTE ankyrin family, low complexity entire gene
+POTEH	POTE ankyrin family, low complexity entire gene
+POTEI	POTE ankyrin family, low complexity entire gene
+POTEJ	POTE ankyrin family, low complexity entire gene
+POTEM	POTE ankyrin family, low complexity entire gene
+SSX1	SSX,  low complexity entire gene
+SSX2	SSX,  low complexity entire gene
+SSX3	SSX,  low complexity entire gene
+SSX4B	SSX,  low complexity entire gene
+SSX5	SSX,  low complexity entire gene
+SSX7	SSX,  low complexity entire gene
+PRAMEF1	PRAME family, low complexity entire gene
+PRAMEF2	PRAME family, low complexity entire gene
+PRAMEF3	PRAME family, low complexity entire gene
+PRAMEF4	PRAME family, low complexity entire gene
+PRAMEF5	PRAME family, low complexity entire gene
+PRAMEF6	PRAME family, low complexity entire gene
+PRAMEF8	PRAME family, low complexity entire gene
+PRAMEF9	PRAME family, low complexity entire gene
+PRAMEF10	PRAME family, low complexity entire gene
+PRAMEF11	PRAME family, low complexity entire gene
+PRAMEF12	PRAME family, low complexity, parts of gene
+PRAMEF13	PRAME family, low complexity entire gene
+PRAMEF16	PRAME family, low complexity entire gene
+PRAMEF17	PRAME family, low complexity entire gene
+PRAMEF19	PRAME family, low complexity entire gene
+PRAMEF20	PRAME family, low complexity entire gene
+PRAMEF22	PRAME family, low complexity entire gene
+DEFA1	DEFA family, low complexity entire gene
+DEFA1B	DEFA family, low complexity entire gene
+DEFB4A	DEFB family, low complexity entire gene
+DEFB4B	DEFB family, low complexity entire gene
+DEFB103A	DEFB family, low complexity entire gene
+DEFB104B	DEFB family, low complexity entire gene
+DEFB105A	DEFB family, low complexity entire gene
+DEFB106A	DEFB family, low complexity entire gene
+DEFB107A	DEFB family, low complexity entire gene
+DEFB107B	DEFB family, low complexity entire gene
+DEFB108B	DEFB family, low complexity entire gene
+DEFB130	DEFB family, low complexity entire gene
+DEFB131	DEFB family, low complexity entire gene
+ANKRD18A	Ankyrin family, low complexity entire gene
+ANKRD18B	Ankyrin family, low complexity entire gene
+ANKRD20A3	Ankyrin family, low complexity entire gene
+ANKRD20A4	Ankyrin family, low complexity entire gene
+ANKRD30BL	Ankyrin family, low complexity entire gene
+ANKRD30A	Ankyrin family, low complexity most of gene
+ANKRD30B	Ankyrin family, low complexity most of gene
+ANKRD49	Ankyrin family, low complexity parts of gene
+ANKRD62	Ankyrin family, low complexity parts of gene
+AGAP4	AGAP, low complexity entire gene
+AGAP5	AGAP, low complexity entire gene
+AGAP6	AGAP, low complexity entire gene
+AGAP7	AGAP, low complexity entire gene
+AGAP8	AGAP, low complexity entire gene
+AGAP9	AGAP, low complexity entire gene
+AGAP10	AGAP, low complexity entire gene
+AGAP11	AGAP, low complexity entire gene
+GOLGA6A	GOLGA6 golgin,  low complexity entire gene
+GOLGA6B	GOLGA6 golgin,  low complexity entire gene
+GOLGA6C	GOLGA6 golgin,  low complexity entire gene
+GOLGA6D	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L1	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L4	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L6	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L9	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L10	GOLGA6 golgin,  low complexity entire gene
+GOLGA6L2	GOLGA6 golgin,  low complexity parts of gene
+GOLGA8A	GOLGA8 golgin,  low complexity entire gene
+GOLGA8B	GOLGA8 golgin,  low complexity entire gene
+GOLGA8C	GOLGA8 golgin,  low complexity entire gene
+FCGR1A	FCGR family member, low complexity, entire gene
+FCGR1B	FCGR family member, low complexity, entire gene
+FCGR2A	FCGR family member, low complexity, entire gene
+FCGR2B	FCGR family member, low complexity, entire gene
+FCGR3A	FCGR family member, low complexity, entire gene
+FCGR3B	FCGR family member, low complexity, entire gene
+BAGE	low complexity, whole gene, paralogs
+BAGE2	low complexity, whole gene, paralogs
+BAGE3	low complexity, whole gene, paralogs
+BAGE4	low complexity, whole gene, paralogs
+BAGE5	low complexity, whole gene, paralogs
+TPTE	low complexity, whole gene
+WASH1	low complexity, whole gene
+FLG2	repetitive gene, filaggrin family
+FRG1	FSHD region, low complexity entire gene
+FRG2B	FSHD region, low complexity entire gene
+DUX2	DUX homeobox, low complexity entire gene, high GC
+DUX4	DUX homeobox, low complexity entire gene, high GC
+DUX4L3	DUX homeobox, low complexity entire gene, high GC
+DUX4L4	DUX homeobox, low complexity entire gene, high GC
+DUX4L5	DUX homeobox, low complexity entire gene, high GC
+DUX4L6	DUX homeobox, low complexity entire gene, high GC
+MYH1	myosin heavy, low complexity parts of gene
+MYH2	myosin heavy, low complexity parts of gene
+MYH3	myosin heavy, low complexity parts of gene
+MYH4	myosin heavy, low complexity parts of gene
+MYH6	myosin heavy, low complexity parts of gene
+MYH7	myosin heavy, low complexity parts of gene
+MYH8	myosin heavy, low complexity parts of gene
+TVP23C	low complexity, 17p2
+CDRT1	low complexity, 17p2, duplicated region
+TRIM16	low complexity entire gene, 17p2
+ZNF286A	low complexity, 17p2
+TBC1D26	low complexity, 17p2
+TRIM16L	low complexity,  entire gene
+TRIM51	low complexity,  entire gene
+PSG2	PSG family, low complexity, entire gene
+PSG3	PSG family, low complexity, entire gene
+PSG4	PSG family, low complexity, entire gene
+PSG5	PSG family, low complexity, entire gene
+PSG6	PSG family, low complexity, entire gene
+PSG7	PSG family, low complexity, entire gene
+PSG8	PSG family, low complexity, entire gene
+PSG9	PSG family, low complexity, entire gene
+PSG11	PSG family, low complexity, entire gene
+CD177	low complexity, most of gene
+ACER2	most exons low complexity
+AKR1B10	most exons low complexity
+AMOT	simple repeat chrX:112,022,477-112,022,758
+OBP2A	most exons low complexity
+OBP2B	most exons low complexity
+PRSS1	most exons low complexity
+TYRO3	processed pseudogene in some person
+RBMX	low complexity
+CRIPAK	low complexity
+CYP2D6	low complexity
+PRK	low complexity
+ZNF676	low complexity
+HS6ST1	low complexity
+(^OR1[A-Z])	Olfactory receptors, family 1
+(^OR2[A-Z])	Olfactory receptors, family 2
+(^OR3[A-Z])	Olfactory receptors, family 3
+(^OR4[A-Z])	Olfactory receptors, family 4
+(^OR5[A-Z])	Olfactory receptors, family 5
+(^OR6[A-Z])	Olfactory receptors, family 6
+(^OR7[A-Z])	Olfactory receptors, family 7
+(^OR8[A-Z])	Olfactory receptors, family 8
+(^OR9[A-Z])	Olfactory receptors, family 9
+(^OR10[A-Z])	Olfactory receptors, family 10
+(^OR11[A-Z])	Olfactory receptors, family 11
+(^OR12[A-Z])	Olfactory receptors, family 12
+(^OR13[A-Z])	Olfactory receptors, family 13
+(^OR14[A-Z])	Olfactory receptors, family 14
+(^OR51[A-Z])	Olfactory receptors, family 51
+(^OR52[A-Z])	Olfactory receptors, family 52
+(^OR55[A-Z])	Olfactory receptors, family 55
+(^OR56[A-Z])	Olfactory receptors, family 56

@@ -1,0 +1,412 @@
+## The file is collection of known function mutations or known polymorphism
+## Those genes start with ^ will be considered as common variants and filtered
+## out.  Those genes start with "#" will be treated as VUS
+AKT1	E17K	somatic
+AKT2	E17K	somatic
+AKT3	E17K	somatic
+JAK1	S703I	somatic
+JAK1	S729C	somatic
+JAK2	V617F	somatic
+JAK2	D319N	somatic
+FLT3	D835	somatic	mycancergenome
+^FLT3	D835D	filter	
+FLT3	I836	somatic	mycancergenome
+^FLT3	I836I	filter	
+BRAF	V600E	somatic
+BRAF	V600K	somatic
+BRAF	V600G	somatic
+BRAF	V600R	somatic
+BRAF	V600E	somatic
+BRAF	V600D	somatic
+BRAF	K601E	somatic
+BRAF	D594N	somatic
+BRAF	D594H	somatic
+BRAF	D594G	somatic
+BRAF	D594V	somatic
+BRAF	D594E	somatic
+BRAF	L597V	somatic
+BRAF	L597S	somatic
+BRAF	L597Q	somatic
+BRAF	L597R	somatic
+KRAS	G12	somatic
+KRAS	G13	somatic
+^KRAS	G12G	somatic
+^KRAS	G13G	somatic
+KRAS	Q61	somatic
+^KRAS	Q61Q	somatic
+KRAS	Q63K	somatic
+KRAS	K117N	somatic
+KRAS	A146P	somatic
+KRAS	A146T	somatic
+KRAS	A146V	somatic
+NRAS	G12	somatic
+NRAS	G13	somatic
+^NRAS	G12G	somatic
+^NRAS	G13G	somatic
+NRAS	Q61	somatic
+^NRAS	Q61Q	somatic
+NRAS	Q63K	somatic
+HRAS	G12	somatic
+HRAS	G13	somatic
+^HRAS	G12G	somatic
+^HRAS	G13G	somatic
+HRAS	Q61	somatic
+^HRAS	Q61Q	somatic
+HRAS	Q63K	somatic
+EGFR	A289	somatic
+^EGFR	A289A	somatic
+EGFR	G598V	somatic
+EGFR	S492R	somatic
+EGFR	G719	somatic
+^EGFR	G719G	somatic
+EGFR	L858R	somatic
+EGFR	L861Q	somatic
+EGFR	T790M	somatic
+EGFR	C797S	somatic
+PIK3CA	N345K	somatic
+PIK3CA	C420R	somatic
+PIK3CA	E453K	somatic
+PIK3CA	E542K	somatic
+PIK3CA	E545	somatic
+PIK3CA	Q546	somatic
+PIK3CA	D549N	somatic	mycancergenome (Kang, Bader, and Vogt 2005)
+PIK3CA	M1043V	somatic
+PIK3CA	H1047R	somatic
+PIK3CA	H1047L	somatic
+PIK3CA	H1047Y	somatic
+PIK3CA	G1049R	somatic
+^PIK3CA	K733R	1	common germline SNP
+ERBB2	S310F	somatic
+ERBB2	L755	somatic
+ERBB2	R678Q	somatic
+ERBB2	V842I	somatic
+PTEN	R159S	somatic	mycancergenome
+PTEN	R130Q	somatic	mycancergenome
+PTEN	R130G	somatic	mycancergenome
+PTEN	R130L	somatic	mycancergenome
+PTEN	R130P	somatic	mycancergenome
+PTEN	C124R	somatic	mycancergenome
+PTEN	C124S	somatic	mycancergenome
+PTEN	G129E	somatic	mycancergenome
+PTEN	G129V	somatic	mycancergenome
+PTEN	G129R	somatic	mycancergenome
+PTEN	R173C	somatic	mycancergenome
+PTEN	C124R	somatic	mycancergenome
+PTEN	C124S	somatic	mycancergenome
+PTEN	A34D	somatic	PMID: 21828076, PMID: 25875300
+PTEN	A39P	somatic	PMID: 25527629
+PTEN	A121E	somatic	PMID: 21828076
+PTEN	A121P	somatic	PMID: 10866302
+PTEN	A126D	somatic	PMID: 21828076
+PTEN	A126S	somatic	PMID: 21828076
+PTEN	A126V	somatic	PMID: 21828076
+PTEN	A126G	somatic	PMID: 26504226
+PTEN	C105F	somatic	PMID: 9823298
+ATM	M1T	somatic ClinVar
+ATM	M1	somatic Start loss
+ATM	M1?	somatic Start loss
+ATM	R337C	somatic
+ATM	R337H	somatic
+ATM	R337S	somatic
+ATM	D2870A	somatic	Kinase dead http://www.uniprot.org/uniprot/Q13315
+ATM	N2875K	somatic	Kinase dead http://www.uniprot.org/uniprot/Q13315
+ATM	N2875S	somatic	Likely Kinase dead, observed in TCGA prostate
+ATM	R2032K	germline	ClinVar
+ATM	R2227C	germline	ClinVar
+ATM	V2424G	germline	ClinVar
+ATM	G2695S	somatic	PMID: 11805335
+ATM	S2592C	somatic	PMID:18568480
+ATM	SRI2546del	germline	PMID:18568480,11805335
+ATM	S2546_I2548del	germline	PMID:18568480,11805335
+ATM	RIS2547del	germline	PMID:18568480,11805335
+ATM	R2547_S2549del	germline	PMID:18568480,11805335
+ATM	G2765S	germline	ClinVar
+ATM	V2716A	germline	PMID: 11805335
+ATM	R2832C	germline	ClinVar
+ATM	R2849P	germline	PMID: 11805335
+ATM	S2855_V2856delinsRI	germline	ClinVar
+ATM	SV2855RI	germline	ClinVar
+ATM	G2867R	germline	PMID: 11805335
+ATM	G2867E	germline	https://ash.confex.com/ash/2010/webprogram/Paper30544.html
+ATM	D2016G	germline
+ATM	Y2470D	germline
+ATM	R3008C	germline	ClinVar
+ATM	R3008H	germline	ClinVar
+ATM	V2662del	germline
+ATM	R250Q	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+#ATM	G2023R	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy, G2023 is not conserved
+#ATM	T2396S	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	N2435K	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	R2854C	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	R3008H	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	D2597Y	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy, affecting splicing
+ATM	P292L	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	H1083R	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	T1953I	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	D2016G	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	R2227C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	V2424G	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	L2656P	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	Y2677C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	R2832C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	A2622V	germline	PMID: 10330348
+ATM	K750K	germline	PMID: 10330348
+ATM	K1192K	germline	PMID: 10330348
+ATM	A2067D	germline	PMID: 25077176
+ATM	P292L	germline	PMID: 9463314
+#ATM	N768D	germline	PMID: 9463314, N768 is not conserved
+ATM	L1001Q	germline	PMID: 9463314
+#ATM	S1691R	germline	PMID: 9463314, S1691 is not conserved
+ATM	T1743I	germline	PMID: 9463314
+ATM	LR2427del	germline	PMID: 9463314
+ATM	AF1812delinsV	germline	PMID: 9463314
+#ATM	H2554D	germline	PMID: 9463314, H2554 is not conserved
+ATM	E2668G	germline	PMID: 9463314
+ATM	F2827C	germline	PMID: 9463314
+ATM	R2642S	germline	PMID: 9443866
+ATM	T2666N	germline	ClinVar.  Only submission as likely pathogenic.  T2666 is conserved.
+FGFR2	S252W	somatic
+FGFR2	N549H	somatic
+FGFR2	N549K	somatic
+FGFR3	S249C	somatic
+FGFR3	R248C	somatic
+FGFR3	G370C	somatic
+FGFR3	Y373C	somatic
+FGFR3	S371C	somatic
+FGFR3	G380R	somatic
+IDH1	R132	somatic
+IDH2	R140	somatic
+IDH2	R172	somatic
+FGFR2	C382R	somatic
+FGFR3	S249C	somatic	http://www.nature.com/onc/journal/v19/n48/full/1203934a.html
+ESR1	S463P	somatic	mycancergenome (Toy et al. 2013)
+ESR1	V534E	somatic	mycancergenome (Toy et al. 2013)
+ESR1	P535H	somatic	mycancergenome (Toy et al. 2013)
+ESR1	L536Q	somatic	mycancergenome (Robinson et al. 2013)
+ESR1	L536R	somatic	mycancergenome (Toy et al. 2013)
+ESR1	Y537	somatic
+ESR1	D538G	somatic
+GNAQ	Q209P	somatic
+GNAQ	Q209L	somatic
+GNA11	Q209L	somatic
+SF3B1	R625	somatic	
+^SF3B1	R625R	filter	
+BRCA2	E2663K	5
+BRCA1	M18T	4
+BRCA1	L22S	5
+BRCA1	T37K	5
+BRCA1	C39R	5
+BRCA1	C44S	5
+BRCA1	C44Y	5
+BRCA1	C61G	5
+BRCA1	R1495M	5
+BRCA1	T1685A	5
+BRCA1	T1685I	5
+BRCA1	V1688del	5
+BRCA1	M1689R	4
+BRCA1	R1699Q	5
+BRCA1	R1699W	5
+BRCA1	G1706E	5
+BRCA1	A1708E	5
+BRCA1	S1715R	5
+BRCA1	G1738R	5
+BRCA1	L1764P	5
+BRCA1	I1766S	5
+BRCA1	M1775K	5
+BRCA1	M1775R	5
+BRCA1	C1787S	5
+BRCA1	G1788V	5
+BRCA1	V1838E	5
+BRCA2	W2626C	5
+BRCA2	I2627F	5
+BRCA2	L2647P	4
+BRCA2	L2653P	5
+BRCA2	R2659K	5
+BRCA2	E2663V	5
+BRCA2	T2722R	5
+BRCA2	D2723H	5
+BRCA2	D2723G	5
+BRCA2	G2748D	5
+BRCA2	R3052W	5
+BRCA2	D3095E	4
+BRCA1	L1786P	4	http://www.nature.com/ncomms/2015/151209/ncomms10086/fig_tab/ncomms10086_F6.html
+BRCA1	T1685I	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1685A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1689R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1691K	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1691I	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1708V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1708E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1714G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1715R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1715N	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1718C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1718S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1722F	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1736G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1738E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1738R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739Y	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	P1749R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1751P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1752P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1753T	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	F1761S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1763V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	L1764P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	I1766S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	L1780P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1788V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1838E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1841N	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1841R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	Y1853C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1700A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1713A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1775R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1775K	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1656D	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1655F	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1699L	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1696L	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1706E	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	H1746N	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837G	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1843P	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA2	G2609D	4	http://europepmc.org/articles/PMC3537884
+BRCA2	W2626C	5	http://europepmc.org/articles/PMC3537884
+BRCA2	I2627F	5	http://europepmc.org/articles/PMC3537884
+BRCA2	L2647P	4	http://europepmc.org/articles/PMC3537884
+BRCA2	L2653P	5	http://europepmc.org/articles/PMC3537884
+BRCA2	L2688P	4	http://europepmc.org/articles/PMC3537884
+BRCA2	T2722R	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D2723G	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D2723H	5	http://europepmc.org/articles/PMC3537884
+BRCA2	G2748D	5	http://europepmc.org/articles/PMC3537884
+BRCA2	R3052W	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D3095E	4	http://europepmc.org/articles/PMC3537884
+BRCA2	N3124I	4	http://europepmc.org/articles/PMC3537884
+BRCA1	C44F	5	http://www.kconfab.org/Progress/Mutations.aspx
+BRCA1	R1495T	5	http://www.kconfab.org/Progress/Mutations.aspx
+BRCA1	C64R	5	http://www.ganjoho.org/knowledge/oncoloplan/breast/14th_Nakamura.pdf
+BRCA1	C24Y	5	http://www.ganjoho.org/knowledge/oncoloplan/breast/14th_Nakamura.pdf
+BRCA1	A1623G	4	http://www.sciencedirect.com/science/article/pii/S0002929707638658; CLINVITAE_BRCA1
+BRCA1	G1803A	4	http://www.plosone.org/article/fetchObject.action?uri=info:doi/10.1371/journal.pone.0050800&representation=PDF
+^BRCA1	E1346K	2	Germline, sometimes lost in tumor
+CDKN2A	H83	somatic	Hotspot
+CDKN2A	D84	somatic	Hotspot
+CDKN2A	D108	somatic	Hotspot
+CDKN2A	P114	somatic	Hotspot
+^CDKN2A	H83H	somatic	Hotspot
+^CDKN2A	D84D	somatic	Hotspot
+^CDKN2A	D108D	somatic	Hotspot
+^CDKN2A	P114P	somatic	Hotspot
+KIT	W557	somatic	Hotspot
+KIT	V559	somatic	Hotspot
+KIT	V560	somatic	Hotspot
+^KIT	W557W	somatic	Hotspot
+^KIT	V559V	somatic	Hotspot
+^KIT	V560V	somatic	Hotspot
+KIT	L576P	somatic	Hotspot
+KIT	D816H	somatic	mycancergenome (AML)
+KIT	D816Y	somatic	mycancergenome (AML)
+KIT	D816I	somatic	mycancergenome (AML)
+KIT	D816V	somatic	mycancergenome (AML)
+ROS1	G2032R	somatic	Resistant
+^DPYD	R29C	1	Common germline SNP
+^IL7R	V138I	1	Common germline SNP
+^IL7R	I66T	1	Common germline SNP
+^CYP2D6	C296R	1	Common germline SNP
+^CYP2D6	P34S	1	Common germline SNP
+^FGFR4	G388R	1	Common germline SNP
+^NQO1	P187S	1	Common germline SNP
+^CASP8	D344H	1	Common germline SNP
+^KDM6A	T778K	1	Common germline SNP
+^BRD4	P759P	1	Artifact in high GC region
+^BRD4	P978P	1	Artifact in high GC region
+^BRD4	P961P	1	Artifact in high GC region
+^BRD4	L958P	1	Artifact in high GC region
+^ERCC5	G1080R	1	Common germline SNP
+^PRSS1	A16V	1	Artifact in low complexity region
+^PRSS1	N54S	1	Artifact in low complexity region
+^PCSK9	L22dup	1	Common in a stretch of 8 CTG repeats
+^PCSK9	L22del	1	Common in a stretch of 8 CTG repeats
+PCSK9	L108R	5	Germline, High LDL PMID: 26503796
+PCSK9	S127R	5	Germline, High LDL PMID: 26503796
+PCSK9	D129G	5	Germline, High LDL PMID: 26503796
+PCSK9	R215H	5	Germline, High LDL PMID: 26503796
+PCSK9	F216L	5	Germline, High LDL PMID: 26503796
+PCSK9	R218S	5	Germline, High LDL PMID: 26503796
+PCSK9	R357H	5	Germline, High LDL PMID: 26503796
+PCSK9	D374Y	5	Germline, High LDL PMID: 26503796
+PCSK9	D374H	5	Germline, High LDL PMID: 26503796
+PCSK9	R496W	5	Germline, High LDL PMID: 26503796
+PCSK9	R46L	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	R93C	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	G106R	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	Q152H	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	G236S	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	R237W	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	L253F	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	N354I	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	A443T	5	Germline, Low LDL, protective PMID: 26503796
+PCSK9	S462P	5	Germline, Low LDL, protective PMID: 26503796
+^RBMX	G356W	1	Artifact in low complexity
+^RBMX	G196E	1	Artifact in low complexity
+^RBMX	Y214*	1	Artifact in low complexity
+^NCOR1	R190*	1	Artifact from pseudogene resolved in hg38
+^NCOR1	E191K	1	Artifact from pseudogene resolved in hg38
+^NCOR1	K178N	1	Artifact from pseudogene resolved in hg38
+^NCOR1	G5V	1	Artifact from pseudogene resolved in hg38
+^NCOR1	Y20S	1	Artifact from pseudogene resolved in hg38
+^CHEK2	I200T	2	Germline VUS, not a conserved residue
+^CHEK2	I157T	2	Germline VUS, not a conserved residue
+^CHEK2	R181H	2	Germline, not a conserved residue
+^NOTCH2	C19W	3	Imcomplete reference in hg19.  Fixed in hg38
+^NOTCH2	N46S	1	Common germline SNP
+^NOTCH2	E38K	1	Common germline SNP
+DNMT3A	R882	somatic	mycancergenome
+^DNMT3A	R882R	somatic	mycancergenome
+^DNMT3A	R882R	1	synonymous
+^FANCD2	N405S	2	Artifact in low complexity
+^PTPN11	S189A	2	Artifact (pseudogene?)
+^PTPN11	Y197*	2	Artifact (pseudogene?)
+^PARP4	T1170I	2	Artifact (pseudogene?)
+^PARP4	V1065A	2	Artifact (pseudogene?)
+^PARP4	Q1059R	2	Artifact (pseudogene?)
+^PARP4	L694R	2	Artifact (pseudogene?)
+^PARP4	Q691R	2	Artifact (pseudogene?)
+^SPEN	T3246P	2	Artifact in high GC region
+^MAP3K1	T949del	2	Likely either a germline or artifact with high prevalence
+^H3F3A	A115G	2	Likely an artifact with high prevalence and typically low AF
+^ETV5	H179P	2	Likely an artifact with high prevalence in a high GC region
+MYD88	L265P	somatic	Known
+MYD88	S243N	somatic	Known
+MYD88	M232T	somatic	Known
+MYD88	S219C	somatic	Known
+CD79B	Y196	somatic	Known
+^CD79B	Y196Y	1	Synonymous
+MET	D1228	5	Acquired resistance to savolitinib. Disrupts salt bridge to K1110.  DOI: 10.1158/2159-8290.CD-16-0686
+MET	D1228D	1	Synonymous
+MET	M1131T	somatic	Activating mutation
+^PALB2	Q559R	2	Common germline SNP at 15%.  Mistaken as likely due to COSMIC having 10 records.
+AR	L702H	4	Likely activating and linked to abiraterone resistance
+^PMS2	G857A	1	A benign variant with MAF=0.37, misclassified by COSMIC as frequent hotspot somatic
+^ARID1B	S320G	2	Artifact
+^ARID1B	A331G	2	Artifact
+^ARID1B	Q120Q	2	Artifact
+^ARID1B	Q122Q	2	Artifact
+^ARID1B	A460G	2	Artifact
+TP53	E224D	4	Splicing aberrations supported by RNA-seq
+TP53	E224E	4	Splicing aberrations supported by RNA-seq
+TP53	S261T	4	Splicing aberrations supported by RNA-seq
+TP53	T125T	4	Splicing aberrations supported by RNA-seq
+TP53	G187R	4	Splicing aberrations supported by RNA-seq
+TP53	A307V	4	Splicing aberrations supported by RNA-seq
+TP53	Q331H	4	Splicing aberrations supported by RNA-seq
+TP53	Q331Q	4	Splicing aberrations supported by RNA-seq

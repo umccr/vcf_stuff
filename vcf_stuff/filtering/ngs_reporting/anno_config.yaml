@@ -1,0 +1,35 @@
+blacklist:
+  genes:
+  - published
+  - abnormal_gc
+  - low_complexity
+  - repetitive_single_exome
+  - too_many_cosmic_mutations
+  regions:
+  - bad_promoter  # Anecdotal results suggested that many transcription start sites or first exons
+                  # in the human genome tend to have poor coverage. By a systematic analysis of
+                  # these regions we defined the 1,000 with the lowest relative coverage based on
+                  # low coverage by an Illumina data set, which we term the 'bad promoters' list
+                  # (see Materials and methods). The bad promoters are, like many exons, GC-rich
+                  # (averaging 79% GC composition).
+  - gc0to15
+  - gc15to20
+  - gc20to25
+  - gc25to30
+  - gc65to70
+  - gc70to75
+  - gc75to80
+  - gc80to85
+  - gc85to100
+  - low_complexity_lt51bp     # Homopolymers, STRs, VNTRs and other repetitive sequences. These were
+  - low_complexity_51to200bp  # compiled from TRDB along with a custom script to find repeat regions
+  - low_complexity_gt200bp
+  - repeats
+  - self_chain
+  - heng_universal_mask       # Variants in the unmasked regions are
+                              # supposed to be highly accurate even without sophisticated filtering. This mask
+                              # is made from three separate masks: compositional mask (low-complexity by mDUST
+                              # and from UCSC repeatMasker plus flanking regions), structural mask (HWE+depth
+                              # mask from 1000g plus flanking regions) and 75bp mappability mask. The integrated
+                              # mask is um75-hs37d5.bed.gz. Note that this mask is specific to hs37d5 because
+                              # 1000g mapped reads to this genome.

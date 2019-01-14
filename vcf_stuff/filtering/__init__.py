@@ -7,3 +7,11 @@ def package_path():
 
 def get_gnomad_lua():
     return join(package_path(), 'anno_gnomad.lua')
+
+
+def add_cyvcf2_filter(rec, filt):
+    filters = rec.FILTER.split(';') if rec.FILTER else []
+    filters.append(filt)
+    f = ';'.join(filters)
+    rec.FILTER = str(f)
+    return rec

@@ -1,0 +1,41 @@
+Gene 	Chr	Start	Ref	Alt	Protein_Change	dbSNP	COSMIC	Note
+BARD1	chr2	214767531	CA	TG	HV506HM	 	 	Common germline variant
+BRCA1	chr17	43067614	T	G	K1711Q	rs397507239	 	Common germline variant; another rs397507239 T>A, K1711* is significant
+BRCA1	chr17	43071077	T	C	S1634G	rs1799966	 	Commone germline variant
+BRCA2	chr13	32332592	A	C	N372H	rs144848	COSM147663	 
+BRCA2	chr13	32398489	A	T	K3326*	rs11571833	 	Common germline variant, not clinically significant. Source: BIC
+BRCA2	chr13	32338940	G	A	rs28897728	COSM946807	 	Not clinically significant. Source: BIC
+BRCA2	chr13	32340678	G	A	rs35029074	 		Not clinically significant. Source: IARC
+FANCA	chr16	89748744	G	A	S1088F	rs17233497	COSM1579580	Common germline variant, not somatic
+FANCF	chr11	22625254	G	A	A186V	rs113910234	COSM1321727	Common germline variant, not somatic
+PARP4	chr13	24426479	C	G	A1656P	rs7571	COSM147645	Common germline variant, not somatic
+PARP4	chr13	24453606	AT	GC	M936A	 	 	Common germline variant
+PMS2	chr7	6006003	T	C	I18V	rs63750123	COSM601786	Common germline variant, not somatic
+PRKDC	chr8	47893255	A	AG	-1243?	rs11411516	 	Common germline variant, likely reference assembly error
+RAD52	chr12	914052	G	T	S346*	rs4987207	 	Common germline variant
+ATM	chr11	108244022	G	A	R189K	rs79075295	COSM304070	Likely common germline or sequencing error
+CRIPAK	chr4	1394969	T	C	M153T	rs138170890	COSM225540	Common germline variant
+CRIPAK	chr4	1395029	C	G	P173R	rs200606324	COSM1427144	Common germline variant and likely a homolog misalignment
+CRIPAK	chr4	1395031	T	C	C174R	rs144797159	COSM1427145	Common germline variant and likely a homolog misalignment
+CRIPAK	chr4	1395217	T	C	C236R	rs71614970	COSM1567004	Common germline variant and likely a homolog misalignment
+CD3EAP	chr19	45409231	CAAG	C	K430del	rs35729377	COSM1481223	Common germline variant
+FANCD2	chr3	10046615	CACCAATACTCAGACAAAGAAGTACATTGACAGGGTGCTAAGAAA	TACCAATACCCAGACAAAGAAGTACATTGACAGGGTGCTAAGAAG	N405S			Common germline variant
+CCND3	chr6	41936044	AG	CA	S259A			Common germline variant
+FANCD2	chr3	10046720	CTTAGTAAG	TTTAT	splice			Liely an artifact due to low complexity
+FANCD2	chr3	10046720	CTTAGTA	TTT	splice			Liely an artifact due to low complexity
+FANCD2	chr3	10046724	GTAAG	T	splice			Liely an artifact due to low complexity
+NOTCH4	chr6	32223881	TAGC	T	L16del	rs67193181;rs35795312	COSM451259	Common germline variant, with 10 3nt MSI
+ALK	chr2	29222326	G	A	c.3515+18C>T	rs79325200	COSM28496	Common germline variant, but has 5 entries in COSMIC from only 1 study
+PTEN	chr10	87960876	C	CT	c.1321-3dupT	rs762344516		Common germline variant in poly-T of 15
+PTEN	chr10	87960876	C	CTT	c.1321-4_1321-3dupTT	rs762344516		Common germline variant in poly-T of 15
+HNF1A	chr12	120999579	A	G	S574G	rs1169305	COSM4445211	Common germline variant
+ARID1A	chr1	26773690	CGCA	C	Q1334del	rs374564889	COSM298325	Common germline variant with 8 GCA
+ARID1A	chr1	26773690	C	CGCA	Q1334dup	rs570962335	COSM1341408	Common germline variant with 8 GCA
+APOBR	chr16	28496076	TGGGACAGCCTCAGGAGGGGAGGAGGCC	T	E361_G369del	rs148114931	COSM1377134	Likely a mis-alignment
+FANCL	chr2	58159793	G	GTAAT	T367fs	rs759217526		A common SNP at the end of FANCL
+NOTCH2	chr1	120069388	CGG	C	P6fs	rs372504208	COSM132830	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+BCR	chr22	23653975	T	TCCGG	V1094fs	rs372013175		An alignment from othter region (incomplete reference)
+TSC2	chr16	2087923	TCCCTGCAGTGCAGGAAAGGTAGGGCCGGGTGGGG	T	S1684_D1690delinsY	rs137854209		A 34bp benign tandem repeat (1,2,3 copies)
+TSC2	chr16	2087923	T	TCCCTGCAGTGCAGGAAAGGTAGGGCCGGGTGGGG			A 34bp benign tandem repeat (1,2,3 copies)
+TSC2	chr16	2087923	T	TCCCTGCAGTGCAGGAAAGGTAGGGCCGCAGGAAAGGTAGGGCCGGGTGGGG			A 34bp benign tandem repeat (1,2,3 copies) (Bug in VarDict, Should be fixed.  Added for compatibility.)
+NDUFAF6	chr8	95035578	T	TA	c.420+2_420+3insA	rs34960210		A very common A insertion in a stretch of 14 poly-A.  MAF=0.36

@@ -1,0 +1,12 @@
+# If a novel variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples,
+# it will be to be considered too common to be functional and filtered out.
+# Don't use it if the cohort is homogeneous! Use only for heterogeneous cohorts.
+max_ratio:      0.4
+max_sample_cnt: 5
+
+min_freq:       0.005  # -f
+                       # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                       # likely false poitive, unless it is actionable.
+act_min_freq:   0.002  # -F
+                       # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
+                       # Default: 0.01 or half [min_freq], whichever is less.

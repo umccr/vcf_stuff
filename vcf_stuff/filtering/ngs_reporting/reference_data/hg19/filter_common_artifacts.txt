@@ -1,0 +1,56 @@
+## Lines start with "##" will be treated as comments and ignored
+##Gene 	Chr	Start	Ref	Alt	Protein_Change	dbSNP	COSMIC	Note
+##BRCA2	chr13	32954022	C	CA	-3030fs	rs67201695	 	8 poly-A
+##BRCA2	chr13	32954022	CA	C	-3030fs	 	 	8 poly-A
+CHEK2	chr22	29091840	TG	CA	K373E	 	 	Repetitive region
+FANCD2	chr3	10108913	G	T	Q802H	rs80258959	COSM1130392	Common DNA sequencing artifact in exome, but not RNA-seq
+FANCD2	chr3	10088408	GTAAG	T	splice	 	 	Repetitive region
+PARP4	chr13	25021323	A	G	I1039T	rs73172125	COSM147647	Common DNA sequencing artifact in exome, but not RNA-seq. Repeats?
+##RAD50	chr5	131931451	TA	T	-719fs	 	COSM1433046	9 poly-A
+CRIPAK	chr4	1388504	CGTGT	TGC	R69fs			A misalignment of homolog sequence
+CRIPAK	chr4	1388319	GTGCCAATGTGGAGTGCCCGCCTGCTCACACGTGCCCATGTGGAGTGCCCGCCTGCTCATGTGCCCATGTGGAGTGCCCGCCTGCTCACACATGTCGATGCGGAGTGCCCGCCTGCTCACACA	G	N9fs			A misalignment of homolog sequence
+CRIPAK	chr4	1388504	CGTGT	TGC	R69fs			A misalignment of homolog sequence
+##MSH6	chr2	48030639	A	AC		rs267608087	COSM308681	8 poly-C
+##PIK3C2B	chr1	204438071	C	CG			COSM1338089	7 poly-G
+##PIK3CB	chr3	138413709	C	CG			COSM1484672	7 poly-G flanked by Cs
+##FANCE	chr6	35425714	G	GC			COSM1444011	7 poly-C flanked by Cs
+#TGFBR2	chr3	30691871	GA	G	K153fs	 rs79375991	COSM1180952	10 poly-A
+##EP300	chr22	41574678	G	GC	H2324fs	 		7 poly-C
+##JAK1	chr1	65325832	C	CG	L431fs	 		7 poly-G
+FANCD2	chr3	10088404	CTTAGTAAG	TTTAT				Misalignment of homolog sequence
+##PRKDC	chr8	48866909	A	AT				10 poly-T
+##PRKDC	chr8	48866909	AT	A				10 poly-T
+GNAQ	chr9	80537112	T	A				Misalignment of homolog sequence
+CHEK2	chr22	29083962	G	C		rs200432447	COSM478842	No clear explanation, maybe in the neighborhood of high GC region
+PRSS1	chr7	142458451	A	T		rs111033566	COSM4161874	Common artifact due to low complexity in TCR region, though ClinVar listed it as pathogenic
+SDHA	chr5	256483	CTT	C		rs11237877	COSM111560	Common artifact without clear explanation
+CEBPA	chr19	33792751	33792775	ignore	rule			A region with tri-nt MSI
+IGFN1	chr1	201178647	201180735	ignore	rule			A region with low complexity
+HNF1A	chr12	121432117	G	CC				8 poly-C and 3 poly G
+NOTCH2	chr1	120612002	CGG	C	P6fs	rs372504208	COSM132830	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NOTCH2	chr1	120612006	G	A	R5R	rs4021006	COSM1320072	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NOTCH2	chr1	120612034	T	G	5'UTR	rs201668322		Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NOTCH2	chr1	120611960	C	T	A21T	rs2603926	COSM1600651	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NOTCH2	chr1	120611964	G	C	C19W	rs11810554	COSM132738	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NCOR1	chr17	16068396	G	A	S172L	rs150910818	COSM4590747	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NCOR1	chr17	16068287	A	T	c.618+6T>A	rs201932638	COSM4591902	Mis-alignment from pseudogene specific to hg19, resolved in hg38
+NOTCH4	chr6	32191658	32691690	ignore	rule			A region with 11 CAG (poly L amino acid) and highly prevalent
+AR	chrX	66765158	66765228	ignore	rule			A region with 11 GCA (poly Q amino acid) and highly prevalent
+AR	chrX	66766338	66766407	ignore	rule			A region with 23 (poly G amino acid)
+C11orf80	chr11	66512290	66512315	ignore	rule			A region with 8 GGC (poly A amino acid) and highly prevalent
+PRSS1	chr7	142454800	142486478	ignore	rule			A region with low complexity and many false positives
+KMT2C	chr7	151901475	151946817	ignore	rule			A region with low complexity and many false positives
+KMT2C	chr7	151955801	151989859	ignore	rule			A region with low complexity and many false positives
+KMT2C	chr7	152072247	152120614	ignore	rule			A region with low complexity and many false positives
+MYOM2	chr8	2033522	2034355	ignore	rule			A region with low complexity and many false positives
+NOTCH2	chr1	120531760	120721309	ignore	rule			A region with low complexity and many false positives
+FNACD2	chr3	10087885	10091827	ignore	rule			A region with low complexity and many false positives
+chr2	chr2	91508652	92454577	ignore	rule			A region with low complexity and many false positives
+NCOR1	chr17	16065124	16072075	ignore	rule			A region with low complexity and many false positives
+NCOR1	chr17	16097697	16099159	ignore	rule			A region with low complexity and many false positives
+PARP4	chr13	24994074	25017631	ignore	rule			A region with low complexity and many false positives
+chr12	chr12	129487525	129490094	ignore	rule			A region with low complexity and many false positives
+BRD4	chr19	15353892	15354029	ignore	rule			A region with low complexity and many false positives
+chr17	chr17	22215425	22217862	ignore	rule			A region with low complexity and many false positives
+chr14	chr14	18993297	19434802	ignore	rule			A region with low complexity and many false positives
+RAD51B	chr14	68331718	AGA	TTT	splice			Poly-T region with 39 Ts

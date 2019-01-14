@@ -1,9 +1,19 @@
 #!/usr/bin/env python
 import math
+import re
+from collections import defaultdict
+from os.path import join
+
 import click
-from ngs_utils.utils import set_locale; set_locale()
+
+from ngs_utils import logger
+from ngs_utils.file_utils import verify_file, verify_dir, adjust_path
+from ngs_utils.utils import set_locale
+set_locale()
 from ngs_utils.vcf_utils import get_sample_ids
+from ngs_utils.utils import OrderedDefaultDict
 from vcf_stuff import iter_vcf
+from vcf_stuff.filtering import add_cyvcf2_filter
 
 
 PON_HITS = 2
@@ -13,26 +23,29 @@ PON_HITS = 2
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-g', 'genome', default='GRCh37')
-@click.option('-f', '--ref-fasta', 'ref_fasta', type=click.Path(exists=True))
-def main(input_file, output_file, genome=None, ref_fasta=None):
+@click.option('--sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
+@click.option('--msi', 'msi', is_flag=True, default=True)
+@click.option('--vardict2mut', 'vardict2mut', is_flag=True, default=False)
+def main(input_file, output_file, genome=None, strand_bias=None, msi=None, vardict2mut=False):
     tumor_index, control_index = get_sample_ids(input_file)
+
+    if vardict2mut:
+        from vcf_stuff.filtering.ngs_reporting.vardict2mut import VarDict2Mut
+        from vcf_stuff.filtering.ngs_reporting.config import get_filt_cfg, load_filt_cfg
+        filt_cnf = load_filt_cfg(None, target_type='wgs')
+        vardict2mut = VarDict2Mut(genome, filt_cnf, None, None)
 
     iter_vcf(input_file, output_file,
              proc_rec=_somatic_vcf_filter_rec,
              proc_hdr=_somatic_vcf_filter_hdr,
              tumor_index=tumor_index,
-             control_index=control_index)
+             control_index=control_index,
+             strand_bias=strand_bias,
+             msi=msi,
+             vardict2mut=vardict2mut)
 
 
-def _add_cyvcf2_filter(rec, filt):
-    filters = rec.FILTER.split(';') if rec.FILTER else []
-    filters.append(filt)
-    f = ';'.join(filters)
-    rec.FILTER = str(f)
-    return rec
-
-
-def _somatic_vcf_filter_rec(rec, tumor_index=None, **kwargs):
+def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, msi=True, vardict2mut=None, **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
     # Keeping all variants with tier 1, 2, 3:
@@ -71,16 +84,16 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, **kwargs):
     #        mappability<1
     else:
         # if rec.INFO['TUMOR_AF'] < 0.1:
-        #     _add_cyvcf2_filter(rec, 'AF10')
+        #     add_cyvcf2_filter(rec, 'AF10')
 
         # common in gnomAD => likely germline
         if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
-            _add_cyvcf2_filter(rec, 'gnomAD_common')
+            add_cyvcf2_filter(rec, 'gnomAD_common')
 
         # in panel of normals => likely an artefact
         pon = rec.INFO.get('PoN_CNT')
         if pon is not None and pon >= PON_HITS:
-            _add_cyvcf2_filter(rec, 'PoN')
+            add_cyvcf2_filter(rec, 'PoN')
 
         af = rec.INFO.get('TUMOR_AF')
         dp = rec.INFO.get('TUMOR_DP')
@@ -93,12 +106,17 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, **kwargs):
         if not rec.is_snp:
             # removing indels in bad promoter regions - all of those are artefacts in MB benchmark
             if 'bad_promoter' in tricky_flags:
-                _add_cyvcf2_filter(rec, 'bad_promoter')
+                add_cyvcf2_filter(rec, 'bad_promoter')
             # filtering indels in homopolymers
-            rec = _check_msi(rec, af)
+            if msi:
+                rec = _check_msi(rec, af)
 
         # filter strand biased variants in vardict
-        rec = _vardict_strand_bias(rec, tumor_index)
+        if strand_bias:
+            rec = _vardict_strand_bias(rec, tumor_index)
+
+        if vardict2mut:
+            vardict2mut.filter(rec, tumor_index)
 
         # removing low AF and low DP variants in low complexity regions
         lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
@@ -107,16 +125,16 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, **kwargs):
             'LCR'}
 
         if vd < 3:  # fewer than 3 reads supporting the variant
-            _add_cyvcf2_filter(rec, 'lowVD')
+            add_cyvcf2_filter(rec, 'lowVD')
 
         elif vd < 5:  # fewer than 5 reads supporting an LCR variant
             if lcr:
-                _add_cyvcf2_filter(rec, 'LowVD_LCR')
+                add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
-                _add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
+                add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
             mpbl = max(map(float, rec.INFO.get('HMF_MAPPABILITY', '1.0').split(',')))
             if mpbl < 1.0:
-                _add_cyvcf2_filter(rec, 'LowVD_LowMappability')
+                add_cyvcf2_filter(rec, 'LowVD_LowMappability')
 
         # if rec.INFO['TUMOR_AF'] < 0.01:
         #     _add_cyvcf2_filter(rec, 'LowAF')
@@ -137,9 +155,12 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'StrandBias1:1',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'StrandBias2:0',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
+    vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
-    vcf.add_info_to_header({'ID': 'TRICKY','Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_hotspot',   'Description': 'Hotspot based on AZ data knowledge', 'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_artefact',  'Description': 'Artefact based on AZ data knowledge', 'Type': 'String', 'Number': '1'})
 
 # def _somatic_vcf_filter_rec__pysam(rec):
 #     """ using pysam
@@ -209,7 +230,6 @@ def _check_msi(rec, af, _coef=40):
     """
     Dynamic threshold for indels in homopolymers.
     Motivation:
-
                Sample    SNP                                               INDEL
                                     TP   FP   FN Recall    Prec     F1     F2     F3    TP    FP   FN Recall    Prec     F1     F2     F3
          MB: no filtering         1183  540   80 93.67%  68.66% 79.24% 87.31% 90.37%   318  1378   29 91.64%  18.75% 31.13% 51.56% 65.99%
@@ -240,11 +260,11 @@ def _check_msi(rec, af, _coef=40):
     # 8  17,5%
     # 9  20%
     if af < af_threshold:
-        _add_cyvcf2_filter(rec, 'HP')
+        add_cyvcf2_filter(rec, 'HP')
     return rec
 
 
-def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
+def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
     """
     Filter VarDict variants with single strand support for ALT, while REF has
     both; or REF and ALT have opposite supporting strands.
@@ -252,6 +272,13 @@ def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
     BIAS is in format X:Y, where X is the number of strands supporting REF,
     and Y is the number of strands supporting ALT. 0 represents a too low
     P value to call support.
+
+    Evaluation:
+        MB: HP40                     1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   226    80  121 65.13%  73.86% 69.22% 66.71% 65.91%
+        MB: HP40 + SB with min_vd=4  1122  182  141 88.84%  86.04% 87.42% 88.26% 88.55%   225    75  122 64.84%  75.00% 69.55% 66.65% 65.73%    #
+        MB: HP40 + SB with min_vd=5  1133  186  130 89.71%  85.90% 87.76% 88.92% 89.31%   225    75  122 64.84%  75.00% 69.55% 66.65% 65.73%    # the best
+        MB: HP40 + SB with min_vd=6  1135  200  128 89.87%  85.02% 87.37% 88.85% 89.36%   225    77  122 64.84%  74.50% 69.34% 66.57% 65.69%    #
+        MB: HP40 + SB with min_vd=0  1136  214  127 89.94%  84.15% 86.95% 88.72% 89.33%   225    78  122 64.84%  74.26% 69.23% 66.53% 65.67%    #
     """
 
     if 'BIAS' not in rec.FORMAT or 'SBF' not in rec.FORMAT:
@@ -265,23 +292,74 @@ def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01):
     if ref < 2 or alt < 2 and sbf is not None:
         if ref == 2 and alt == 1 and sbf < damage_p_value * 10:
             # ALT has only single strand support, while REF has both
-            _add_cyvcf2_filter(rec, 'StrandBias2:1')
+            add_cyvcf2_filter(rec, 'StrandBias2:1')
 
         if ref == 2 and alt == 0 and sbf < damage_p_value:
             # ALT has only single strand support and p-value is low, while reference has both
-            _add_cyvcf2_filter(rec, 'StrandBias2:0')
+            add_cyvcf2_filter(rec, 'StrandBias2:0')
 
         if ref == alt == 1 and sbf < damage_p_value / 10:
             # Filter variants with opposite supporting strands for REF and ALT
-            _add_cyvcf2_filter(rec, 'StrandBias1:1')
+            add_cyvcf2_filter(rec, 'StrandBias1:1')
 
-        if 'ALD' in rec.FORMAT:
-            # Has only single strand support ({frd}, {rrd}) while reference has both
-            frd, rrd = rec.format('ALD')[tumor_index,:]
-            if ref == 2 and float(frd) * float(rrd) == 0 and float(frd) + float(rrd) >= 4:
-                _add_cyvcf2_filter(rec, 'StrandBias')
+        # if 'ALD' in rec.FORMAT:
+        #     # Has only single strand support ({frd}, {rrd}) while reference has both
+        #     frd, rrd = rec.format('ALD')[tumor_index,:]
+        #     if ref == 2 and float(frd) * float(rrd) == 0 and float(frd) + float(rrd) >= min_vd:
+        #         _add_cyvcf2_filter(rec, 'StrandBias')
 
     return rec
 
+
+# def _filter_vardict(rec, tumor_index):
+#     """
+#     Filter VarDict based on https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl
+#     """
+# No need in doing this because it's already filtered:
+    # min_pmean = 5    # same threshold in vardict.pl
+    # min_qmean = 25   # 22.5 in vardict.pl
+    # min_mq = 10      # variants usually have a much higher MQ
+    # min_vd = 10      # the threshold is too high
+    # min_sn = 1.5     # same threshold in vardict.pl
+
+    # if 'PMEAN' in rec.FORMAT:
+    #     pmean = rec.format('PMEAN')[tumor_index]
+    #     if pmean < min_pmean
+
+
+
 if __name__ == '__main__':
     main()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
