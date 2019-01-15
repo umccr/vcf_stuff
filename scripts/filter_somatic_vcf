@@ -241,14 +241,28 @@ def _check_msi(rec, af, _coef=40):
          MB: _coef=Inf (no filt)  1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   233   265  114 67.15%  46.79% 55.15% 61.77% 64.35%
 
     AF>10% for homopolymers looks like a better idea, though
+
+    TODO:
+    use approach https://github.com/genome/joinx/tree/master/integration-test/data/vcf-annotate-homopolymers
+    for more refined HP filtering and considering non-vardict calls too.
+    Not nesessarily this tool (doesn't compile), but the idea.
     """
 
     hp_len = rec.INFO.get('MSILEN')
-    if hp_len is None:
+    hp_repeated = rec.INFO.get('MSI')
+    if hp_len is None or hp_repeated is None:
         return rec
 
-    hp_repeated = rec.INFO.get('MSI')
+    # chg_len = abs(len(rec.REF) - len(rec.ALT[0]))
+    # if chg_len > 2 * hp_len:  # caucious with long changes cause it might be real
+    #     return rec
+
+    callers = rec.INFO.get('CALLERS').split(',')
+    if len(callers) == 3:  # we wanna only filter vardict
+        return rec
+
     af_threshold = (hp_repeated - 1) / _coef
+    af_threshold = min(af_threshold, 0.35)
     # HP  AF
     # 1   0
     # 2   2,5%
@@ -259,7 +273,7 @@ def _check_msi(rec, af, _coef=40):
     # 7  15%
     # 8  17,5%
     # 9  20%
-    if af < af_threshold:
+    if hp_repeated > 2 and af < af_threshold:
         add_cyvcf2_filter(rec, 'HP')
     return rec
 
