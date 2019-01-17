@@ -155,6 +155,7 @@ rule somatic_vcf_pcgr_anno:
                           'CLINVAR_CLNSIG']:
                     val = row[k]
                     val = val.replace(' ', '_')
+                    val = val.replace(',', '|')
                     if val == 'TRUE':
                         val = True
                     if val == 'FALSE':
@@ -172,34 +173,18 @@ rule somatic_vcf_pcgr_anno:
             vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description':
                 'VEP gene symbol, reported by PCGR in .snvs_indels.tiers.tsv file',
                                     'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description':
-                'TIER as reported by PCGR in .snvs_indels.tiers.tsv file. '
-                '1: strong clinical significance; '
-                '2: potential clinical significance; '
-                '3: unknown clinical significance; '
-                '4: other coding variants',
-                'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE', 'Description':
-                'VEP consequence, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT', 'Description':
-                'Mutation hotspot, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_INTOGEN_DRIVER_MUT', 'Description':
-                'Driver mutation by Introgen, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description':
-                'Occurences in TCGR, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG', 'Description':
-                'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'COSMIC_CNT', 'Description':
-                'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS', 'Description':
-                'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description': 'TIER as reported by PCGR in .snvs_indels.tiers.tsv file. '
+                                                                      '1: strong clinical significance; '
+                                                                      '2: potential clinical significance; '
+                                                                      '3: unknown clinical significance; '
+                                                                      '4: other coding variants',                                                                                                  'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE',          'Description': 'VEP consequence, reported by PCGR in .snvs_indels.tiers.tsv file',                                          'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT',     'Description': 'Mutation hotspot, reported by PCGR in .snvs_indels.tiers.tsv file',                                         'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_INTOGEN_DRIVER_MUT',   'Description': 'Driver mutation by Introgen, reported by PCGR in .snvs_indels.tiers.tsv file',                              'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': 'Occurences in TCGR, reported by PCGR in .snvs_indels.tiers.tsv file',                                       'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG',       'Description': 'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',                            'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'COSMIC_CNT',                'Description': 'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',                                           'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS',           'Description': 'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file', 'Type': 'Integer', 'Number': '1'})
         def func(rec):
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
             pcgr_d = pcgr_fields_by_snp.get(change, {})
@@ -277,9 +262,9 @@ ops = ["flag"]
 
 [[annotation]]
 file = "{input.hmf_mappability}"
-names = ["HMF_MAPPABILITY"]
+names = ["HMF_MAPPABILITY_float"]
 columns = [5]
-ops = ["self"]
+ops = ["concat"]
 
 [[annotation]]
 file = "{input.lcr}"
@@ -291,7 +276,7 @@ ops = ["flag"]
 file = "{input.encode}"
 names = ["ENCODE"]
 columns = [4]
-ops = ["self"]
+ops = ["concat"]
 
 """)
         for fn in os.listdir(join(input.ga4gh_dir)):
