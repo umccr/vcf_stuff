@@ -26,8 +26,9 @@ loc = find_loc()
 @click.option('--anno-pon', 'anno_pon', is_flag=True)
 @click.option('--anno-gnomad', 'anno_gnomad', is_flag=True)
 @click.option('--unlock', 'unlock', is_flag=True)
+@click.option('--fast', 'fast', is_flag=True)
 def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, jobs=1, anno_tricky=False, anno_dp_af=False,
-         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None):
+         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None, fast=False):
     if not vcfs:
         raise click.BadParameter('Provide at least one VCF file')
 
@@ -42,6 +43,7 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
         'remove_anno': remove_anno,
         'anno_pon': anno_pon,
         'anno_gnomad': anno_gnomad,
+        'fast': fast,
     }
     if regions:
         conf['sample_regions'] = abspath(regions)

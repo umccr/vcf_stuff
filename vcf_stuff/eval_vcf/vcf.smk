@@ -16,6 +16,9 @@ from vcf_stuff.evaluation import dislay_stats_df, f_measure
 from vcf_stuff.eval_vcf import vcf_stats_to_df
 
 
+FAST = config.get('fast', False)
+
+
 rule all:
     input:
         'eval/report.tsv'
@@ -72,61 +75,62 @@ rule narrow_samples_to_regions_and_pass:
     run:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
-        anno_to_remove = [
-            'ac_exac_all',
-            'an_exac_all',
-            'ac_adj_exac_afr',
-            'an_adj_exac_afr',
-            'ac_adj_exac_amr',
-            'an_adj_exac_amr',
-            'ac_adj_exac_eas',
-            'an_adj_exac_eas',
-            'ac_adj_exac_fin',
-            'an_adj_exac_fin',
-            'ac_adj_exac_nfe',
-            'an_adj_exac_nfe',
-            'ac_adj_exac_oth',
-            'an_adj_exac_oth',
-            'ac_adj_exac_sas',
-            'an_adj_exac_sas',
-            'num_exac_Het',
-            'num_exac_Hom',
-            'rs_ids',
-            'fitcons',
-            'encode_consensus_gm12878',
-            'encode_consensus_h1hesc',
-            'encode_consensus_helas3',
-            'encode_consensus_hepg2',
-            'encode_consensus_huvec',
-            'encode_consensus_k562',
-            'rmsk',
-            'hapmap1',
-            'hapmap2',
-            'stam_mean',
-            'stam_names',
-            'af_exac_all',
-            'af_adj_exac_afr',
-            'af_adj_exac_amr',
-            'af_adj_exac_eas',
-            'af_adj_exac_fin',
-            'af_adj_exac_nfe',
-            'af_adj_exac_oth',
-            'af_adj_exac_sas',
-            'max_aaf_all',
-        ]
-        anno_to_remove_found = []
-        with open_gzipsafe(input[0]) as f:
-            for l in f:
-                if l.startswith('##'):
-                    for to_rm in anno_to_remove:
-                        if '##INFO=<ID=' + to_rm in l:
-                            anno_to_remove_found.append(to_rm)
-                if not l.startswith('#'):
-                    break
         rm_cmd = ''
-        if anno_to_remove_found:
-            rm_cmd = ' -Ov | bcftools annotate -x ' + ','.join(f'INFO/{to_rm}' for to_rm in anno_to_remove_found)
-        shell('bcftools view {input} {regions} -f.,PASS ' + rm_cmd + ' -Oz -o {output}')
+        if not FAST:
+            anno_to_remove = [
+                'ac_exac_all',
+                'an_exac_all',
+                'ac_adj_exac_afr',
+                'an_adj_exac_afr',
+                'ac_adj_exac_amr',
+                'an_adj_exac_amr',
+                'ac_adj_exac_eas',
+                'an_adj_exac_eas',
+                'ac_adj_exac_fin',
+                'an_adj_exac_fin',
+                'ac_adj_exac_nfe',
+                'an_adj_exac_nfe',
+                'ac_adj_exac_oth',
+                'an_adj_exac_oth',
+                'ac_adj_exac_sas',
+                'an_adj_exac_sas',
+                'num_exac_Het',
+                'num_exac_Hom',
+                'rs_ids',
+                'fitcons',
+                'encode_consensus_gm12878',
+                'encode_consensus_h1hesc',
+                'encode_consensus_helas3',
+                'encode_consensus_hepg2',
+                'encode_consensus_huvec',
+                'encode_consensus_k562',
+                'rmsk',
+                'hapmap1',
+                'hapmap2',
+                'stam_mean',
+                'stam_names',
+                'af_exac_all',
+                'af_adj_exac_afr',
+                'af_adj_exac_amr',
+                'af_adj_exac_eas',
+                'af_adj_exac_fin',
+                'af_adj_exac_nfe',
+                'af_adj_exac_oth',
+                'af_adj_exac_sas',
+                'max_aaf_all',
+            ]
+            anno_to_remove_found = []
+            with open_gzipsafe(input[0]) as f:
+                for l in f:
+                    if l.startswith('##'):
+                        for to_rm in anno_to_remove:
+                            if '##INFO=<ID=' + to_rm in l:
+                                anno_to_remove_found.append(to_rm)
+                    if not l.startswith('#'):
+                        break
+            if anno_to_remove_found:
+                rm_cmd = ' -Ou | bcftools annotate -x ' + ','.join(f'INFO/{to_rm}' for to_rm in anno_to_remove_found)
+        shell('bcftools view {input} {regions} -f.,PASS' + rm_cmd + ' -Oz -o {output}')
 
 prev_rule = rules.narrow_samples_to_regions_and_pass
 
@@ -171,40 +175,46 @@ rule narrow_truth_to_target:
     run:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
-        shell('bcftools view {input} {regions} -Ou | bcftools annotate -x INFO,FORMAT -Oz -o {output} && tabix -p vcf -f {output}')
+        rm_cmd = ''
+        if not FAST:
+            rm_cmd = ' -Ou | bcftools annotate -x INFO,FORMAT'
+        shell('bcftools view {input} {regions}' + rm_cmd + ' -Oz -o {output} && tabix -p vcf -f {output}')
 
 ############################
 ######### NORMALSE #########
 # Normalise query VCFs:
-rule normalise_sample:
-    input:
-        vcf = rules.narrow_samples_to_tumor_sample.output[0],
-        ref = config['reference_fasta']
-    output:
-        vcf = 'normalise/{sample}/{sample}.vcf.gz',
-        tbi = 'normalise/{sample}/{sample}.vcf.gz.tbi'
-    shell:
-        make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
+prev_sample_rule = rules.narrow_samples_to_tumor_sample
+prev_truth_rule = rules.narrow_truth_to_target
+if not FAST:
+    rule normalise_sample:
+        input:
+            vcf = prev_sample_rule.output[0],
+            ref = config['reference_fasta']
+        output:
+            vcf = 'normalise/{sample}/{sample}.vcf.gz',
+            tbi = 'normalise/{sample}/{sample}.vcf.gz.tbi'
+        shell:
+            make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
+    prev_sample_rule = rules.normalise_sample
 
-# Normalise truth VCFs:
-rule normalise_truth:
-    input:
-        vcf = rules.narrow_truth_to_target.output[0],
-        ref = config['reference_fasta']
-    output:
-        vcf = 'normalise/truth_variants.vcf.gz',
-        tbi = 'normalise/truth_variants.vcf.gz.tbi'
-    shell:
-        make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
+    # Normalise truth VCFs:
+    rule normalise_truth:
+        input:
+            vcf = prev_truth_rule.output[0],
+            ref = config['reference_fasta']
+        output:
+            vcf = 'normalise/truth_variants.vcf.gz',
+            tbi = 'normalise/truth_variants.vcf.gz.tbi'
+        shell:
+            make_normalise_cmd('{input.vcf}', '{output[0]}', '{input.ref}')
+    prev_truth_rule = rules.normalise_truth
 
 ##########################
 ####### Annotation #######
-prev_sample_rule = rules.normalise_sample
-prev_truth_rule = rules.normalise_truth
 if config.get('anno_pon'):
     rule anno_pon_sample:
         input:
-            rules.normalise_sample.output[0]
+            prev_sample_rule.output[0]
         output:
             'anno_pon/{sample}/{sample}.vcf.gz'
         shell:
@@ -213,7 +223,7 @@ if config.get('anno_pon'):
 
     rule anno_pon_truth:
         input:
-            rules.normalise_truth.output[0]
+            prev_truth_rule.output[0]
         output:
             'anno_pon/truth.pon.vcf.gz'
         shell:
