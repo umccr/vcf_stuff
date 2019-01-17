@@ -11,7 +11,7 @@ from ngs_utils.file_utils import verify_file, verify_dir, adjust_path
 from ngs_utils.utils import set_locale
 set_locale()
 from ngs_utils.vcf_utils import get_sample_ids
-from ngs_utils.utils import OrderedDefaultDict
+from ngs_utils.utils import OrderedDefaultDict, flatten
 from vcf_stuff import iter_vcf
 from vcf_stuff.filtering import add_cyvcf2_filter
 
@@ -55,7 +55,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, msi=True, v
 
     tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
     if tricky_flags:
-        rec.INFO['TRICKY'] = ','.join(tricky_flags)
+        rec.INFO['TRICKY'] = '|'.join(tricky_flags)
     for f in tricky_flags:
         del rec.INFO[f'TRICKY_{f}']
 
@@ -132,8 +132,8 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, msi=True, v
                 add_cyvcf2_filter(rec, 'LowVD_LCR')
             if not rec.INFO.get('HMF_GIAB_CONF'):
                 add_cyvcf2_filter(rec, 'LowVD_GIAB_LCR')
-            mpbl = max(map(float, rec.INFO.get('HMF_MAPPABILITY', '1.0').split(',')))
-            if mpbl < 1.0:
+            mpbl = max(flatten([rec.INFO.get('HMF_MAPPABILITY', 1.0)]))
+            if mpbl < 0.9:
                 add_cyvcf2_filter(rec, 'LowVD_LowMappability')
 
         # if rec.INFO['TUMOR_AF'] < 0.01:
@@ -148,7 +148,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
     vcf.add_filter_to_header({'ID': 'HP',                   'Description': 'Low AF indel in a homopolymer region (AF lt (INFO/MSI - 1)/0.4%'})
     vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP below 3 (i.e. fewer than 3 reads support the variant)'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps LCR: GC=0-15% or GC=70-100%, or a low complexity region longer than 50bp long, or ENCODE low mappability'})
+    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps GC=0-15% or GC=70-100%, or an LCR longer than 50bp, or ENCODE low mappability'})
     vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
     vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
     vcf.add_filter_to_header({'ID': 'StrandBias',           'Description': 'Strand bias as reported by VarDict'})
@@ -158,9 +158,9 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
-    vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio\'s coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
-    vcf.add_info_to_header({'ID': 'AZ_hotspot',   'Description': 'Hotspot based on AZ data knowledge', 'Type': 'String', 'Number': '1'})
-    vcf.add_info_to_header({'ID': 'AZ_artefact',  'Description': 'Artefact based on AZ data knowledge', 'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'TRICKY',      'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                                                                   'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                                                                  'Type': 'String', 'Number': '1'})
 
 # def _somatic_vcf_filter_rec__pysam(rec):
 #     """ using pysam
@@ -230,18 +230,23 @@ def _check_msi(rec, af, _coef=40):
     """
     Dynamic threshold for indels in homopolymers.
     Motivation:
-               Sample    SNP                                               INDEL
-                                    TP   FP   FN Recall    Prec     F1     F2     F3    TP    FP   FN Recall    Prec     F1     F2     F3
-         MB: no filtering         1183  540   80 93.67%  68.66% 79.24% 87.31% 90.37%   318  1378   29 91.64%  18.75% 31.13% 51.56% 65.99%
-         MB: static cutoff HP<=5  1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%    69    44  278 19.88%  61.06% 30.00% 22.98%
-         MB: AF>=10%, no HP filt   948   68  315 75.06%  93.31% 83.19% 78.11% 76.56%   232    93  115 66.86%  71.38% 69.05% 67.72% 67.29%
-         MB: _coef=40             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   226    80  121 65.13%  73.86% 69.22% 66.71% 65.91%
-         MB: _coef=50             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   231    91  116 66.57%  71.74% 69.06% 67.54% 67.05%
-         MB: _coef=60             1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   233   100  114 67.15%  69.97% 68.53% 67.69% 67.42%
-         MB: _coef=Inf (no filt)  1136  228  127 89.94%  83.28% 86.49% 88.53% 89.23%   233   265  114 67.15%  46.79% 55.15% 61.77% 64.35%
+        ICGC MB test set
+                                                                                   TP    FP   FN Recall Prec   F1     F2     F3
+        no filtering                                                               318 1378   29 91.64% 18.75% 31.13% 51.56% 65.99%
+        static cutoff HP len<=5                                                     69   44  278 19.88% 61.06% 30.00% 22.98%
+        AF>=10%, no HP filtering                                                   232   93  115 66.86% 71.38% 69.05% 67.72% 67.29%
+        dyn AF cutoff by HP len, coef=40                                           226   80  121 65.13% 73.86% 69.22% 66.71% 65.91%
+        dyn AF cutoff by HP len, coef=50                                           231   91  116 66.57% 71.74% 69.06% 67.54% 67.05%
+        dyn AF cutoff by HP len, coef=60                                           233  100  114 67.15% 69.97% 68.53% 67.69% 67.42%
+        dyn AF cutoff by HP len, coef=Inf (no filt)                                233  265  114 67.15% 46.79% 55.15% 61.77% 64.35%
+        dyn AF cutoff by HP len, coef=40, min AF 35%                               225   78  122 64.84% 74.26% 69.23% 66.53% 65.67%
+        dyn AF cutoff by HP len, coef=40, min AF 35%, filter VarDict only          232   94  115 66.86% 71.17% 68.95% 67.68% 67.27%
+        dyn AF cutoff by HP len, coef=40, min AF 35%, min change len =2bp          225   82  122 64.84% 73.29% 68.81% 66.37% 65.60%
+        dyn AF cutoff by HP len, coef=40, min AF 35%, min change len =2bp, HPx1    225   85  122 64.84% 72.58% 68.49% 66.25% 65.54%
+        dyn AF cutoff by HP len, coef=40, min AF 35%, min change len =2bp, HPx1,3  225   85  122 64.84% 72.58% 68.49% 66.25% 65.54%
+        dyn AF cutoff by HP len, coef=40, min AF 35%, HPx1,3                       225   81  122 64.84% 73.53% 68.91% 66.41% 65.62%
 
-    AF>10% for homopolymers looks like a better idea, though
-
+    AF>10% for homopolymers looks like a better idea, though we want to keep low frequency variants
     TODO:
     use approach https://github.com/genome/joinx/tree/master/integration-test/data/vcf-annotate-homopolymers
     for more refined HP filtering and considering non-vardict calls too.
@@ -263,17 +268,18 @@ def _check_msi(rec, af, _coef=40):
 
     af_threshold = (hp_repeated - 1) / _coef
     af_threshold = min(af_threshold, 0.35)
-    # HP  AF
-    # 1   0
-    # 2   2,5%
-    # 3   5%
-    # 4   7,5%
-    # 5  10%
-    # 6  12,5%
-    # 7  15%
-    # 8  17,5%
-    # 9  20%
-    if hp_repeated > 2 and af < af_threshold:
+    # HP/_coef  40   50    60
+    #  2       2.5    2    1.67
+    #  3       5      4    3.33
+    #  4       7.5    6    5
+    #  5      10      8    6.67
+    #  6      12.5   10    8.33
+    #  7      15     12   10
+    #  8      17.5   14.  11.7
+    #  9      20     16   13.3
+    # 10      22.5   18   15
+
+    if hp_repeated >= 3 and af < af_threshold:
         add_cyvcf2_filter(rec, 'HP')
     return rec
 
