@@ -8,7 +8,7 @@ from cyvcf2 import VCF, Writer
 import re
 import numpy as np
 
-from ngs_utils.logger import warn
+from ngs_utils.logger import warn, critical
 from ngs_utils.vcf_utils import get_sample_ids
 
 from ngs_utils.utils import set_locale
@@ -32,19 +32,33 @@ def main(input_file, output_file=None):
     new_header = []
     for h in vcf.raw_header.split('\n'):
         if h.startswith('#CHROM'):
-            for tag in ['AF', 'DP', 'MQ']:
-                type = 'Integer' if tag == 'DP' else 'Float'
+            for tag in ['AF', 'DP', 'VD', 'MQ']:
+                if tag in ['VD', 'DP']:
+                    type = 'Integer'
+                else:
+                    type = 'Float'
+                if tag in ['AD', 'VD']:
+                    number = 'A'
+                else:
+                    number = '1'
+
                 tumor_tag = tumor_prefix + tag
                 normal_tag = normal_prefix + tag
 
-                new_header.append(f'##INFO=<ID={tumor_tag},Number=1,Type={type},Description="{tag} in tumor sample">')
-                vcf.add_info_to_header({'ID': tumor_tag, 'Description': '', 'Type': type, 'Number': '1'})
+                new_header.append(f'##INFO=<ID={tumor_tag},Number={number},Type={type},Description="{tag} in tumor sample">')
+                vcf.add_info_to_header({'ID': tumor_tag, 'Description': '', 'Type': type, 'Number': number})
                 if control_index is not None:
-                    new_header.append(f'##INFO=<ID={normal_tag},Number=1,Type={type},Description="{tag} in control sample">')
-                    vcf.add_info_to_header({'ID': normal_tag, 'Description': '', 'Type': type, 'Number': '1'})
+                    new_header.append(f'##INFO=<ID={normal_tag},Number={number},Type={type},Description="{tag} in control sample">')
+                    vcf.add_info_to_header({'ID': normal_tag, 'Description': '', 'Type': type, 'Number': number})
 
-        if not any(h.startswith(f'##INFO=<ID={p+tag},') for tag in ['AF', 'DP', 'MQ'] for p in [tumor_prefix, normal_prefix]):
+        if not any(h.startswith(f'##INFO=<ID={p+tag},') for tag in ['AF', 'DP', 'VD', 'MQ'] for p in [tumor_prefix, normal_prefix]):
+            # to make sure we don't add duplicated TUMOR_AF,... fields
             new_header.append(h)
+
+    if not any(h.startswith(f'##FORMAT=<ID=AD,') for h in vcf.raw_header.split('\n')):
+        # need to add the AD field into FORMAT:
+        new_header.append('##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">')
+        vcf.add_format_to_header({'ID': 'AD', 'Description': 'Allelic depths for the ref and alt alleles in the order listed', 'Type': 'Integer', 'Number': 'R'})
 
     if output_file:
         w = Writer(output_file, vcf)
@@ -55,9 +69,9 @@ def main(input_file, output_file=None):
 
     # Go through each record and add new INFO fields
     for rec in vcf:
-        af, dp, mq = _collect_vals_per_sample(rec, control_index, tumor_index)
+        af, dp, vd, ad, mq = _collect_vals_per_sample(rec, control_index, tumor_index)
 
-        for t, v in zip(['AF', 'DP', 'MQ'], [af, dp, mq]):
+        for t, v in zip(['AF', 'DP', 'VD', 'MQ'], [af, dp, vd, mq]):
             if v is not None:
                 if v[tumor_index] is not None:
                     rec.INFO[tumor_prefix + t] = str(v[tumor_index])
@@ -66,6 +80,10 @@ def main(input_file, output_file=None):
                         sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {control_index} of control sample. Record {v}\n')
                     elif v[control_index] is not None:
                         rec.INFO[normal_prefix + t] = str(v[control_index])
+
+        # Writing AD into FORMAT for Purple
+        if 'AD' not in rec.FORMAT:
+            rec.set_format('AD', ad)
 
         if w:
             w.write_record(rec)
@@ -79,81 +97,99 @@ def main(input_file, output_file=None):
 
 ''' 
 VarDict
-FORMAT/DP,       FORMAT/AF,                                FORMAT/MQ (somatic), INFO/MQ (germline)
-                     
-Mutect2                     
-FORMAT/DP,       FORMAT/AF,                                FORMAT/MMQ
-                     
-Freebayes                                               
-FORMAT/DP        FORMAT/AD = ref_count,alt_count           INFO/MQM+INFO/MQMR
-                     
-GATK-Haplotype                                          
-FORMAT/DP        FORMAT/AD = ref_count,alt_count           FORMAT/MMQ
-         
-Strelka2 - germline                      
-SNV:     
-sum(alt_counts)  FORMAT/AD = ref_count,alt_counts          INFO/MQ
-INDEL:     
-sum(alt_counts)  FORMAT/AD = ref_count,alt_counts          INFO/MQ
+FORMAT/DP,       FORMAT/AF,     FORMAT/VD,                     FORMAT/MQ (somatic), INFO/MQ (germline)
 
-Strelka2 - somatic                 
-SNV:
-FORMAT/DP        FORMAT/{ALT}U[0] = alt_count(tier1,tier2) INFO/MQ
-INDEL:
-FORMAT/DP        FORMAT/TIR = alt_count(tier1,tier2)       INFO/MQ
+Mutect2                     
+FORMAT/DP,       FORMAT/AF,     FORMAT/AD[1:]                  FORMAT/MMQ
+                                       
+Freebayes                                                                          
+FORMAT/DP        FORMAT/AD = ref_count,alt_count               INFO/MQM+INFO/MQMR
+                                       
+GATK-Haplotype                                                                     
+FORMAT/DP        FORMAT/AD = ref_count,alt_count               FORMAT/MMQ
+                           
+Strelka2 - germline                                                 
+SNV:                       
+sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              INFO/MQ
+INDEL:                       
+sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              INFO/MQ
+                  
+Strelka2 - somatic                                   
+SNV:                  
+FORMAT/DP        FORMAT/{ALT}U[0] = alt_count(tier1,tier2)     INFO/MQ
+INDEL:                  
+FORMAT/DP        FORMAT/TIR = alt_count(tier1,tier2)           INFO/MQ
+
+### AF:
+    If FORMAT/AF exists, report it as af (vardict, mutect).
+    Else, calculate from ad (depth per allele):
+        - Check FORMAT/AD (freebayes, gatk-haplotype, strelka2 germline)
+        - Else, check FORMAT/*U (strelka2 somatic)
+
+### DP
+    If FORMAT/DP exists, report it as dp,
+    Else, report sum(ad)
+
+### VD
+    if FORMAT/VD exists (varidct), report it as `vd`.
+    Else, report ad[1:]
 '''
 
 
 def _collect_vals_per_sample(rec, control_index, tumor_index):
-    dp = None
-    af = None
-    mq = None
+    # colleting the following values:
+    dp = af = vd = ad = mq = None
 
-    # If FORMAT/AF exists, report it as af. Else, check FORMAT/AD. If not, check FORMAT/*U
     if 'AF' in rec.FORMAT:
         af = rec.format('AF')[:,0]
     if 'DP' in rec.FORMAT:
         dp = rec.format('DP')[:,0]
+    if 'VD' in rec.FORMAT:
+        vd = rec.format('VD')[:,0:]
+    if 'AD' in rec.FORMAT:
+        ad = rec.format('AD')[:,0:]
 
     if dp is None:
         # strelka2 germline?
-        if 'AD' in rec.FORMAT:
-            dp = np.sum(rec.format('AD')[:,0:], axis=1)
-        # strelka2 somatic?
-        elif 'DP' in rec.FORMAT:
-            dp = rec.format('DP')[:,0]
-        # unknown caller?
+        if ad:
+            dp = np.sum(ad, axis=1)
+
+    if vd is None:
+        if ad:
+            vd = ad[:,1:]  # AD=REF,ALT so 1: is the position of ALTs
+        elif 'TIR' in rec.FORMAT:  # strelka2 somatic indel?
+            vd = rec.format('TIR')[:,0]
+        elif rec.REF + 'U' in rec.FORMAT:  # strelka2 somatic snp?
+            vd = np.array([rec.format(alt + 'U')[:,0] for alt in rec.ALT]).transpose()
         else:
-            dp = None
+            critical(f'Cannot read variant depth from:\n'
+                     f'{rec}\n'
+                     f'Unknown caller?')
 
     if af is None:  # strelka2 before bcbio populated AFs?
-        # strelka2 germline?
-        if 'AD' in rec.FORMAT:
-            alt_counts = rec.format('AD')[:,1]  # AD=REF,ALT so 1 is the position of ALT
-        # strelka2 somatic?
-        elif len(rec.ALT) == 0:
-            alt_counts = None
-        elif rec.ALT[0] + 'U' in rec.FORMAT:
-            alt_counts = rec.format(rec.ALT[0] + 'U')[:,0]
-        elif 'TIR' in rec.FORMAT:
-            alt_counts = rec.format('TIR')[:,0]
-        # unknown caller?
+        if vd is not None and dp is not None:
+            af = np.true_divide(vd.transpose(), dp, where=dp!=0).transpose()
+
+    if ad is None:
+        if rec.REF + 'U' in rec.FORMAT:
+            ref_depth = rec.format(rec.REF + 'U')[:,0]
         else:
-            alt_counts = None
+            ref_depth = dp - np.sum(vd, axis=1)
+        ad = np.zeros((vd.shape[0], vd.shape[1] + 1), dtype=vd.dtype)
+        ad[:,0] = ref_depth
+        ad[:,1:] = vd
 
-        if alt_counts is not None and dp is not None:
-            af = np.true_divide(alt_counts, dp, out=np.zeros(alt_counts.shape), where=dp!=0)
+    if 'MQ' in rec.FORMAT:
+        mq = rec.format('MQ', float)[:,0]
+        # VarDict has an incorrect MQ header (with Integer type instead of Float),
+        # so need to specify "float" type here explicitly otherwise MQ won't be parsed
+    elif 'MMQ' in rec.FORMAT:
+        mq = rec.format('MMQ')[:,0]
+    else:
+        mq = [None for _ in [control_index, tumor_index]]
+        mq[tumor_index] = rec.INFO.get('MQ')
 
-    try:
-        mq = rec.format('MQ', float)[:,0]  # VarDict has an incorrect MQ header (with Integer type instead of Float), so need to specify "float" type here explicitly otherwise MQ won't be parsed
-    except:
-        try:
-            mq = rec.format('MMQ')[:,0]
-        except:
-            mq = [None for _ in [control_index, tumor_index]]
-            mq[tumor_index] = rec.INFO.get('MQ')
-
-    return af, dp, mq
+    return af, dp, vd, ad, mq
 
 
 def _parse_tag(rec, header_by_tag, tag, d, tumor_index, control_index):
