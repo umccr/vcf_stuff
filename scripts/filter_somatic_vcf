@@ -23,10 +23,10 @@ PON_HITS = 2
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-g', 'genome', default='GRCh37')
-@click.option('--sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
-@click.option('--msi', 'msi', is_flag=True, default=True)
+@click.option('--sb/--no-sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
+@click.option('--hp', 'hp_coef', type=click.INT, help="Set to -1 to disable filtering")
 @click.option('--vardict2mut', 'vardict2mut', is_flag=True, default=False)
-def main(input_file, output_file, genome=None, strand_bias=None, msi=None, vardict2mut=False):
+def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, vardict2mut=False):
     tumor_index, control_index = get_sample_ids(input_file)
 
     if vardict2mut:
@@ -41,11 +41,12 @@ def main(input_file, output_file, genome=None, strand_bias=None, msi=None, vardi
              tumor_index=tumor_index,
              control_index=control_index,
              strand_bias=strand_bias,
-             msi=msi,
-             vardict2mut=vardict2mut)
+             hp_coef=hp_coef,
+             vardict2mut=vardict2mut,
+             )
 
 
-def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, msi=True, vardict2mut=None, **kwargs):
+def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None, **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
     # Keeping all variants with tier 1, 2, 3:
@@ -108,8 +109,8 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, msi=True, v
             if 'bad_promoter' in tricky_flags:
                 add_cyvcf2_filter(rec, 'bad_promoter')
             # filtering indels in homopolymers
-            if msi:
-                rec = _check_msi(rec, af)
+            if hp_coef != -1:
+                rec = _check_hp(rec, af, _coef=hp_coef)
 
         # filter strand biased variants in vardict
         if strand_bias:
@@ -226,8 +227,11 @@ def _somatic_vcf_filter_hdr(vcf):
 #     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
 
 
-def _check_msi(rec, af, _coef=40):
+def _check_hp(rec, af, _coef=None):
+    _coef = _coef or 40
+
     """
+    ### VarDict MSI ###
     Dynamic threshold for indels in homopolymers.
     Motivation:
         ICGC MB test set
@@ -247,10 +251,27 @@ def _check_msi(rec, af, _coef=40):
         dyn AF cutoff by HP len, coef=40, min AF 35%, HPx1,3                       225   81  122 64.84% 73.53% 68.91% 66.41% 65.62%
 
     AF>10% for homopolymers looks like a better idea, though we want to keep low frequency variants
-    TODO:
-    use approach https://github.com/genome/joinx/tree/master/integration-test/data/vcf-annotate-homopolymers
-    for more refined HP filtering and considering non-vardict calls too.
-    Not nesessarily this tool (doesn't compile), but the idea.
+
+
+    ### JOINX ###
+    - Use approach https://github.com/genome/joinx/tree/master/integration-test/data/vcf-annotate-homopolymers
+      to filter non-vardict calls (e.g. strelka2-alone)
+      Result:
+        - Compiles by travis and runs nicely, however that's only for linux.
+        - Unfortunately, annotates only _homo_polymers, i.e. element length = 1.
+        - Misses to annotate variants at 2 different HP joints.
+        - Most of the variants filtered out as HP are truth:
+            bcftools filter -i "HP_JOINX>0 & FILTER=='PASS'" batch1-ensemble-TP.FILT_HP40.Joinx.vcf.gz | bcftools query -f "%CHROM \t %POS \t %FILTER \t %HP_JOINX \t %TIERS\n" | grep tier | wc
+            178   # Truth
+            ... grep -v tier | wc
+            67    # False
+
+            # passed by joinx, filtered by us:
+            bcftools filter -e "HP_JOINX>0 | FILTER=='PASS'" batch1-ensemble-TP.FILT_HP40.Joinx.vcf.gz |bcftools query -f "%TIERS\n" | grep tier | wc
+            67    # Truth
+            ... grep -v tier | wc
+            468   # False
+      TODO: try on a different truth set
     """
 
     hp_len = rec.INFO.get('MSILEN')
@@ -300,6 +321,10 @@ def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
         MB: HP40 + SB with min_vd=6  1135  200  128 89.87%  85.02% 87.37% 88.85% 89.36%   225    77  122 64.84%  74.50% 69.34% 66.57% 65.69%    #
         MB: HP40 + SB with min_vd=0  1136  214  127 89.94%  84.15% 86.95% 88.72% 89.33%   225    78  122 64.84%  74.26% 69.23% 66.53% 65.67%    #
     """
+
+    callers = rec.INFO.get('CALLERS').split(',')
+    if len(callers) == 3:  # we wanna only filter vardict
+        return rec
 
     if 'BIAS' not in rec.FORMAT or 'SBF' not in rec.FORMAT:
         return rec
