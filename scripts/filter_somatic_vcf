@@ -54,11 +54,13 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     # Tier 2 - variants of potential clinical significance
     # Tier 3 - variants of unknown clinical significance [UPD: excluded this tier as it often contains unknown variants, but in known onco/ts genes)
 
-    tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
-    if tricky_flags:
-        rec.INFO['TRICKY'] = '|'.join(tricky_flags)
-    for f in tricky_flags:
-        del rec.INFO[f'TRICKY_{f}']
+    if 'TRICKY' not in rec.INFO:
+        tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
+        if tricky_flags:
+            rec.INFO['TRICKY'] = '|'.join(tricky_flags)
+            for f in tricky_flags:
+                del rec.INFO[f'TRICKY_{f}']
+    tricky_flags = rec.INFO.get('TRICKY', '').split('|')
 
     is_hs = rec.INFO.get('HMF_HOTSPOT', False) or \
             rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or \
@@ -159,7 +161,6 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
-    vcf.add_info_to_header({'ID': 'TRICKY',      'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                                                                   'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                                                                  'Type': 'String', 'Number': '1'})
 
@@ -283,9 +284,10 @@ def _check_hp(rec, af, _coef=None):
     # if chg_len > 2 * hp_len:  # caucious with long changes cause it might be real
     #     return rec
 
-    callers = rec.INFO.get('CALLERS').split(',')
-    if len(callers) == 3:  # we wanna only filter vardict
-        return rec
+    if rec.INFO.get('CALLERS') is not None:
+        callers = rec.INFO.get('CALLERS').split(',')
+        if len(callers) == 3:  # we wanna only filter vardict
+            return rec
 
     af_threshold = (hp_repeated - 1) / _coef
     af_threshold = min(af_threshold, 0.35)
@@ -322,9 +324,10 @@ def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
         MB: HP40 + SB with min_vd=0  1136  214  127 89.94%  84.15% 86.95% 88.72% 89.33%   225    78  122 64.84%  74.26% 69.23% 66.53% 65.67%    #
     """
 
-    callers = rec.INFO.get('CALLERS').split(',')
-    if len(callers) == 3:  # we wanna only filter vardict
-        return rec
+    if rec.INFO.get('CALLERS') is not None:
+        callers = rec.INFO.get('CALLERS').split(',')
+        if len(callers) == 3:  # we wanna only filter vardict
+            return rec
 
     if 'BIAS' not in rec.FORMAT or 'SBF' not in rec.FORMAT:
         return rec

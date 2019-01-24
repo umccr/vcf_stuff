@@ -104,12 +104,19 @@ rule somatic_vcf_pcgr_ready:
     run:
         total_vars = int(subprocess.check_output(f'bcftools view -H {input.full_vcf} | wc -l', shell=True).strip())
         vcf = input.full_vcf if total_vars <= 500_000 else input.keygenes_vcf  # to avoid PCGR choking on too many variants
-#        def func(rec):
-#            if rec.INFO.get('ANN') is not None:
-#                rec['ANN'] = None
-#            return rec
-#        iter_vcf(vcf, output.vcf, func)
-        shell(f'bcftools annotate -x INFO/ANN {vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
+        def func(rec):
+            if rec.INFO.get('ANN') is not None:
+                del rec.INFO['ANN']
+            return rec
+        def postproc_hdr(raw_hdr):
+            new_hdr = []
+            for l in raw_hdr.split('\n'):
+                if not l.startswith('##INFO=<ID=ANN,'):
+                    new_hdr.append(l)
+            return '\n'.join(new_hdr)
+        iter_vcf(vcf, output.vcf, func, postproc_hdr=postproc_hdr)
+        # if has_ann(vcf):
+        #     shell(f'bcftools annotate -x INFO/ANN {vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 rule somatic_vcf_pcgr_round1:
     input:
@@ -304,11 +311,40 @@ rule somatic_vcf_regions_anno:
     shell:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
 
-
-rule annotate:
+rule somatic_vcf_regions_clean:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
+    output:
+        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble-clean.vcf.gz',
+        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble-clean.vcf.gz.tbi',
+    run:
+        def proc_hdr(vcf):
+            vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+
+        def postproc_hdr(raw_hdr):
+            import pdb; pdb.set_trace()
+            new_hdr = []
+            for l in raw_hdr.split('\n'):
+                if not l.startswith('##INFO=<ID=TRICKY_'):
+                    new_hdr.append(l)
+            return '\n'.join(new_hdr)
+
+        def func(rec):
+            tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
+            if tricky_flags:
+                rec.INFO['TRICKY'] = '|'.join(tricky_flags)
+            for f in tricky_flags:
+                del rec.INFO[f'TRICKY_{f}']
+            return rec
+
+        iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
+
+
+rule annotate:
+    input:
+        vcf = rules.somatic_vcf_regions_clean.output.vcf,
+        tbi = rules.somatic_vcf_regions_clean.output.tbi,
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
