@@ -7,7 +7,15 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.vcf_utils import get_sample_ids
 
 
-def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, **kwargs):
+def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, postproc_hdr=None, **kwargs):
+    """
+    :param input_file: path to input VCF file
+    :param output_file: path to output VCF file (can be .vcf or .vcf.gz, but it will always bgzip/tabix and write with .vcf.gz extention)
+    :param proc_rec: a function to process a single cyvcf Record object. Returns either a (new) Record object to write, or None to indicate that the record should be discarded
+    :param proc_hdr: a function to process cyvcf object once (i.e. to add values to the header with vcf.add_info_to_header, etc)
+    :param postproc_hdr: a function to postprocess finalized header string (vcf.rawheader), e.g. in order to remove values
+    :param kwargs: any paramters to pass directly into proc_rec
+    """
     vcf = VCF(input_file, gts012=True)
     if proc_hdr is not None:
         proc_hdr(vcf)
@@ -21,7 +29,11 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, **kwargs):
     else:
         # sys.stdout.write(vcf.raw_header)
         w = sys.stdout
-    w.write(vcf.raw_header)
+
+    header = vcf.raw_header
+    if postproc_hdr is not None:
+        header = postproc_hdr(header)
+    w.write(header)
 
     for rec in vcf:
         if proc_rec:
