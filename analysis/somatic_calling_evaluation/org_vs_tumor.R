@@ -1,27 +1,24 @@
----
-title: "Organoid vs tumor"
-output: html_notebook
----
-
-```{r libraries}
 library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(stringr)
 library(stringi)
-#library(vcfR)
+# library(vcfR)
 library(plyranges)
 library(readr)
 library(purrr)
 library(crayon)
-```
 
-Loading files:
-```
-bcftools view o6.vcf.gz | bcftools query -H -f "%CHROM \t %POS \t %REF \t %ALT \t %FILTER \t %GIAB_CONF \t %HMF_GIAB_CONF \t %TUMOR_DP \t %TUMOR_AF \t %NORMAL_DP \t %NORMAL_AF \t %PCGR_TIER \t %PCGR_CLINVAR_CLNSIG \t %PCGR_CONSEQUENCE \t %PCGR_INTOGEN_DRIVER_MUT \t %PCGR_MUTATION_HOTSPOT \t %PCGR_TCGA_PANCANCER_COUNT \t %PoN_CNT \t %HMF_HOTSPOT \t %PCGR_SYMBOL \t %TRICKY \t %ENCODE \t %HMF_MAPPABILITY \t %MSI \t %MSILEN \t %LSEQ \t %RSEQ \n" > o6.tsv
-```
+#####################
+### Loading files
 
-```{r merged}
+"""
+bcftools view o6.vcf.gz | bcftools query -H -f "%CHROM \t %POS \t %REF \t %ALT \t %FILTER \t %GIAB_CONF \t %HMF_GIAB_CONF \t %TUMOR_DP \
+  \t %TUMOR_AF \t %NORMAL_DP \t %NORMAL_AF \t %PCGR_TIER \t %PCGR_CLINVAR_CLNSIG \t %PCGR_CONSEQUENCE \t %PCGR_INTOGEN_DRIVER_MUT \t \
+  %PCGR_MUTATION_HOTSPOT \t %PCGR_TCGA_PANCANCER_COUNT \t %PoN_CNT \t %HMF_HOTSPOT \t %PCGR_SYMBOL \t %TRICKY \t %ENCODE \t %HMF_MAPPABILITY \
+  \t %MSI \t %MSILEN \t %LSEQ \t %RSEQ \n" > o6.tsv
+"""
+
 load_vars <- function(fname, purity) {
   raw <- read_tsv(
     str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.tsv'), 
@@ -51,16 +48,15 @@ t6 <- load_vars('t6', purity = c(0.37, 0.44))
 o6 <- load_vars('o6', purity = c(0.94, 1.00))
 
 merged <- full_join(o6, t6,
-  by = c('CHROM', 'POS', 'REF', 'ALT', 
-         'GIAB_CONF', 'HMF_GIAB_CONF', 'PoN_CNT', 'HMF_HOTSPOT', 'TRICKY', 'ENCODE', 'HMF_MAPPABILITY',
-         'PCGR_TIER', 'PCGR_CLINVAR_CLNSIG', 'PCGR_CONSEQUENCE', 'PCGR_INTOGEN_DRIVER_MUT', 'PCGR_MUTATION_HOTSPOT', 'PCGR_TCGA_PANCANCER_COUNT', 'PCGR_SYMBOL', 
-         'MSI', 'MSILEN', 'LSEQ', 'RSEQ'), 
-  suffix = c('.o', '.t'))
-```
+                    by = c('CHROM', 'POS', 'REF', 'ALT', 
+                           'GIAB_CONF', 'HMF_GIAB_CONF', 'PoN_CNT', 'HMF_HOTSPOT', 'TRICKY', 'ENCODE', 'HMF_MAPPABILITY',
+                           'PCGR_TIER', 'PCGR_CLINVAR_CLNSIG', 'PCGR_CONSEQUENCE', 'PCGR_INTOGEN_DRIVER_MUT', 'PCGR_MUTATION_HOTSPOT', 'PCGR_TCGA_PANCANCER_COUNT', 'PCGR_SYMBOL', 
+                           'MSI', 'MSILEN', 'LSEQ', 'RSEQ'), 
+                    suffix = c('.o', '.t'))
 
-Processing: fixing AF/DP/VD values, mappability, hotspot and other fields.
 
-```{r data}
+#####################
+#### Processing: fixing AF/DP/VD values, mappability, hotspot and other fields.
 data <- merged %>%
   mutate(
     vt = ifelse(str_length(REF) == str_length(ALT), "SNP", "Indel"),
@@ -99,11 +95,9 @@ data <- merged %>%
     -HMF_GIAB_CONF)
 
 data %>% select(HMF_MAPPABILITY) %>% datatable()
-```
 
-Adding Purple
-
-```{r data_p}
+############################
+#### Adding Purple
 read_purple <- function(fname) {
   # #chromosome  start      end        copyNumber  bafCount  observedBAF  actualBAF 
   # 1            1          2038216    2.1435      123       0.5422       0.5327    
@@ -133,27 +127,24 @@ data_p <- data %>%
   as_tibble() %>% 
   dplyr::select(-seqnames, -start, -end, -width, -strand)
 
-```
-
-Exploring
-
-```{r exploring}
+##########################
+#### Exploring
 # TP
 (matching <- data_p %>% 
-   filter(!is.na(FIL.o), !is.na(FIL.t)))
+    filter(!is.na(FIL.o), !is.na(FIL.t)))
 # 6404
 (matching_pass <- matching %>% 
-  filter(FIL.t == "PASS" & FIL.o == "PASS"))
+    filter(FIL.t == "PASS" & FIL.o == "PASS"))
 # 5409
 
 # FN in tumor
 (fneg <- data_p %>% 
-  filter((FIL.t != "PASS" | is.na(FIL.t)) & FIL.o == "PASS"))
+    filter((FIL.t != "PASS" | is.na(FIL.t)) & FIL.o == "PASS"))
 # 3482 (all but 118 are not called in T at all)
 
 # FP in tumor
 (fpos <- data_p %>% 
-  filter(FIL.t == "PASS" & (FIL.o != "PASS" | is.na(FIL.o))))
+    filter(FIL.t == "PASS" & (FIL.o != "PASS" | is.na(FIL.o))))
 # 1829 (all but 8 are not called in O at all)
 
 # Exploring FN in tumor: what kind of FN are called in organoid with a high AF, meaning that they should show up in tumor as well?
@@ -227,10 +218,10 @@ tumor_snps %>%
 for (t in c(2, 3, 4, 5, 6, 7)) {
   print(str_c("VD>=", t))
   print(tumor_snps %>% 
-    filter(VD.t >= t) %>% 
-    mutate(Organoid = ifelse(FIL.o != "PASS" | is.na(FIL.o), "no called", "PASS"),
-           AF = ifelse(AF.t >= 10, ">=10%", "<10%")) %>%   
-    count(AF, Organoid))
+          filter(VD.t >= t) %>% 
+          mutate(Organoid = ifelse(FIL.o != "PASS" | is.na(FIL.o), "no called", "PASS"),
+                 AF = ifelse(AF.t >= 10, ">=10%", "<10%")) %>%   
+          count(AF, Organoid))
 }
 
 # AF distributions for variants missed in organoid
@@ -243,11 +234,10 @@ tumor_snps %>%
   geom_histogram(aes(x = AF.t), binwidth = 1) +
   facet_wrap(~Organoid, ncol = 1) +
   xlim(0, 100)
-```
 
-Exploring homopolymers
+##################################
+#### Exploring homopolymers
 
-```{r homopolymers}
 ### HP
 # Checking flanking sequences of MSI variants
 data_p %>% 
@@ -269,14 +259,14 @@ data_p %>%
 
 # We want to filter novel indels in homopolymer, which are likely artefacts  
 (novel_indels <- data_p %>% 
-  mutate(
-    SEQ = str_c(LSEQ, "-", REF, "-", RSEQ),
-    CH_len = abs(str_length(REF) - str_length(ALT)),
-  ) %>%     
-  filter(!is.na(FIL.t)) %>% 
-  filter(!HS | PCGR_TIER >= 4) %>% 
-  filter(vt == "Indel") %>% 
-  select(-LSEQ, -RSEQ))
+    mutate(
+      SEQ = str_c(LSEQ, "-", REF, "-", RSEQ),
+      CH_len = abs(str_length(REF) - str_length(ALT)),
+    ) %>%     
+    filter(!is.na(FIL.t)) %>% 
+    filter(!HS | PCGR_TIER >= 4) %>% 
+    filter(vt == "Indel") %>% 
+    select(-LSEQ, -RSEQ))
 
 novel_indels %>% 
   filter(AF.t / 100 < HP_REPEATED / 50) %>% 
@@ -289,7 +279,7 @@ novel_indels %>%
     VD = mean(VD.t, rm.na = T),
     AF = mean(AF.t, rm.na = T),
     AF = cut(AF, c(0, 10, 20, 30, 40, 100))
-    ) %>% 
+  ) %>% 
   ggplot() +
   geom_point(aes(x = HP_ELEMENT, y = HP_REPEATED, color = AF, size = n)) +
   facet_wrap(~CH_len, nrow = 1) 
@@ -322,14 +312,14 @@ novel_indels %>%
   mutate(rem = CH_len %% HP_ELEMENT) %>% 
   select(HP_REPEATED, HP_ELEMENT, CH_len, rem, SEQ, CH, C, POSITION, AF.t, DP.t, VD.t, FIL.t, FIL.o) %>% 
   filter(rem != 0) %>% View()
-  print(n = 100)
+print(n = 100)
 # All these changes are either a junction of 2 HP, or just a very low complexity region.
 
 # Conclusion: filter out indels HP_REPEATED > 5
 
 novel_indels %>% 
   filter(MSI >= 5) %>% 
-#  filter(CH_len == 1) %>% 
+  #  filter(CH_len == 1) %>% 
   select(C, POSITION, CH, ALT, REF, vt, AF.t, VD.t, AF.o, VD.o, MSI, MSILEN, LSEQ, RSEQ, PCGR_TIER, 
          everything()) %>% 
   mutate(SEQ = str_c(LSEQ, "-", REF, "-", RSEQ),
@@ -339,9 +329,9 @@ novel_indels %>%
 
 # Exploring different MSI lengths
 data_p %>% 
-group_by(MSI, MSILEN)
+  group_by(MSI, MSILEN)
 
-  filter(CH_len == 1) %>% 
+filter(CH_len == 1) %>% 
   select(-LSEQ, -RSEQ, -ALT, -REF, -CH_len) %>% 
   filter(MSI < 5)
 
@@ -356,7 +346,7 @@ group_by(MSI, MSILEN)
 # msi == 12 and af < 0.3,
 # msi >  12 and af < 0.35])  
 # change_len == 3 and msi >= 5 and af < 0.1:  # ignore low AF in 3nt MSI region
-  
+
 # Zhongwu's rules:
 zh <- tribble(
   ~hp, ~af,
@@ -386,11 +376,11 @@ zh %>% mutate(pred_af = )
 
 tibble(hp = 1:20,
        (hp - 1) / 2 * 0.05)
-```
 
-How AZ blacklisted genes overlap with the noise
 
-```{r genes}
+##########################
+#### How AZ blacklisted genes overlap with the noise
+
 # def _read_list(reason, fpath):
 #     gene_d = list()
 #     df <- read_tsv(fpath)
@@ -442,12 +432,13 @@ with_bl %>%
 with_bl %>% 
   mutate(in_bl = !is.na(blacklists),
          status = ifelse(is.na(FIL.t), "-", ifelse(FIL.t == "PASS", "PASS", "called"))
-         ) %>% 
+  ) %>% 
   count(in_bl, status)
-  
-```
 
-```{r test, echo=TRUE}
+
+#######################
+####
+
 lists <- list(
   bl1 = c("G1", "G2"),
   bl2 = c("G2", "G3"),
