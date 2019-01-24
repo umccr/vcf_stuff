@@ -12,16 +12,14 @@ library(crayon)
 #####################
 ### Loading files
 
-"""
-bcftools view o6.vcf.gz | bcftools query -H -f "%CHROM \t %POS \t %REF \t %ALT \t %FILTER \t %GIAB_CONF \t %HMF_GIAB_CONF \t %TUMOR_DP \
-  \t %TUMOR_AF \t %NORMAL_DP \t %NORMAL_AF \t %PCGR_TIER \t %PCGR_CLINVAR_CLNSIG \t %PCGR_CONSEQUENCE \t %PCGR_INTOGEN_DRIVER_MUT \t \
-  %PCGR_MUTATION_HOTSPOT \t %PCGR_TCGA_PANCANCER_COUNT \t %PoN_CNT \t %HMF_HOTSPOT \t %PCGR_SYMBOL \t %TRICKY \t %ENCODE \t %HMF_MAPPABILITY \
-  \t %MSI \t %MSILEN \t %LSEQ \t %RSEQ \n" > o6.tsv
-"""
+# bcftools view o6.vcf.gz | bcftools query -H -f "%CHROM \t %POS \t %REF \t %ALT \t %FILTER \t %GIAB_CONF \t %HMF_GIAB_CONF \t %TUMOR_DP \
+#  \t %TUMOR_AF \t %NORMAL_DP \t %NORMAL_AF \t %PCGR_TIER \t %PCGR_CLINVAR_CLNSIG \t %PCGR_CONSEQUENCE \t %PCGR_INTOGEN_DRIVER_MUT \t \
+#  %PCGR_MUTATION_HOTSPOT \t %PCGR_TCGA_PANCANCER_COUNT \t %PoN_CNT \t %HMF_HOTSPOT \t %PCGR_SYMBOL \t %TRICKY \t %ENCODE \t %HMF_MAPPABILITY \
+#  \t %MSI \t %MSILEN \t %LSEQ \t %RSEQ \n" > o6.tsv
 
 load_vars <- function(fname, purity) {
   raw <- read_tsv(
-    str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.tsv'), 
+    str_c('/Users/vsaveliev/Analysis/snv_validation/org_tum/vcfs/', fname, '.tsv'), 
     col_types = 'cicccllididccccciiccccciicc',
     na = c("", ".", "NA"))
   raw %>% 
