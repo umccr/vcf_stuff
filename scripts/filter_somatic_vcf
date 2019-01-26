@@ -163,6 +163,8 @@ def _somatic_vcf_filter_hdr(vcf):
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
     vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                                                                   'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                                                                  'Type': 'String', 'Number': '1'})
+    if not '##INFO=<ID=TRICKY,' in vcf.raw_header:  # legacy
+        vcf.add_info_to_header({'ID': 'TRICKY',      'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
 # def _somatic_vcf_filter_rec__pysam(rec):
 #     """ using pysam

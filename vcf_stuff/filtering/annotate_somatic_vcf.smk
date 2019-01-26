@@ -323,7 +323,6 @@ rule somatic_vcf_regions_clean:
             vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
         def postproc_hdr(raw_hdr):
-            import pdb; pdb.set_trace()
             new_hdr = []
             for l in raw_hdr.split('\n'):
                 if not l.startswith('##INFO=<ID=TRICKY_'):
