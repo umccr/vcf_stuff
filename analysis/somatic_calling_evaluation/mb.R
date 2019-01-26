@@ -61,19 +61,21 @@ build_stats <- function(data) {
       FP = sum(is_called & !is_true),
       FN = sum(!is_called & is_true),
       recall = TP / true,
-      prec = FP / called,
+      prec = TP / called,
       F2 = f_measure(2, prec, recall)
     ) %>% 
-    select(-called, -true)
+    select(-called, -true) %>% 
+    mutate_if(is.double, function(v) {str_c(round(v * 100, v), "%")})
   
   metrics = names(stats %>% select(-vartype))
   
   # If you want samples to be columns, and metrics to be rows:
   stats_row <- stats %>%
-    gather(metric, value, -vartype) %>%
+    gather(metric, s, -vartype) %>%
     mutate(metric = factor(metric, levels = metrics)) %>%
     arrange(vartype)
-
+    # mutate(s.called = ifelse(metric %in% c("prec", "recall", "F2"), str_c(round(s.called * 100, 2), "%"), s.called))
+  
   # If you want samples to be rows, and metrics to be columns:  
   # stats_col <- stats %>%
   #   gather(metric, value, -vartype) %>%
@@ -83,9 +85,6 @@ build_stats <- function(data) {
   #   mutate(type_metric = interaction(metric, vartype), vartype = NULL, metric = NULL) %>%
   #   spread(type_metric, value)
 }
-
-called_stats <- build_stats(merged %>% mutate(is_passed = T))
-passed_stats <- build_stats(merged %>% mutate(is_passed = FILTER.c == "PASS"))
 
 # For samples to be rows, and metrics to be columns:  
 # print_stats <- function(df) {
@@ -101,10 +100,22 @@ passed_stats <- build_stats(merged %>% mutate(is_passed = FILTER.c == "PASS"))
 #   select(type, everything()) %>% 
 #   print_stats()
 
-# For samples to be columns, and metrics to be rows:  
-dplyr::full_join(called_stats, passed_stats, by = c("metric", "vartype"), 
-                 suffix = c(".called", ".passed"))
+?deparse
 
+show_stats = function(...) {
+  argnames = sapply(substitute(list(...))[-1], deparse) %>% str_c(".", .)
+  dplyr::full_join(..., by = c("metric", "vartype"), suffix = argnames)
+}
+
+##############
+### Exploring
+called <- merged %>% mutate(is_passed = T) %>% build_stats
+passed <- merged %>% mutate(is_passed = FILTER.c == "PASS") %>% build_stats
+
+brad_filt <- merged %>% mutate(is_passed = 
+# QD < 10.0 && AD[1] / (AD[1] + AD[0]) < 0.25 && ReadPosRankSum < 0.0
+
+show_stats(called, passed)
 
 
 
