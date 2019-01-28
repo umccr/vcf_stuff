@@ -68,7 +68,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or \
             rec.INFO.get('COSMIC_CNT', 0) >= 5 or \
             rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or \
-            rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 2
+            rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3
 
     if int_tier in [1, 2] or is_hs:
         return rec
