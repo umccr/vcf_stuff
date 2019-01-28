@@ -203,15 +203,6 @@ rule somatic_vcf_pcgr_anno:
             return rec
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
-rule prep_giab_bed:
-    input:
-        get_ref_file(GENOME, ['truth_sets', 'giab', 'bed'])
-    output:
-        bed = f'somatic_anno/giab_conf.bed.gz',
-        tbi = f'somatic_anno/giab_conf.bed.gz.tbi'
-    shell:
-        'cat {input} | bgzip -c > {output.bed} && tabix -f -p bed {output.bed}'
-
 rule prep_hmf_hotspots:
     input:
         get_ref_file(GENOME, key='hmf_hotspot'),
@@ -233,7 +224,6 @@ rule prep_anno_toml:
         ga4gh_dir       = directory(join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH')),
         encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
         lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
-        giab_conf_bed   = rules.prep_giab_bed.output.bed,
         gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
         hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
         hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
@@ -243,12 +233,6 @@ rule prep_anno_toml:
     run:
         with open(output[0], 'w') as f:
             f.write(f"""
-[[annotation]]
-file = "{input.giab_conf_bed}"
-names = ["GIAB_CONF"]
-columns = [3]
-ops = ["flag"]
-
 [[annotation]]
 file="{input.gnomad_vcf}"
 fields = ["AF"]
