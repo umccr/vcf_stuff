@@ -26,7 +26,7 @@ install:
 script: 
   - nosetests --nocapture tests/test.py:TestEvalVcf.test_preset_ref
   - nosetests --nocapture tests/test.py:TestEvalVcf.test_custom_ref
-  - nosetests --nocapture tests/test.py:TestEvalCnv
+#  - nosetests --nocapture tests/test.py:TestEvalCnv
   - nosetests --nocapture tests/test.py:TestPonAnno
   - nosetests --nocapture tests/test.py:TestPoNPipeline
   - nosetests --nocapture tests/test.py:TestNormVcf
