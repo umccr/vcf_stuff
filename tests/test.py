@@ -70,29 +70,29 @@ class TestEvalVcf(BaseTestCase):
         self._check_file_throws(join(out_dir, 'report.tsv'), ignore_matching_lines=vcf_ignore_lines)
 
 
-@attr(kind='eval_cnv')
-class TestEvalCnv(BaseTestCase):
-    script = 'eval_cnv'
-    data_dir = join(dirname(__file__), BaseTestCase.data_dir, 'cnv', 'hcc2218')
-    results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
-    gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
-
-    def setUp(self):
-        BaseTestCase.setUp(self)
-        self.ref_cnv = join(TestEvalCnv.data_dir, 'HCC2218_truthset_cnv_bcbio.tsv')
-        self.input_cnvs = [join(TestEvalCnv.data_dir, fn) for fn in [
-            'HCC2218_cnvkit-call.cns',
-            'HCC2218_facets_cncf.tsv',
-            'HCC2218_manta.vcf',
-            'HCC2218_purple.cnv.tsv',
-        ]]
-
-    def test(self):
-        out_dir = join(TestEvalCnv.results_dir)
-        cmdl = f'eval_cnv {self.ref_cnv} {" ".join(self.input_cnvs)} -g GRCh37 -o {out_dir}'
-        self._run_cmd(cmdl, self.input_cnvs, out_dir)
-        self._check_file_throws(join(out_dir, 'report.tsv'))
-        self._check_file_throws(join(out_dir, 'table.tsv'))
+# @attr(kind='eval_cnv')
+# class TestEvalCnv(BaseTestCase):
+#     script = 'eval_cnv'
+#     data_dir = join(dirname(__file__), BaseTestCase.data_dir, 'cnv', 'hcc2218')
+#     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
+#     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
+#
+#     def setUp(self):
+#         BaseTestCase.setUp(self)
+#         self.ref_cnv = join(TestEvalCnv.data_dir, 'HCC2218_truthset_cnv_bcbio.tsv')
+#         self.input_cnvs = [join(TestEvalCnv.data_dir, fn) for fn in [
+#             'HCC2218_cnvkit-call.cns',
+#             'HCC2218_facets_cncf.tsv',
+#             'HCC2218_manta.vcf',
+#             'HCC2218_purple.cnv.tsv',
+#         ]]
+#
+#     def test(self):
+#         out_dir = join(TestEvalCnv.results_dir)
+#         cmdl = f'eval_cnv {self.ref_cnv} {" ".join(self.input_cnvs)} -g GRCh37 -o {out_dir}'
+#         self._run_cmd(cmdl, self.input_cnvs, out_dir)
+#         self._check_file_throws(join(out_dir, 'report.tsv'))
+#         self._check_file_throws(join(out_dir, 'table.tsv'))
 
 
 pon_data_dir = join(data_dir, 'panel_of_normals')
@@ -131,7 +131,7 @@ class TestNormVcf(BaseTestCase):
 
     def _run_norm_vcf(self, input_vcf=None):
         out_vcf = join(TestNormVcf.results_dir, basename(add_suffix(input_vcf, 'norm')))
-        cmdl = f'norm_vcf {input_vcf} -o {out_vcf} -g {ref_fa}'
+        cmdl = f'norm_vcf {input_vcf} -o {out_vcf} --ref-fasta {ref_fa}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 

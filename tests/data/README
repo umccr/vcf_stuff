@@ -1,0 +1,1 @@
+bcftools view -r 16:1-100000 /Users/vsaveliev/git/umccr/vcf_stuff/tests/data/ori/MB_100vs50-strelka2-annotated.vcf.gz -Oz -o test-strelka2.vcf.gz
