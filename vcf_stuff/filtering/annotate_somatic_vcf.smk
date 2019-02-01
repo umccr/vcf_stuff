@@ -224,6 +224,7 @@ rule prep_anno_toml:
         ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
         encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
         lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
+        segdup          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
         gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
         hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
         hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
@@ -268,6 +269,12 @@ file = "{input.encode}"
 names = ["ENCODE"]
 columns = [4]
 ops = ["concat"]
+
+[[annotation]]
+file = "{input.segdup}"
+columns = [3]
+names = ["SEGDUP"]
+ops = ["flag"]
 
 """)
         for fn in os.listdir(join(input.ga4gh_dir)):

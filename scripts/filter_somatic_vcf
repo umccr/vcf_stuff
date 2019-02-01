@@ -78,12 +78,13 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     # Remove gnomad_AF>=0.01
     # Remove PoN_CNT>=2         # {0 if issnp else 1}'
     # Remove indels in "bad_promoter" tricky regions
-    # Remove DP*AF<3
-    # Remove DP*AF<5 in tricky regions:
+    # Remove VD<3
+    # Remove VD<5 in tricky regions:
     #        gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp,
     #        non-GIAB confident,
     #        LCR,
     #        ENCODE,
+    #        SEGDUP,
     #        mappability<1
     else:
         # if rec.INFO['TUMOR_AF'] < 0.1:
@@ -122,7 +123,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             vardict2mut.filter(rec, tumor_index)
 
         # removing low AF and low DP variants in low complexity regions
-        lcr = rec.INFO.get('ENCODE') or set(tricky_flags) & {
+        lcr = rec.INFO.get('ENCODE') or rec.INFO.get('SEGDUP') or set(tricky_flags) & {
             'gc15', 'gc70to75', 'gc75to80', 'gc80to85', 'gc85', 'heng_um75-hs37d5',
             'low_complexity_51to200bp', 'low_complexity_gt200bp',
             'LCR'}
