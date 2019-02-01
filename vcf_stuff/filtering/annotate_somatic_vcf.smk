@@ -61,8 +61,8 @@ rule somatic_vcf_prep:
     input:
         vcf = INPUT_VCF
     output:
-        vcf = f'somatic_anno/{SAMPLE}-somatic-ensemble-prep.vcf.gz',
-        tbi = f'somatic_anno/{SAMPLE}-somatic-ensemble-prep.vcf.gz.tbi'
+        vcf = f'somatic_anno/{SAMPLE}-somatic-prep.vcf.gz',
+        tbi = f'somatic_anno/{SAMPLE}-somatic-prep.vcf.gz.tbi'
     shell:
         'pcgr_prep {input.vcf} | bcftools view -f.,PASS -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}'
 
@@ -75,8 +75,8 @@ rule somatic_vcf_pon_anno:
         pon_hits = 3,
         pon_dir = get_ref_file(GENOME, 'panel_of_normals_dir')
     output:
-        vcf = f'somatic_anno/pon/{SAMPLE}-somatic-ensemble.vcf.gz',
-        tbi = f'somatic_anno/pon/{SAMPLE}-somatic-ensemble.vcf.gz.tbi',
+        vcf = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz.tbi',
     shell:
         'pon_anno {input.vcf} --pon-dir {params.pon_dir} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
@@ -86,7 +86,7 @@ rule somatic_vcf_keygenes:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
     output:
-        vcf = f'somatic_anno/keygenes/{SAMPLE}-somatic-ensemble.vcf.gz',
+        vcf = f'somatic_anno/keygenes/{SAMPLE}-somatic.vcf.gz',
     run:
         genes = get_key_genes_set()
         def func(rec):
@@ -99,8 +99,8 @@ rule somatic_vcf_pcgr_ready:
         full_vcf = rules.somatic_vcf_pon_anno.output.vcf,
         keygenes_vcf = rules.somatic_vcf_keygenes.output.vcf,
     output:
-        vcf = f'somatic_anno/pcgr_input/{SAMPLE}-somatic-ensemble.vcf.gz',
-        tbi = f'somatic_anno/pcgr_input/{SAMPLE}-somatic-ensemble.vcf.gz.tbi',
+        vcf = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
         total_vars = int(subprocess.check_output(f'bcftools view -H {input.full_vcf} | wc -l', shell=True).strip())
         vcf = input.full_vcf if total_vars <= 500_000 else input.keygenes_vcf  # to avoid PCGR choking on too many variants
@@ -141,8 +141,8 @@ rule somatic_vcf_pcgr_anno:
         vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
         tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
     output:
-        vcf = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic-ensemble.vcf.gz',
-        tbi = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic-ensemble.vcf.gz.tbi',
+        vcf = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
         pcgr_fields_by_snp = dict()
         cosmic_by_snp = dict()
@@ -221,7 +221,7 @@ tabix -f -p vcf {output.vcf}
 
 rule prep_anno_toml:
     input:
-        ga4gh_dir       = directory(join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH')),
+        ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
         encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
         lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
         gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
@@ -290,8 +290,8 @@ rule somatic_vcf_regions_anno:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         toml = rules.prep_anno_toml.output[0]
     output:
-        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble.vcf.gz',
-        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble.vcf.gz.tbi',
+        vcf = f'somatic_anno/regions/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/regions/{SAMPLE}-somatic.vcf.gz.tbi',
     shell:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
 
@@ -300,8 +300,8 @@ rule somatic_vcf_regions_clean:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
     output:
-        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble-clean.vcf.gz',
-        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-ensemble-clean.vcf.gz.tbi',
+        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz',
+        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz.tbi',
     run:
         def proc_hdr(vcf):
             vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})

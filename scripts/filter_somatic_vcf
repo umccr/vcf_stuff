@@ -75,7 +75,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     # Applying LC, PoN, depth and AF filters to tier 4 and non-coding:
     # Tier 4 - other coding variants
     # Noncoding variants
-    # Remove gnomad_AF>0.01
+    # Remove gnomad_AF>=0.01
     # Remove PoN_CNT>=2         # {0 if issnp else 1}'
     # Remove indels in "bad_promoter" tricky regions
     # Remove DP*AF<3
