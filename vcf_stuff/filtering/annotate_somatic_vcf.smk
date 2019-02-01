@@ -236,7 +236,7 @@ rule prep_anno_toml:
             f.write(f"""
 [[annotation]]
 file="{input.gnomad_vcf}"
-fields = ["AF"]
+fields = ["AF_POPMAX"]
 names = ["gnomAD_AF"]
 ops = ["self"]
 
