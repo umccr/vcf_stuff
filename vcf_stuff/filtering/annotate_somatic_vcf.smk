@@ -121,7 +121,7 @@ rule somatic_vcf_pcgr_ready:
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
-        pcgr_data = get_loc().pcgr_data,
+        pcgr_data = get_ref_file(key='pcgr_data'),
     output:
         tiers = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr.snvs_indels.tiers.tsv',
     params:
