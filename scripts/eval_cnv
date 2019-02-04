@@ -5,7 +5,6 @@ import click
 from ngs_utils.file_utils import splitext_plus, verify_file
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
-from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
 from vcf_stuff.eval_cnv import package_path
 from ngs_utils.utils import set_locale; set_locale()
 
@@ -35,8 +34,6 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
     if regions:
         conf['sample_regions'] = abspath(regions)
 
-    # get_ref(genome, conf, truth)
-
     run_snakemake(join(package_path(), "cnv.smk"), conf, jobs, output_dir, force_rerun='table report', unlock=unlock)
 
     if output_dir:
@@ -46,32 +43,6 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
         print(f'Results are in "{output_dir}" folder.\n'
               f'  Data in TSV: "{output_dir}/report.tsv"\n'
               f'  HTML report: "{output_dir}/report.html"')
-
-# def get_ref(genome, conf, truth):
-#     genome_d = None
-#
-#     loc = find_loc()
-#     if loc:
-#         genome_d = get_genomes_d(genome, loc=loc)
-#     else:
-#         critical(f'Genome {genome} data does not exist for location {loc.name}.')
-
-    # Truth set
-    # if isfile(truth):
-    #     conf['truth_variants'] = abspath(truth)
-    # elif genome_d:
-    #     truth_set_d = genome_d.get('truth_sets', {}).get(truth)
-    #     if not truth_set_d:
-    #         critical(f'First argument must be either a CNS/BED file, or a value from:'
-    #                  f' {", ".join(genome_d.get("truth_sets").keys())}.'
-    #                  f' Truth set "{truth}" was not found in the file system or in hpc.py'
-    #                  f' for genome "{genome}" at file system "{loc.name}"')
-    #
-    #     conf['truth_variants'] = abspath(truth_set_d['cnv'])
-    #     if 'bed' in truth_set_d:
-    #         conf['truth_regions'] = abspath(truth_set_d['bed'])
-    # else:
-    #     critical(f'Truth set {truth}: file does not exist, or cannot automatically find it by location.')
 
 
 if __name__ == '__main__':

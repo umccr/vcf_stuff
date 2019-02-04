@@ -5,7 +5,7 @@ import click
 from ngs_utils.file_utils import splitext_plus, verify_file
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
-from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_d
+from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_dict
 from vcf_stuff.eval_vcf import package_path
 from ngs_utils.utils import set_locale; set_locale()
 
@@ -68,7 +68,7 @@ def get_ref(genome, conf, truth, ref_fasta):
         genome = splitext_plus(basename(genome))[0]
     elif loc:
         conf['reference_fasta'] = get_ref_file(genome, loc=loc)
-        genome_d = get_genomes_d(genome, loc=loc)
+        genome_d = get_genomes_dict(genome, loc=loc)
     else:
         critical(f'Genome {genome}: fasta file does not exist, or cannot automatically find it by location.')
 
