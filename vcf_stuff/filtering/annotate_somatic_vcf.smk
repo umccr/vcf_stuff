@@ -4,7 +4,6 @@ import toml
 import csv
 from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
-from ngs_utils.reference_data import get_key_genes_set
 from ngs_utils.file_utils import splitext_plus
 from hpc_utils.hpc import get_ref_file, get_loc
 from vcf_stuff import iter_vcf
@@ -82,28 +81,13 @@ rule somatic_vcf_pon_anno:
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
         # ' && tabix -f -p vcf {output.vcf} '
 
-rule somatic_vcf_keygenes:
+rule somatic_vcf_rm_snpeff:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
-    output:
-        vcf = f'somatic_anno/keygenes/{SAMPLE}-somatic.vcf.gz',
-    run:
-        genes = get_key_genes_set()
-        def func(rec):
-            if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
-                return rec
-        iter_vcf(input.vcf, output.vcf, func)
-
-rule somatic_vcf_pcgr_ready:
-    input:
-        full_vcf = rules.somatic_vcf_pon_anno.output.vcf,
-        keygenes_vcf = rules.somatic_vcf_keygenes.output.vcf,
     output:
         vcf = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
-        total_vars = int(subprocess.check_output(f'bcftools view -H {input.full_vcf} | wc -l', shell=True).strip())
-        vcf = input.full_vcf if total_vars <= 500_000 else input.keygenes_vcf  # to avoid PCGR choking on too many variants
         def func(rec):
             if rec.INFO.get('ANN') is not None:
                 del rec.INFO['ANN']
@@ -114,13 +98,13 @@ rule somatic_vcf_pcgr_ready:
                 if not l.startswith('##INFO=<ID=ANN,'):
                     new_hdr.append(l)
             return '\n'.join(new_hdr)
-        iter_vcf(vcf, output.vcf, func, postproc_hdr=postproc_hdr)
+        iter_vcf(input.vcf, output.vcf, func, postproc_hdr=postproc_hdr)
         # if has_ann(vcf):
         #     shell(f'bcftools annotate -x INFO/ANN {vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 rule somatic_vcf_pcgr_round1:
     input:
-        vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
+        vcf = rules.somatic_vcf_rm_snpeff.output.vcf,
         pcgr_data = get_ref_file(key='pcgr_data'),
     output:
         tiers = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr.snvs_indels.tiers.tsv',
@@ -138,7 +122,7 @@ rule somatic_vcf_pcgr_round1:
 
 rule somatic_vcf_pcgr_anno:
     input:
-        vcf = rules.somatic_vcf_pcgr_ready.output.vcf,
+        vcf = rules.somatic_vcf_rm_snpeff.output.vcf,
         tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
     output:
         vcf = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz',
