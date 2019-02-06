@@ -7,6 +7,8 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from hpc_utils.hpc import get_ref_file, get_loc
 from vcf_stuff import iter_vcf
+import subprocess
+from ngs_utils.reference_data import get_key_genes_set
 
 
 localrules: prep_anno_toml, prep_giab_bed, annotate
@@ -26,6 +28,8 @@ PCGR_ENV_PATH = config.get('pcgr_env_path')
 conda_cmd = ''
 if PCGR_ENV_PATH:
     conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
+
+# REMOVE_GERMLINE = config.get('remove_germline', 'no') == 'yes'
 
 
 #############################
@@ -55,15 +59,182 @@ rule all:
 #   Remove DP<25 & AF<5% in tricky regions: gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp, non-GIAB confident, unless coding in cancer genes
 
 
+rule prep_hmf_hotspots:
+    input:
+        get_ref_file(GENOME, key='hmf_hotspot'),
+    output:
+        vcf = f'somatic_anno/hmf_hotspot.vcf.gz',
+        tbi = f'somatic_anno/hmf_hotspot.vcf.gz.tbi',
+    params:
+        ungz = f'somatic_anno/hmf_hotspot.vcf'
+    shell: """
+echo "##fileformat=VCFv4.2" >> {params.ungz} &&
+echo "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO" >> {params.ungz} &&
+gunzip -c {input} | py -x "print('\t'.join([x.split()[0], x.split()[1], '.', x.split()[2], x.split()[3], '.', '.', 'HS']))" >> {params.ungz} &&
+bgzip {params.ungz} &&
+tabix -f -p vcf {output.vcf}
+"""
+
+rule prep_anno_toml:
+    input:
+        ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
+        encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
+        lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
+        segdup          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
+        gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
+        hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
+        hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
+        hmf_mappability = get_ref_file(GENOME, key='hmf_mappability'),
+    output:
+        f'somatic_anno/tricky_vcfanno.toml'
+    run:
+        with open(output[0], 'w') as f:
+            f.write(f"""
+[[annotation]]
+file="{input.gnomad_vcf}"
+fields = ["AF_popmax"]
+names = ["gnomAD_AF"]
+ops = ["self"]
+
+[[annotation]]
+file = "{input.hmf_hotspots}"
+fields = ["HS"]
+names = ["HMF_HOTSPOT"]
+ops = ["flag"]
+
+[[annotation]]
+file = "{input.hmf_giab}"
+names = ["HMF_GIAB_CONF"]
+columns = [3]
+ops = ["flag"]
+
+[[annotation]]
+file = "{input.hmf_mappability}"
+names = ["HMF_MAPPABILITY_float"]
+columns = [5]
+ops = ["concat"]
+
+[[annotation]]
+file = "{input.lcr}"
+names = ["TRICKY_LCR"]
+columns = [3]
+ops = ["flag"]
+
+[[annotation]]
+file = "{input.encode}"
+names = ["ENCODE"]
+columns = [4]
+ops = ["concat"]
+
+[[annotation]]
+file = "{input.segdup}"
+columns = [3]
+names = ["SEGDUP"]
+ops = ["flag"]
+
+""")
+        for fn in os.listdir(join(input.ga4gh_dir)):
+            if fn.endswith('.bed.gz'):
+                fpath = join(input.ga4gh_dir, fn)
+                assert isfile(fpath), fpath
+                name = splitext_plus(basename(fpath))[0]
+                with open(output[0], 'a') as f:
+                    f.write(f"""
+[[annotation]]
+file = "{fpath}"
+columns = [4]
+names = ["TRICKY_{name}"]
+ops = ["flag"]
+""")
+
+rule somatic_vcf_regions_anno:
+    input:
+        vcf = INPUT_VCF,
+        toml = rules.prep_anno_toml.output[0],
+    output:
+        vcf = f'somatic_anno/vcfanno/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/vcfanno/{SAMPLE}-somatic.vcf.gz.tbi',
+    shell:
+        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
+
+# Possibly subset VCF to avoid PCGR choking with R stuff.
+# too higly mutated samples might indicate germline contamination.
+rule remove_germline:
+    input:
+        vcf = rules.somatic_vcf_regions_anno.output.vcf,
+        tbi = rules.somatic_vcf_regions_anno.output.tbi,
+    output:
+        vcf = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz.tbi',
+    run:
+        total_vars = int(subprocess.check_output(f'bcftools view -H {input.vcf} | wc -l', shell=True).strip())
+        if total_vars > 500_000:
+            shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
+        else:
+            shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
+
+# If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
+# subsetting to cancer genes in this case.
+rule subset_cancer_genes:
+    input:
+        rm_germline_vcf = rules.remove_germline.output.vcf,
+        rm_germline_tbi = rules.remove_germline.output.tbi,
+        full_vcf = rules.somatic_vcf_regions_anno.output.vcf,
+        full_tbi = rules.somatic_vcf_regions_anno.output.tbi,
+    output:
+        vcf = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz.tbi',
+        subset_to_cancer = f'somatic_anno/subset_to_cancer_genes.flag',
+    run:
+        vars_left = int(subprocess.check_output(f'bcftools view -H {input.rm_germline_vcf} | wc -l', shell=True).strip())
+        if vars_left > 500_000:
+            genes = get_key_genes_set()
+            def func(rec):
+                if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
+                    return rec
+            iter_vcf(input.vcf, output.vcf, func)
+            shell('echo YES > {output.subset_to_cancer}')
+        else:
+            shell('cp {input.rm_germline_vcf} {output.vcf} ; cp {input.rm_germline_tbi} {output.tbi} ; ')
+            shell('echo NO > {output.subset_to_cancer}')
+
+rule somatic_vcf_regions_clean:
+    input:
+        vcf = rules.subset_cancer_genes.output.vcf,
+        tbi = rules.subset_cancer_genes.output.tbi,
+    output:
+        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz',
+        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz.tbi',
+    run:
+        def proc_hdr(vcf):
+            vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+
+        def postproc_hdr(raw_hdr):
+            new_hdr = []
+            for l in raw_hdr.split('\n'):
+                if not l.startswith('##INFO=<ID=TRICKY_'):
+                    new_hdr.append(l)
+            return '\n'.join(new_hdr)
+
+        def func(rec):
+            tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
+            if tricky_flags:
+                rec.INFO['TRICKY'] = '|'.join(tricky_flags)
+            for f in tricky_flags:
+                del rec.INFO[f'TRICKY_{f}']
+            return rec
+
+        iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
+
 # Preparations: annotate TUMOR_X and NORMAL_X fields for PCGR, remove non-standard chromosomes and mitochondria, remove non-PASSed calls
 rule somatic_vcf_prep:
     input:
-        vcf = INPUT_VCF
+        vcf = rules.somatic_vcf_regions_clean.output.vcf,
     output:
-        vcf = f'somatic_anno/{SAMPLE}-somatic-prep.vcf.gz',
-        tbi = f'somatic_anno/{SAMPLE}-somatic-prep.vcf.gz.tbi'
+        vcf = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz.tbi'
     shell:
-        'pcgr_prep {input.vcf} | bcftools view -f.,PASS -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}'
+        'pcgr_prep {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
 
 rule somatic_vcf_pon_anno:
     input:
@@ -187,138 +358,10 @@ rule somatic_vcf_pcgr_anno:
             return rec
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
-rule prep_hmf_hotspots:
-    input:
-        get_ref_file(GENOME, key='hmf_hotspot'),
-    output:
-        vcf = f'somatic_anno/hmf_hotspot.vcf.gz',
-        tbi = f'somatic_anno/hmf_hotspot.vcf.gz.tbi',
-    params:
-        ungz = f'somatic_anno/hmf_hotspot.vcf'
-    shell: """
-echo "##fileformat=VCFv4.2" >> {params.ungz} &&
-echo "#CHROM\\tPOS\\tID\\tREF\\tALT\\tQUAL\\tFILTER\\tINFO" >> {params.ungz} &&
-gunzip -c {input} | py -x "print('\t'.join([x.split()[0], x.split()[1], '.', x.split()[2], x.split()[3], '.', '.', 'HS']))" >> {params.ungz} &&
-bgzip {params.ungz} &&
-tabix -f -p vcf {output.vcf}
-"""
-
-rule prep_anno_toml:
-    input:
-        ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
-        encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
-        lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
-        segdup          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
-        gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
-        hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
-        hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
-        hmf_mappability = get_ref_file(GENOME, key='hmf_mappability'),
-    output:
-        f'somatic_anno/tricky_vcfanno.toml'
-    run:
-        with open(output[0], 'w') as f:
-            f.write(f"""
-[[annotation]]
-file="{input.gnomad_vcf}"
-fields = ["AF_popmax"]
-names = ["gnomAD_AF"]
-ops = ["self"]
-
-[[annotation]]
-file = "{input.hmf_hotspots}"
-fields = ["HS"]
-names = ["HMF_HOTSPOT"]
-ops = ["flag"]
-
-[[annotation]]
-file = "{input.hmf_giab}"
-names = ["HMF_GIAB_CONF"]
-columns = [3]
-ops = ["flag"]
-
-[[annotation]]
-file = "{input.hmf_mappability}"
-names = ["HMF_MAPPABILITY_float"]
-columns = [5]
-ops = ["concat"]
-
-[[annotation]]
-file = "{input.lcr}"
-names = ["TRICKY_LCR"]
-columns = [3]
-ops = ["flag"]
-
-[[annotation]]
-file = "{input.encode}"
-names = ["ENCODE"]
-columns = [4]
-ops = ["concat"]
-
-[[annotation]]
-file = "{input.segdup}"
-columns = [3]
-names = ["SEGDUP"]
-ops = ["flag"]
-
-""")
-        for fn in os.listdir(join(input.ga4gh_dir)):
-            if fn.endswith('.bed.gz'):
-                fpath = join(input.ga4gh_dir, fn)
-                assert isfile(fpath), fpath
-                name = splitext_plus(basename(fpath))[0]
-                with open(output[0], 'a') as f:
-                    f.write(f"""
-[[annotation]]
-file = "{fpath}"
-columns = [4]
-names = ["TRICKY_{name}"]
-ops = ["flag"]
-""")
-
-
-rule somatic_vcf_regions_anno:
-    input:
-        vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
-        toml = rules.prep_anno_toml.output[0]
-    output:
-        vcf = f'somatic_anno/regions/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/regions/{SAMPLE}-somatic.vcf.gz.tbi',
-    shell:
-        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
-
-rule somatic_vcf_regions_clean:
-    input:
-        vcf = rules.somatic_vcf_regions_anno.output.vcf,
-        tbi = rules.somatic_vcf_regions_anno.output.tbi,
-    output:
-        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz',
-        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz.tbi',
-    run:
-        def proc_hdr(vcf):
-            vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
-
-        def postproc_hdr(raw_hdr):
-            new_hdr = []
-            for l in raw_hdr.split('\n'):
-                if not l.startswith('##INFO=<ID=TRICKY_'):
-                    new_hdr.append(l)
-            return '\n'.join(new_hdr)
-
-        def func(rec):
-            tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
-            if tricky_flags:
-                rec.INFO['TRICKY'] = '|'.join(tricky_flags)
-            for f in tricky_flags:
-                del rec.INFO[f'TRICKY_{f}']
-            return rec
-
-        iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
-
-
 rule annotate:
     input:
-        vcf = rules.somatic_vcf_regions_clean.output.vcf,
-        tbi = rules.somatic_vcf_regions_clean.output.tbi,
+        vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
+        tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
