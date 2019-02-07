@@ -3,13 +3,20 @@ from bed_annotation import get_canonical_transcripts_ids
 from hpc_utils.hpc import get_ref_file
 # from pybedtools import BedTool
 from ngs_utils import gtf
+import sys
 
 ''' Generates coding_regions BED file for SAGE
     https://github.com/hartwigmedical/hmftools/tree/master/sage
+
+    Usage: 
+    python {__file__} | sort -k1,1V -k2,2n | grep -v ^MT | grep -v ^GL | bedtools merge -i - > coding_regions.canonical.sort.merged.bed
 '''
 
 GENOME = 'GRCh37'
-OUTPUT= 'coding_regions.canonical.bed'
+if len(sys.argv) > 1:
+    out = open(sys.argv[1], 'w')
+else:
+    out = sys.stdout
 
 gtf_fpath = get_ref_file(GENOME, key='gtf')
 db = gtf.get_gtf_db(gtf_fpath)
@@ -34,11 +41,11 @@ for rec in db.all_features(order_by=('seqid', 'start', 'end')):
                          str(rec.start - 1),
                          str(rec.end)])
 
-with open(OUTPUT, 'w') as out:
-    for f in features:
-        out.write('\t'.join(f) + '\n')
-#BedTool(features).saveas(OUTPUT)
+for f in features:
+    out.write('\t'.join(f) + '\n')
 
+try:
+    out.close()
+except:
+    pass
 
-# Then sort and clean:
-# sort -k1,1V -k2,2n coding_regions.canonical.bed | grep -v ^MT | grep -v ^GL > coding_regions.sort.bed
