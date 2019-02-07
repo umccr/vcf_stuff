@@ -5,7 +5,7 @@ import csv
 from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
-from hpc_utils.hpc import get_ref_file, get_loc
+from hpc_utils.hpc import get_ref_file
 from vcf_stuff import iter_vcf
 import subprocess
 from ngs_utils.reference_data import get_key_genes_set
@@ -19,6 +19,7 @@ localrules: prep_anno_toml, prep_giab_bed, annotate
 
 SAMPLE = config['sample']
 GENOME = config['genome']
+GENOMES_DIR = config.get('genomes_dir')
 INPUT_VCF = config['input_vcf']
 OUTPUT_VCF = config['output_vcf']
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
@@ -28,6 +29,7 @@ PCGR_ENV_PATH = config.get('pcgr_env_path')
 conda_cmd = ''
 if PCGR_ENV_PATH:
     conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
+
 
 # REMOVE_GERMLINE = config.get('remove_germline', 'no') == 'yes'
 
@@ -61,7 +63,7 @@ rule all:
 
 rule prep_hmf_hotspots:
     input:
-        get_ref_file(GENOME, key='hmf_hotspot'),
+        get_ref_file(GENOME, key='hmf_hotspot', genomes_dir=GENOMES_DIR),
     output:
         vcf = f'somatic_anno/hmf_hotspot.vcf.gz',
         tbi = f'somatic_anno/hmf_hotspot.vcf.gz.tbi',
@@ -77,14 +79,14 @@ tabix -f -p vcf {output.vcf}
 
 rule prep_anno_toml:
     input:
-        ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
-        encode          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
-        lcr             = join(get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
-        segdup          = join(get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
-        gnomad_vcf      = get_ref_file(GENOME, key='gnomad'),
+        ga4gh_dir       = join(get_ref_file(GENOME, key='problem_regions_dir', genomes_dir=GENOMES_DIR), 'GA4GH'),
+        encode          = join(get_ref_file(GENOME, key='problem_regions_dir', genomes_dir=GENOMES_DIR), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
+        lcr             = join(get_ref_file(GENOME, key='problem_regions_dir', genomes_dir=GENOMES_DIR), 'repeats', 'LCR.bed.gz'),
+        segdup          = join(get_ref_file(GENOME, key='problem_regions_dir', genomes_dir=GENOMES_DIR), 'segdup.bed.gz'),
+        gnomad_vcf      = get_ref_file(GENOME, key='gnomad', genomes_dir=GENOMES_DIR),
         hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
-        hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf'),
-        hmf_mappability = get_ref_file(GENOME, key='hmf_mappability'),
+        hmf_giab        = get_ref_file(GENOME, key='hmf_giab_conf', genomes_dir=GENOMES_DIR),
+        hmf_mappability = get_ref_file(GENOME, key='hmf_mappability', genomes_dir=GENOMES_DIR),
     output:
         f'somatic_anno/tricky_vcfanno.toml'
     run:
@@ -243,7 +245,7 @@ rule somatic_vcf_pon_anno:
     params:
         genome_build = GENOME,
         pon_hits = 3,
-        pon_dir = get_ref_file(GENOME, 'panel_of_normals_dir')
+        pon_dir = get_ref_file(GENOME, 'panel_of_normals_dir', genomes_dir=GENOMES_DIR)
     output:
         vcf = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz.tbi',
@@ -276,7 +278,7 @@ rule somatic_vcf_rm_snpeff:
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_rm_snpeff.output.vcf,
-        pcgr_data = get_ref_file(key='pcgr_data'),
+        pcgr_data = get_ref_file(key='pcgr_data', genomes_dir=GENOMES_DIR),
     output:
         tiers = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr.snvs_indels.tiers.tsv',
     params:

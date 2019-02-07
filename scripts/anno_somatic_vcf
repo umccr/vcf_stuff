@@ -14,8 +14,9 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
+@click.option('--genomes-dir', 'genomes_dir')
 @click.option('--unlock', 'unlock', is_flag=True)
-def main(vcf, genome, output_file, work_dir=None, unlock=None):
+def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, unlock=None):
 
     if not vcf.endswith('.vcf.gz'):
         raise click.BadParameter('VCF must be bgzip compresed')
@@ -34,6 +35,8 @@ def main(vcf, genome, output_file, work_dir=None, unlock=None):
         'sample': basename(splitext_plus(output_file)[0]),
         'genome': genome,
     }
+    if genomes_dir:
+        conf['genomes_dir'] = genomes_dir
 
     if not work_dir:
         work_dir = output_file + '_work'
