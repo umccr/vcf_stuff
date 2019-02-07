@@ -255,6 +255,13 @@ passed2 %>% count(TCGA >= 5)
 
 # TODO: explore CALLS and TIERS.truth
 
+# SAGE. Explore how it changes in CCR180148_MH18F001P062-sage.vcf.gz (not MB unfortanately because MB doesn't have hotspots)
+# - what are "inframe" hotspots?
+# - add all PASS SAGE variants into the resulting VCF
+# - add FILTER=SAGE_lowconf into resulting VCF if a passing variants is not confirmed by SAGE
+# - extend the set of hotspots by adding PCGR sources?
+# - CACAO: compare hotspots and genes with PCGR and HMF hotspots
+
 
 
 
