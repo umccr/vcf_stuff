@@ -34,6 +34,7 @@ requirements:
     - bed_annotation >=1.0.8
     - hpc_utils >=1.0.16
     - gsort  # https://github.com/brentp/gsort
+    - pyensembl
 
 test:
   imports:
