@@ -6,7 +6,7 @@ from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from hpc_utils.hpc import get_ref_file
-from vcf_stuff import iter_vcf
+from vcf_stuff import iter_vcf, count_vars
 import subprocess
 from ngs_utils.reference_data import get_key_genes_set
 
@@ -169,7 +169,7 @@ rule remove_germline:
         vcf = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
-        total_vars = int(subprocess.check_output(f'bcftools view -H {input.vcf} | wc -l', shell=True).strip())
+        total_vars = count_vars(input.vcf)
         if total_vars > 500_000:
             shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
         else:

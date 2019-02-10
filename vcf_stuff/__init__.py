@@ -1,10 +1,20 @@
+import subprocess
 import sys
-
 from cyvcf2 import VCF, Writer
-
 from ngs_utils.call_process import run_simple
 from ngs_utils.file_utils import get_ungz_gz
-from ngs_utils.vcf_utils import get_sample_ids
+
+
+def count_vars(vcf_path, filter=None):
+    cmd = f'bcftools view -H {f"-f {filter} " if filter else " "}{vcf_path} | wc -l'
+    return int(subprocess.check_output(cmd, shell=True).strip())
+
+
+def vcf_contains_field(vcf_path, field, col=None):
+    # col is FILTER, FORMAT, INFO, or None (=any of three)
+    if col is not None:
+        return f'##{col}=<ID={field},' in VCF(vcf_path).raw_header
+    return f'=<ID={field},' in VCF(vcf_path).raw_header
 
 
 def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, postproc_hdr=None, **kwargs):
