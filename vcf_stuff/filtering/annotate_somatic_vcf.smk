@@ -364,6 +364,7 @@ rule annotate:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
+        subset_to_cancer = f'somatic_anno/subset_to_cancer_genes.flag',
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
