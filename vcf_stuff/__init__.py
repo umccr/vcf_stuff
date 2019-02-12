@@ -12,6 +12,8 @@ def count_vars(vcf_path, filter=None):
 
 def vcf_contains_field(vcf_path, field, col=None):
     # col is FILTER, FORMAT, INFO, or None (=any of three)
+    if col is None and '/' in field:
+        col, field = field.split('/')
     if col is not None:
         return f'##{col}=<ID={field},' in VCF(vcf_path).raw_header
     return f'=<ID={field},' in VCF(vcf_path).raw_header

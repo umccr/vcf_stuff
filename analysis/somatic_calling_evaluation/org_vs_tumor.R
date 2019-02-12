@@ -455,32 +455,6 @@ tbl %>%
   group_by(gene) %>% 
   summarise(blacklists <- str_c(blacklist, collapse = ", "))
 
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
