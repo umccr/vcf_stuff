@@ -154,7 +154,7 @@ rule somatic_vcf_regions_anno:
 
 # Possibly subset VCF to avoid PCGR choking with R stuff.
 # too higly mutated samples might indicate germline contamination.
-rule remove_germline:
+rule maybe_remove_germline:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
@@ -170,10 +170,10 @@ rule remove_germline:
 
 # If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
 # subsetting to cancer genes in this case.
-rule subset_cancer_genes:
+rule maybe_subset_cancer_genes:
     input:
-        rm_germline_vcf = rules.remove_germline.output.vcf,
-        rm_germline_tbi = rules.remove_germline.output.tbi,
+        rm_germline_vcf = rules.maybe_remove_germline.output.vcf,
+        rm_germline_tbi = rules.maybe_remove_germline.output.tbi,
         full_vcf = rules.somatic_vcf_regions_anno.output.vcf,
         full_tbi = rules.somatic_vcf_regions_anno.output.tbi,
     output:
@@ -195,8 +195,8 @@ rule subset_cancer_genes:
 
 rule somatic_vcf_regions_clean:
     input:
-        vcf = rules.subset_cancer_genes.output.vcf,
-        tbi = rules.subset_cancer_genes.output.tbi,
+        vcf = rules.maybe_subset_cancer_genes.output.vcf,
+        tbi = rules.maybe_subset_cancer_genes.output.tbi,
     output:
         vcf = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz',
         tbi = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz.tbi',
