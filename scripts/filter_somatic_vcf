@@ -74,7 +74,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             rec.INFO.get('COSMIC_CNT', 0) >= 5 or \
             rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or \
             rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3 or \
-            rec.INFO.get('sage_filter') == 'PASS'
+            rec.INFO.get('SAGE_FILTER') == 'PASS'
 
     # Keeping all PCGR and HMF known hotspots, as well as variants with tier 1, 2:
     # Tier 1 - variants of strong clinical significance
@@ -179,6 +179,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'StrandBias2:0',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
+    vcf.add_filter_to_header({'ID': 'SAGE_lowconf',         'Description': 'SAGE assigned low confidence to this call'})
     # vcf.add_filter_to_header({'ID': 'LowAF', 'Description': 'DP<25 & AF<5%'})
     # vcf.add_filter_to_header({'ID': 'af10', 'Description': 'AF<10%'})
     vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                                                                   'Type': 'String', 'Number': '1'})
