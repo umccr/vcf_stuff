@@ -63,19 +63,12 @@ rule all:
 
 rule prep_hmf_hotspots:
     input:
-        get_ref_file(GENOME, key='hmf_hotspot', genomes_dir=GENOMES_DIR),
+        vcf = get_ref_file(GENOME, key='hotspots', genomes_dir=GENOMES_DIR),
     output:
         vcf = f'somatic_anno/hmf_hotspot.vcf.gz',
         tbi = f'somatic_anno/hmf_hotspot.vcf.gz.tbi',
-    params:
-        ungz = f'somatic_anno/hmf_hotspot.vcf'
-    shell: """
-echo "##fileformat=VCFv4.2" >> {params.ungz} &&
-echo "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO" >> {params.ungz} &&
-gunzip -c {input} | py -x "print('\t'.join([x.split()[0], x.split()[1], '.', x.split()[2], x.split()[3], '.', '.', 'HS']))" >> {params.ungz} &&
-bgzip {params.ungz} &&
-tabix -f -p vcf {output.vcf}
-"""
+    shell:
+        'bcftools filter -i "HMF=1" {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
 
 rule prep_anno_toml:
     input:
@@ -100,7 +93,7 @@ ops = ["self"]
 
 [[annotation]]
 file = "{input.hmf_hotspots}"
-fields = ["HS"]
+fields = ["HMF"]
 names = ["HMF_HOTSPOT"]
 ops = ["flag"]
 
