@@ -2,7 +2,7 @@
 import os
 import sys
 from os.path import dirname
-from bed_annotation import get_canonical_transcripts_ids
+from bed_annotation import canon_transcript_per_gene
 from ngs_utils.file_utils import open_gzipsafe
 from ngs_utils.logger import warn
 from hpc_utils.hpc import get_ref_file
@@ -18,7 +18,7 @@ GENOME = 'GRCh37'
 out = sys.stdout
 
 
-canon_by_gname = get_canonical_transcripts_ids(GENOME)
+transcript_by_gid = canon_transcript_per_gene(GENOME, only_principal=True, use_gene_id=True)
 
 
 genes_set = set()
@@ -39,11 +39,11 @@ with open_gzipsafe(gtf_path) as f:
                 raise
             if (biotype == 'protein_coding' or 'decay' in biotype) and feature in ['CDS']:
                 annotations = {kv.split()[0].strip().strip('"'): kv.split()[1].strip().strip('"') for kv in annotations.split('; ')}
+                gene_id = annotations['gene_id']
                 gene_name = annotations['gene_name']
-                # import pdb; pdb.set_trace()
                 # TODO: check canonical transcripts against cancer genes
                 transcript_id = annotations['transcript_id']
-                canon_transcript_id = canon_by_gname.get(gene_name)
+                canon_transcript_id = transcript_by_gid.get(gene_id)
                 if not canon_transcript_id:
                     genes_without_canon.add(gene_name)
                 elif transcript_id == canon_transcript_id:
