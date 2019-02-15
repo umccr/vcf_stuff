@@ -101,7 +101,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
         # if rec.INFO['TUMOR_AF'] < 0.1:
         #     add_cyvcf2_filter(rec, 'AF10')
 
-        if 'TRICKY' not in rec.INFO:
+        if rec.INFO.get('TRICKY') is None:
             tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
             if tricky_flags:
                 rec.INFO['TRICKY'] = '|'.join(tricky_flags)
