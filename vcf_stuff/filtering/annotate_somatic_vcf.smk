@@ -6,7 +6,7 @@ from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from hpc_utils.hpc import get_ref_file
-from vcf_stuff import iter_vcf, count_vars
+from vcf_stuff import iter_vcf, count_vars, vcf_contains_field
 import subprocess
 from ngs_utils.reference_data import get_key_genes_set
 
@@ -193,13 +193,14 @@ rule maybe_subset_cancer_genes:
             shell('cp {input.rm_germline_vcf} {output.vcf} ; cp {input.rm_germline_tbi} {output.tbi} ; ')
             shell('echo NO > {output.subset_to_cancer}')
 
-rule somatic_vcf_regions_clean:
+# Removes TRICKY_ and ANN fields
+rule somatic_vcf_clean_info:
     input:
         vcf = rules.maybe_subset_cancer_genes.output.vcf,
         tbi = rules.maybe_subset_cancer_genes.output.tbi,
     output:
-        vcf = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz',
-        tbi = f'somatic_anno/regions/{SAMPLE}-somatic-clean.vcf.gz.tbi',
+        vcf = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
         def proc_hdr(vcf):
             vcf.add_info_to_header({'ID': 'TRICKY', 'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
@@ -207,24 +208,25 @@ rule somatic_vcf_regions_clean:
         def postproc_hdr(raw_hdr):
             new_hdr = []
             for l in raw_hdr.split('\n'):
-                if not l.startswith('##INFO=<ID=TRICKY_'):
+                if not l.startswith('##INFO=<ID=TRICKY_') and not l.startswith('##INFO=<ID=ANN,'):
                     new_hdr.append(l)
             return '\n'.join(new_hdr)
 
         def func(rec):
+            if rec.INFO.get('ANN') is not None:
+                del rec.INFO['ANN']
             tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
             if tricky_flags:
                 rec.INFO['TRICKY'] = '|'.join(tricky_flags)
             for f in tricky_flags:
                 del rec.INFO[f'TRICKY_{f}']
             return rec
-
         iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
 
 # Preparations: annotate TUMOR_X and NORMAL_X fields for PCGR, remove non-standard chromosomes and mitochondria, remove non-PASSed calls
 rule somatic_vcf_prep:
     input:
-        vcf = rules.somatic_vcf_regions_clean.output.vcf,
+        vcf = rules.somatic_vcf_clean_info.output.vcf,
     output:
         vcf = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz.tbi'
@@ -247,30 +249,9 @@ rule somatic_vcf_pon_anno:
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
         # ' && tabix -f -p vcf {output.vcf} '
 
-rule somatic_vcf_rm_snpeff:
-    input:
-        vcf = rules.somatic_vcf_pon_anno.output.vcf,
-    output:
-        vcf = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/pcgr_input/{SAMPLE}-somatic.vcf.gz.tbi',
-    run:
-        def func(rec):
-            if rec.INFO.get('ANN') is not None:
-                del rec.INFO['ANN']
-            return rec
-        def postproc_hdr(raw_hdr):
-            new_hdr = []
-            for l in raw_hdr.split('\n'):
-                if not l.startswith('##INFO=<ID=ANN,'):
-                    new_hdr.append(l)
-            return '\n'.join(new_hdr)
-        iter_vcf(input.vcf, output.vcf, func, postproc_hdr=postproc_hdr)
-        # if has_ann(vcf):
-        #     shell(f'bcftools annotate -x INFO/ANN {vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
-
 rule somatic_vcf_pcgr_round1:
     input:
-        vcf = rules.somatic_vcf_rm_snpeff.output.vcf,
+        vcf = rules.somatic_vcf_pon_anno.output.vcf,
         pcgr_data = get_ref_file(key='pcgr_data', genomes_dir=GENOMES_DIR),
     output:
         tiers = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr.snvs_indels.tiers.tsv',
@@ -288,7 +269,7 @@ rule somatic_vcf_pcgr_round1:
 
 rule somatic_vcf_pcgr_anno:
     input:
-        vcf = rules.somatic_vcf_rm_snpeff.output.vcf,
+        vcf = rules.somatic_vcf_pon_anno.output.vcf,
         tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
     output:
         vcf = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz',
