@@ -34,7 +34,7 @@ def main(truth, cnv_files, genome, output_dir=None, regions=None, jobs=1, unlock
     if regions:
         conf['sample_regions'] = abspath(regions)
 
-    run_snakemake(join(package_path(), "cnv.smk"), conf, jobs, output_dir, force_rerun='table report', unlock=unlock)
+    run_snakemake(join(package_path(), "cnv.smk"), conf, jobs, output_dir, forcerun='table report', unlock=unlock)
 
     if output_dir:
         out_file = verify_file(join(output_dir, 'report.tsv'), is_critical=True)
