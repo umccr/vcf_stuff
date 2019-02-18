@@ -10,8 +10,8 @@ library(bedr)
 # library(pillar)
 library(plyr)
 library(tidyr)
-library(dplyr)
 library(patchwork)
+library(dplyr)
 
 dir = "/Users/vsaveliev/Analysis/snv_validation/mb/"
 truth_vcf = read.vcf(str_c(dir, "MB-benchmark.ANNO.FILT.vcf.gz"), split.info = T)
@@ -48,10 +48,10 @@ count_status <- function(.data) {
 
 fix_fields <- function(data) {
   renamed <- data %>% 
-    mutate(
+    dplyr::mutate(
       HMF_MAPPABILITY = map_dbl(map(str_split(HMF_MAPPABILITY, ","), as.double), min)
     ) %>% 
-    select(
+    dplyr::select(
       # -AF,
       # -VD,
       # -DP,
@@ -59,7 +59,7 @@ fix_fields <- function(data) {
       -QUAL,
       -ID
     ) %>% 
-    rename(
+    dplyr::rename(
       GENE = PCGR_SYMBOL,
       TCGA = PCGR_TCGA_PANCANCER_COUNT,
       ICGC = ICGC_PCAWG_HITS,
@@ -84,12 +84,12 @@ merged <- full_join(
     called_vcf$vcf %>% as_tibble() %>% fix_fields() %>% select(-TIERS),
     by = c('CHROM', 'POS', 'REF', 'ALT'),
     suffix = c('.truth', '.called')) %>% 
-  select(
+  dplyr::select(
     -AF,
     -VD,
     -DP
   ) %>% 
-  rename(
+  dplyr::rename(
     AF = TUMOR_AF.called,
     VD = TUMOR_VD.called,
     DP = TUMOR_DP.called,
@@ -97,7 +97,7 @@ merged <- full_join(
     # 'COSM', 'ENCODE', 'GIAB', 'MBL', 'HMF_HS', 'ICGC', 'PCGR_TIER', 'CLNSIG', 
     # 'CSQ', 'DRIVER', 'PCGR_HS', 'TCGA', 'GENE', 'TRICKY', 'PoN'
   ) %>% 
-  mutate(
+  dplyr::mutate(
     vartype = get_type(REF, ALT),
     is_snp = vartype == "SNP",
     is_called = !is.na(FILT),
@@ -107,7 +107,7 @@ merged <- full_join(
     DP = as.integer(DP),
     VD = round(AF * DP)
   ) %>% 
-  mutate(
+  dplyr::mutate(
     GENE = nonna(GENE.called, GENE.truth),
     TCGA = nonna(TCGA.called, TCGA.truth),
     ICGC = nonna(ICGC.called, ICGC.truth),
@@ -157,6 +157,7 @@ build_stats <- function(.data) {
   metrics = names(stats %>% select(-vartype))
   
   # If you want samples to be columns, and metrics to be rows:
+  print(stats)
   stats_row <- stats %>%
     gather(metric, s, -vartype) %>%
     mutate(metric = factor(metric, levels = metrics)) %>%
@@ -206,7 +207,6 @@ show_stats(called, passed)
 # merged %>% filter(!is.na(ReadPosRankSum)) %>% count(CALLERS)
 
 plot_freq <- function(.data, metric, binwidth = NULL) {
-  browser()
   .data %>% 
     count_status() %>% 
     filter(!is_tn) %>% 

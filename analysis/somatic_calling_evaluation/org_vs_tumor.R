@@ -92,7 +92,7 @@ data <- merged %>%
     -HMF_HOTSPOT, -PCGR_INTOGEN_DRIVER_MUT, -PCGR_MUTATION_HOTSPOT, -PCGR_TCGA_PANCANCER_COUNT, -PCGR_CLINVAR_CLNSIG,
     -HMF_GIAB_CONF)
 
-data %>% select(HMF_MAPPABILITY) %>% datatable()
+# data %>% select(HMF_MAPPABILITY) %>% datatable()
 
 ############################
 #### Adding Purple
@@ -101,7 +101,7 @@ read_purple <- function(fname) {
   # 1            1          2038216    2.1435      123       0.5422       0.5327    
   # segmentStartSupport  segmentEndSupport  method              depthWindowCount  gcContent  minStart   maxStart
   # TELOMERE             DEL                BAF_WEIGHTED        579               0.5759     1          1
-  raw <- read_tsv(str_c('/Users/vsaveliev/Analysis/SNV/org_tum/', fname, '.purple.cnv'), col_types = 'ciididdcccidii') %>% 
+  raw <- read_tsv(str_c('/Users/vsaveliev/Analysis/snv_validation/org_tum/', fname, '.purple.cnv'), col_types = 'ciididdcccidii') %>% 
     dplyr::transmute(
       start, 
       end,
@@ -124,6 +124,8 @@ data_p <- data %>%
   join_overlap_intersect(o6_purple, suffix = c(".t", ".o")) %>% 
   as_tibble() %>% 
   dplyr::select(-seqnames, -start, -end, -width, -strand)
+
+data_p <- data
 
 ##########################
 #### Exploring
