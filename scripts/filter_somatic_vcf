@@ -46,29 +46,30 @@ def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, v
              )
 
 
-def analyse_sage(rec):
-    # - add all PASS SAGE variants into the resulting VCF
-    # - add FILTER=SAGE_lowconf into resulting VCF if a passing variants is not confirmed by SAGE
-    # - extend the set of hotspots by adding PCGR sources?
-    # - CACAO: compare hotspots and genes with PCGR and HMF hotspots
-    sage_filter = rec.INFO.get('SAGE_FILTER')
-    sage_hotspot = rec.INFO.get('SAGE_HOTSPOT')
-    if sage_hotspot is not None:
-        # Sage call overrides all other calls
-        if sage_filter is not None:
-            if sage_filter == 'PASS':
-                rec.FILTER = 'PASS'
-            else:
-                rec.FILTER = 'SAGE_lowconf'
-                del rec['SAGE_HOTSPOT']
-    return rec
+# - add all PASS SAGE variants into the resulting VCF
+# - add FILTER=SAGE_lowconf into resulting VCF if a passing variants is not confirmed by SAGE
+# - extend the set of hotspots by adding PCGR sources?
+# - CACAO: compare hotspots and genes with PCGR and HMF hotspots
+
+# def analyse_sage(rec):
+#     sage_filter = rec.INFO.get('SAGE_FILTER')
+#     sage_hotspot = rec.INFO.get('SAGE_HOTSPOT')
+#     if sage_hotspot is not None:
+#         # Sage call overrides all other calls
+#         if sage_filter is not None:
+#             if sage_filter == 'PASS':
+#                 rec.FILTER = 'PASS'
+#             else:
+#                 rec.FILTER = 'SAGE_lowconf'
+#                 del rec['SAGE_HOTSPOT']
+#     return rec
 
 
 def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None, **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # "TIER_2" -> 2
 
-    rec = analyse_sage(rec)
+    # rec = analyse_sage(rec)
 
     is_hs = rec.INFO.get('HMF_HOTSPOT', False) or \
             rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or \
