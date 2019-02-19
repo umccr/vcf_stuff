@@ -5,6 +5,7 @@ import csv
 from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
+from ngs_utils.logger import warn
 from hpc_utils.hpc import get_ref_file
 from vcf_stuff import iter_vcf, count_vars, vcf_contains_field
 import subprocess
@@ -154,7 +155,7 @@ rule somatic_vcf_regions_anno:
 
 # Possibly subset VCF to avoid PCGR choking with R stuff.
 # too higly mutated samples might indicate germline contamination.
-rule maybe_remove_germline:
+rule remove_germline:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
@@ -162,27 +163,30 @@ rule maybe_remove_germline:
         vcf = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz.tbi',
     run:
-        total_vars = count_vars(input.vcf)
-        if total_vars > 500_000:
-            shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
-        else:
-            shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
+        # total_vars = count_vars(input.vcf)
+        # if total_vars > 500_000:
+        shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
+        # else:
+        #     shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
 
 # If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
 # subsetting to cancer genes in this case.
 rule maybe_subset_cancer_genes:
     input:
-        rm_germline_vcf = rules.maybe_remove_germline.output.vcf,
-        rm_germline_tbi = rules.maybe_remove_germline.output.tbi,
-        full_vcf = rules.somatic_vcf_regions_anno.output.vcf,
-        full_tbi = rules.somatic_vcf_regions_anno.output.tbi,
+        # rm_germline_vcf = rules.maybe_remove_germline.output.vcf,
+        # rm_germline_tbi = rules.maybe_remove_germline.output.tbi,
+        # full_vcf = rules.somatic_vcf_regions_anno.output.vcf,
+        # full_tbi = rules.somatic_vcf_regions_anno.output.tbi,
+        vcf = rules.remove_germline.output.vcf,
+        tbi = rules.remove_germline.output.tbi,
     output:
         vcf = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz.tbi',
         subset_to_cancer = f'somatic_anno/subset_to_cancer_genes.flag',
     run:
-        vars_left = int(subprocess.check_output(f'bcftools view -H {input.rm_germline_vcf} | wc -l', shell=True).strip())
-        if vars_left > 500_000:
+        vars_num = count_vars(input.vcf)
+        if vars_num > 500_000:
+            warn(f'Found {vars_num}>500k somatic variants, subsetting to cancer genes for futher processing')
             genes = get_key_genes_set()
             def func(rec):
                 if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
@@ -190,7 +194,9 @@ rule maybe_subset_cancer_genes:
             iter_vcf(input.vcf, output.vcf, func)
             shell('echo YES > {output.subset_to_cancer}')
         else:
-            shell('cp {input.rm_germline_vcf} {output.vcf} ; cp {input.rm_germline_tbi} {output.tbi} ; ')
+            warn(f'Found {vars_num}<=500k somatic variants, no need to subset to cancer genes - '
+                 f'keeping all of them for futher reporting')
+            shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
             shell('echo NO > {output.subset_to_cancer}')
 
 # Removes TRICKY_ and ANN fields
