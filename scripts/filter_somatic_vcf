@@ -52,12 +52,14 @@ def analyse_sage(rec):
     # - extend the set of hotspots by adding PCGR sources?
     # - CACAO: compare hotspots and genes with PCGR and HMF hotspots
     sage_filter = rec.INFO.get('SAGE_FILTER')
-    if sage_filter is not None:
+    sage_hotspot = rec.INFO.get('SAGE_FILTER')
+    if sage_hotspot is not None:
         # Sage call overrides all other calls
-        if sage_filter == 'PASS':
-            rec.FILTER = 'PASS'
-        else:
-            rec.FILTER = 'SAGE_lowconf'
+        if sage_filter is not None:
+            if sage_filter == 'PASS':
+                rec.FILTER = 'PASS'
+            else:
+                rec.FILTER = 'SAGE_lowconf'
     return rec
 
 
