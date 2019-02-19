@@ -2,6 +2,7 @@ from os.path import isfile, join, basename
 import cyvcf2
 import toml
 import csv
+import yaml
 from ngs_utils.file_utils import which
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
@@ -153,57 +154,62 @@ rule somatic_vcf_regions_anno:
     shell:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
 
+
 # Possibly subset VCF to avoid PCGR choking with R stuff.
 # too higly mutated samples might indicate germline contamination.
-rule remove_germline:
+# If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
+# subsetting to cancer genes in this case.
+rule maybe_subset_highly_mutated:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
     output:
-        vcf = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/remove_gnomad/{SAMPLE}-somatic.vcf.gz.tbi',
+        vcf = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz.tbi',
+        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
+    params:
+        no_gnomad_vcf = f'somatic_anno/subset/no_gnomad/{SAMPLE}.vcf.gz',
     run:
-        # total_vars = count_vars(input.vcf)
-        # if total_vars > 500_000:
-        shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {output.vcf} && tabix -f -p vcf {output.vcf}')
-        # else:
-        #     shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
-
-# If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
-# subsetting to cancer genes in this case.
-rule maybe_subset_cancer_genes:
-    input:
-        # rm_germline_vcf = rules.maybe_remove_germline.output.vcf,
-        # rm_germline_tbi = rules.maybe_remove_germline.output.tbi,
-        # full_vcf = rules.somatic_vcf_regions_anno.output.vcf,
-        # full_tbi = rules.somatic_vcf_regions_anno.output.tbi,
-        vcf = rules.remove_germline.output.vcf,
-        tbi = rules.remove_germline.output.tbi,
-    output:
-        vcf = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/cancer_genes/{SAMPLE}-somatic.vcf.gz.tbi',
-        subset_to_cancer = f'somatic_anno/subset_to_cancer_genes.flag',
-    run:
-        vars_num = count_vars(input.vcf)
-        if vars_num > 500_000:
-            warn(f'Found {vars_num}>500k somatic variants, subsetting to cancer genes for futher processing')
-            genes = get_key_genes_set()
-            def func(rec):
-                if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
-                    return rec
-            iter_vcf(input.vcf, output.vcf, func)
-            shell('echo YES > {output.subset_to_cancer}')
+        total_vars = count_vars(input.vcf)
+        vars_no_gnomad = None
+        vars_cancer_genes = None
+        if total_vars > 500_000:
+            warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
+            shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {params.no_gnomad_vcf}')
+            vars_no_gnomad = count_vars(params.no_gnomad_vcf)
+            if vars_no_gnomad > 500_000:
+                warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
+                     f'So _instead_ subsetting to cancer genes.')
+                genes = get_key_genes_set()
+                def func(rec):
+                    if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
+                        return rec
+                iter_vcf(input.vcf, output.vcf, func)
+                vars_no_gnomad = None
+                vars_cancer_genes = count_vars(output.vcf)
+                warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
+            else:
+                warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad}<=500k somatic variants, '
+                     f'no need to subset to cancer genes keeping all of them for futher reporting')
+                shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
         else:
-            warn(f'Found {vars_num}<=500k somatic variants, no need to subset to cancer genes - '
-                 f'keeping all of them for futher reporting')
             shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
-            shell('echo NO > {output.subset_to_cancer}')
+
+        with open(output.subset_highly_mutated_stats, 'w') as out:
+            stats = dict(
+                total_vars=total_vars
+            )
+            if vars_no_gnomad is not None:
+                stats['vars_no_gnomad'] = vars_no_gnomad
+            if vars_cancer_genes is not None:
+                stats['vars_cancer_genes'] = vars_cancer_genes
+            yaml.dump(stats, out, default_flow_style=False)
 
 # Removes TRICKY_ and ANN fields
 rule somatic_vcf_clean_info:
     input:
-        vcf = rules.maybe_subset_cancer_genes.output.vcf,
-        tbi = rules.maybe_subset_cancer_genes.output.tbi,
+        vcf = rules.maybe_subset_highly_mutated.output.vcf,
+        tbi = rules.maybe_subset_highly_mutated.output.tbi,
     output:
         vcf = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz.tbi',
@@ -344,7 +350,7 @@ rule annotate:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
-        subset_to_cancer = f'somatic_anno/subset_to_cancer_genes.flag',
+        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',

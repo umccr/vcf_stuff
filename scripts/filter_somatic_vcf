@@ -52,7 +52,7 @@ def analyse_sage(rec):
     # - extend the set of hotspots by adding PCGR sources?
     # - CACAO: compare hotspots and genes with PCGR and HMF hotspots
     sage_filter = rec.INFO.get('SAGE_FILTER')
-    sage_hotspot = rec.INFO.get('SAGE_FILTER')
+    sage_hotspot = rec.INFO.get('SAGE_HOTSPOT')
     if sage_hotspot is not None:
         # Sage call overrides all other calls
         if sage_filter is not None:
@@ -60,6 +60,7 @@ def analyse_sage(rec):
                 rec.FILTER = 'PASS'
             else:
                 rec.FILTER = 'SAGE_lowconf'
+                del rec['SAGE_HOTSPOT']
     return rec
 
 
@@ -76,7 +77,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             rec.INFO.get('COSMIC_CNT', 0) >= 5 or \
             rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or \
             rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3 or \
-            rec.INFO.get('SAGE_FILTER') == 'PASS'
+            rec.INFO.get('SAGE_HOTSPOT') is not None
 
     # Keeping all PCGR and HMF known hotspots, as well as variants with tier 1, 2:
     # Tier 1 - variants of strong clinical significance
@@ -121,6 +122,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             add_cyvcf2_filter(rec, 'PoN')
 
         af = rec.INFO.get('TUMOR_AF')
+        assert af, rec
         dp = rec.INFO.get('TUMOR_DP')
         if af is not None and dp is not None:
             vd = round(af * dp)
