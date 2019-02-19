@@ -15,8 +15,15 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--genomes-dir', 'genomes_dir')
+
+@click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
+                                                             'to be run without actually executing them.')
 @click.option('--unlock', 'unlock', is_flag=True)
-def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, unlock=None):
+@click.option('--report', 'report', help='Propagated to snakemake. Create an HTML report with results and statistics. '
+                                         'Needs to end in ".html".')
+@click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
+                                                 'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
+def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, dryrun=None, unlock=None, report=None, dag=None):
 
     if not vcf.endswith('.vcf.gz'):
         raise click.BadParameter('VCF must be bgzip compresed')
@@ -51,7 +58,8 @@ def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, unlock=None)
             critical('pcgr.py not found in PATH. Install pcgr with conda, or use umccrise environment')
         conf['pcgr_env_path'] = pcgr_env_path
 
-    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, output_dir=work_dir, unlock=unlock)
+    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, output_dir=work_dir,
+                  unlock=unlock, dryrun=dryrun, report=report, dag=dag)
 
 
 if __name__ == '__main__':
