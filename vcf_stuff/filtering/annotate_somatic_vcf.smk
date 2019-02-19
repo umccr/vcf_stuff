@@ -175,7 +175,12 @@ rule maybe_subset_highly_mutated:
         vars_cancer_genes = None
         if total_vars > 500_000:
             warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
-            shell('bcftools filter -e "gnomAD_AF>=0.01 & HMF_HOTSPOT=0" {input.vcf} -Oz -o {params.no_gnomad_vcf}')
+            def func(rec):
+                if rec.INFO.get('gnomAD_AF') >= 0.01 and not rec.INFO.get('HMF_HOTSPOT') and not rec.INFO.get('SAGE_HOTSPOT'):
+                    return None
+                else:
+                    return rec
+            iter_vcf(input.vcf, params.no_gnomad_vcf, func)
             vars_no_gnomad = count_vars(params.no_gnomad_vcf)
             if vars_no_gnomad > 500_000:
                 warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
