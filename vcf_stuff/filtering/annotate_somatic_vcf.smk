@@ -1,9 +1,9 @@
-from os.path import isfile, join, basename
+from os.path import isfile, join, basename, dirname
 import cyvcf2
 import toml
 import csv
 import yaml
-from ngs_utils.file_utils import which
+from ngs_utils.file_utils import which, safe_mkdir
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import warn
@@ -176,10 +176,12 @@ rule maybe_subset_highly_mutated:
         if total_vars > 500_000:
             warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
             def func(rec):
-                if rec.INFO.get('gnomAD_AF') >= 0.01 and not rec.INFO.get('HMF_HOTSPOT') and not rec.INFO.get('SAGE_HOTSPOT'):
+                gnomad_af = rec.INFO.get('gnomAD_AF')
+                if gnomad_af is not None and gnomad_af >= 0.01 and not rec.INFO.get('HMF_HOTSPOT') and not rec.INFO.get('SAGE_HOTSPOT'):
                     return None
                 else:
                     return rec
+            safe_mkdir(dirname(params.no_gnomad_vcf))
             iter_vcf(input.vcf, params.no_gnomad_vcf, func)
             vars_no_gnomad = count_vars(params.no_gnomad_vcf)
             if vars_no_gnomad > 500_000:
