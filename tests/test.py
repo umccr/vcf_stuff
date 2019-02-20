@@ -39,6 +39,7 @@ input_ensemble_vcf = join(data_dir, 'test-ensemble.vcf.gz')
 input_mutect2_vcf = join(data_dir, 'test-mutect2.vcf.gz')
 input_vardict_vcf = join(data_dir, 'test-vardict.vcf.gz')
 input_strelka2_vcf = join(data_dir, 'test-strelka2.vcf.gz')
+input_sage_vcf = join(data_dir, 'test-sage.vcf.gz')
 genome_name = 'test-GRCh37'
 ref_fa = join(data_dir, f'{genome_name}.fa')
 
@@ -167,3 +168,6 @@ class TestPcgrPrep(BaseTestCase):
 
     def test_pcgr_prep_mutect(self):
         self._run_pcgr_prep(input_mutect2_vcf)
+
+    def test_pcgr_prep_sage(self):
+        self._run_pcgr_prep(input_sage_vcf)

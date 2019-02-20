@@ -1,0 +1,347 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=PASS,Description="All filters passed">
+##contig=<ID=1>
+##contig=<ID=2>
+##contig=<ID=3>
+##contig=<ID=4>
+##contig=<ID=5>
+##contig=<ID=6>
+##contig=<ID=7>
+##contig=<ID=8>
+##contig=<ID=9>
+##contig=<ID=10>
+##contig=<ID=11>
+##contig=<ID=12>
+##contig=<ID=13>
+##contig=<ID=14>
+##contig=<ID=15>
+##contig=<ID=16>
+##contig=<ID=17>
+##contig=<ID=18>
+##contig=<ID=19>
+##contig=<ID=20>
+##contig=<ID=21>
+##contig=<ID=22>
+##contig=<ID=X>
+##contig=<ID=Y,length=59373566>
+##contig=<ID=MT,length=16569>
+##contig=<ID=GL000207.1,length=4262>
+##contig=<ID=GL000226.1,length=15008>
+##contig=<ID=GL000229.1,length=19913>
+##contig=<ID=GL000231.1,length=27386>
+##contig=<ID=GL000210.1,length=27682>
+##contig=<ID=GL000239.1,length=33824>
+##contig=<ID=GL000235.1,length=34474>
+##contig=<ID=GL000201.1,length=36148>
+##contig=<ID=GL000247.1,length=36422>
+##contig=<ID=GL000245.1,length=36651>
+##contig=<ID=GL000197.1,length=37175>
+##contig=<ID=GL000203.1,length=37498>
+##contig=<ID=GL000246.1,length=38154>
+##contig=<ID=GL000249.1,length=38502>
+##contig=<ID=GL000196.1,length=38914>
+##contig=<ID=GL000248.1,length=39786>
+##contig=<ID=GL000244.1,length=39929>
+##contig=<ID=GL000238.1,length=39939>
+##contig=<ID=GL000202.1,length=40103>
+##contig=<ID=GL000234.1,length=40531>
+##contig=<ID=GL000232.1,length=40652>
+##contig=<ID=GL000206.1,length=41001>
+##contig=<ID=GL000240.1,length=41933>
+##contig=<ID=GL000236.1,length=41934>
+##contig=<ID=GL000241.1,length=42152>
+##contig=<ID=GL000243.1,length=43341>
+##contig=<ID=GL000242.1,length=43523>
+##contig=<ID=GL000230.1,length=43691>
+##contig=<ID=GL000237.1,length=45867>
+##contig=<ID=GL000233.1,length=45941>
+##contig=<ID=GL000204.1,length=81310>
+##contig=<ID=GL000198.1,length=90085>
+##contig=<ID=GL000208.1,length=92689>
+##contig=<ID=GL000191.1,length=106433>
+##contig=<ID=GL000227.1,length=128374>
+##contig=<ID=GL000228.1,length=129120>
+##contig=<ID=GL000214.1,length=137718>
+##contig=<ID=GL000221.1,length=155397>
+##contig=<ID=GL000209.1,length=159169>
+##contig=<ID=GL000218.1,length=161147>
+##contig=<ID=GL000220.1,length=161802>
+##contig=<ID=GL000213.1,length=164239>
+##contig=<ID=GL000211.1,length=166566>
+##contig=<ID=GL000199.1,length=169874>
+##contig=<ID=GL000217.1,length=172149>
+##contig=<ID=GL000216.1,length=172294>
+##contig=<ID=GL000215.1,length=172545>
+##contig=<ID=GL000205.1,length=174588>
+##contig=<ID=GL000219.1,length=179198>
+##contig=<ID=GL000224.1,length=179693>
+##contig=<ID=GL000223.1,length=180455>
+##contig=<ID=GL000195.1,length=182896>
+##contig=<ID=GL000212.1,length=186858>
+##contig=<ID=GL000222.1,length=186861>
+##contig=<ID=GL000200.1,length=187035>
+##contig=<ID=GL000193.1,length=189789>
+##contig=<ID=GL000194.1,length=191469>
+##contig=<ID=GL000225.1,length=211173>
+##contig=<ID=GL000192.1,length=547496>
+##SAMPLE=<ID=PRJ180253_E190-T01-D,Genomes=Tumor>
+##FILTER=<ID=Bias,Description="Strand Bias">
+##FILTER=<ID=Cluster0bp,Description="Two somatic variants are within 0 bp">
+##FILTER=<ID=DIFF0.2,Description="Non-somatic or LOH and allele frequency difference < 0.2">
+##FILTER=<ID=GERMLINE_INDEL,Description="Set if indel has any germline indels at that site">
+##FILTER=<ID=HighDepth,Description="Locus depth is greater than 3x the mean chromosome depth in the normal sample">
+##FILTER=<ID=InDelLikely,Description="Likely Indels are not considered somatic">
+##FILTER=<ID=InGap,Description="The somatic variant is in the deletion gap, thus likely false positive">
+##FILTER=<ID=InIns,Description="The somatic variant is adjacent to an insertion variant">
+##FILTER=<ID=LOW_CONFIDENCE,Description="Set if excessive germline reads or insufficient quality or tumor reads">
+##FILTER=<ID=LongAT,Description="The somatic variant is flanked by long A/T (>=14)">
+##FILTER=<ID=LowAlleleDepth,Description="Low depth per allele frequency along with poor depth, quality, mapping quality and read mismatches.">
+##FILTER=<ID=LowDepth,Description="Tumor or normal sample read depth at this locus is below 2">
+##FILTER=<ID=LowEVS,Description="Somatic Empirical Variant Score (SomaticEVS) is below threshold">
+##FILTER=<ID=LowFreqQuality,Description="Low frequency read with poor quality and p-value (SSF).">
+##FILTER=<ID=MAF0.05,Description="Matched sample has AF > 0.05, thus not somatic">
+##FILTER=<ID=MSI12,Description="Variant in MSI region with 12 non-monomer MSI or 12 monomer MSI">
+##FILTER=<ID=MinAF,Description="Allele frequency is lower than 10.0% (configured in bcbio as min_allele_fraction)">
+##FILTER=<ID=NM4.25,Description="Mean mismatches in reads >= 4.25, thus likely false positive">
+##FILTER=<ID=P0.01Likely,Description="Likely candidate but p-value > 0.01/5**vd2">
+##FILTER=<ID=P0.9,Description="Not significant with p-value > 0.9">
+##FILTER=<ID=Q0,Description="Mean Mapping Quality Below 0">
+##FILTER=<ID=REJECT,Description="Not Somatic via VarDict">
+##FILTER=<ID=SN1.5,Description="Signal to Noise Less than 1.5">
+##FILTER=<ID=artifact_in_normal,Description="artifact_in_normal">
+##FILTER=<ID=base_quality,Description="alt median base quality">
+##FILTER=<ID=clustered_events,Description="Clustered events observed in the tumor">
+##FILTER=<ID=contamination,Description="contamination">
+##FILTER=<ID=d5,Description="Total Depth < 5">
+##FILTER=<ID=duplicate_evidence,Description="evidence for alt allele is overrepresented by apparent duplicates">
+##FILTER=<ID=f0.1,Description="Allele frequency < 0.1">
+##FILTER=<ID=fragment_length,Description="abs(ref - alt) median fragment length">
+##FILTER=<ID=germline_risk,Description="Evidence indicates this site is germline, not somatic">
+##FILTER=<ID=mapping_quality,Description="ref - alt median mapping quality">
+##FILTER=<ID=multiallelic,Description="Site filtered because too many alt alleles pass tumor LOD">
+##FILTER=<ID=p8,Description="Mean Position in Reads Less than 8">
+##FILTER=<ID=pSTD,Description="Position in Reads has STD of 0">
+##FILTER=<ID=panel_of_normals,Description="Blacklisted site in panel of normals">
+##FILTER=<ID=q22.5,Description="Mean Base Quality Below 22.5">
+##FILTER=<ID=read_position,Description="median distance of alt variants from end of reads">
+##FILTER=<ID=str_contraction,Description="Site filtered due to contraction of short tandem repeat region">
+##FILTER=<ID=strand_artifact,Description="Evidence for alt allele comes from one read direction only">
+##FILTER=<ID=t_lod,Description="Tumor does not meet likelihood threshold">
+##FILTER=<ID=v3,Description="Var Depth < 3">
+##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allelic Frequency">
+##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
+##INFO=<ID=CALLERS,Number=.,Type=String,Description="Individual caller support">
+##INFO=<ID=ClippingRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref number of hard clipped bases">
+##INFO=<ID=DECOMPOSED,Number=0,Type=Flag,Description="The allele was parsed using vcfallelicprimitives.">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##INFO=<ID=ECNT,Number=1,Type=Integer,Description="Number of events in this haplotype">
+##INFO=<ID=ENCODE,Number=.,Type=String,Description="calculated by concat of overlapping values in column 4 from /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/problem_regions/ENCODE/wgEncodeDacMapabilityConsensusExcludable.bed.gz">
+##INFO=<ID=END,Number=1,Type=Integer,Description="Chr End Position">
+##INFO=<ID=FS,Number=1,Type=Float,Description="Phred-scaled p-value using Fisher's exact test to detect strand bias">
+##INFO=<ID=GHBL,Number=1,Type=Float,Description="Germline Heterozygous Binomial Likelihood. Only applies when germline alt support = 1">
+##INFO=<ID=HMF_GIAB_CONF,Number=0,Type=Flag,Description="calculated by flag of overlapping values in column 3 from /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/hmf/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz">
+##INFO=<ID=HMF_HOTSPOT,Number=0,Type=Flag,Description="calculated by flag of overlapping values in field HMF from somatic_anno/hmf_hotspot.vcf.gz">
+##INFO=<ID=HMF_MAPPABILITY,Number=.,Type=Float,Description="calculated by concat of overlapping values in column 5 from /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/hmf/out_150_hg19.mappability.bed.gz">
+##INFO=<ID=IC,Number=1,Type=Integer,Description="Number of times RU repeats in the indel allele">
+##INFO=<ID=IHP,Number=1,Type=Integer,Description="Largest reference interrupted homopolymer length intersecting with the indel">
+##INFO=<ID=IN_PON,Number=0,Type=Flag,Description="site found in panel of normals">
+##INFO=<ID=LEN,Number=1,Type=Integer,Description="allele length">
+##INFO=<ID=LOF,Number=.,Type=String,Description="Predicted loss of function effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
+##INFO=<ID=LSEQ,Number=1,Type=String,Description="5' flanking seq">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="RMS Mapping Quality">
+##INFO=<ID=MQ0,Number=1,Type=Integer,Description="Total Mapping Quality Zero Reads">
+##INFO=<ID=MQRankSum,Number=1,Type=Float,Description="Z-score From Wilcoxon rank sum test of Alt vs. Ref read mapping qualities">
+##INFO=<ID=MSI,Number=1,Type=Float,Description="MicroSatellite. > 1 indicates MSI">
+##INFO=<ID=MSILEN,Number=1,Type=Float,Description="MSI unit repeat length in bp">
+##INFO=<ID=NLOD,Number=1,Type=Float,Description="Normal LOD score">
+##INFO=<ID=NMD,Number=.,Type=String,Description="Predicted nonsense mediated decay effects for this variant. Format: 'Gene_Name | Gene_ID | Number_of_transcripts_in_gene | Percent_of_transcripts_affected'">
+##INFO=<ID=NT,Number=1,Type=String,Description="Genotype of the normal in all data tiers, as used to classify somatic variants. One of {ref,het,hom,conflict}.">
+##INFO=<ID=N_ART_LOD,Number=1,Type=Float,Description="log odds of artifact in normal with same allele fraction as tumor">
+##INFO=<ID=OLD_MULTIALLELIC,Number=1,Type=String,Description="Original chr:pos:ref:alt encoding">
+##INFO=<ID=OLD_VARIANT,Number=.,Type=String,Description="Original chr:pos:ref:alt encoding">
+##INFO=<ID=OVERLAP,Number=0,Type=Flag,Description="Somatic indel possibly overlaps a second indel.">
+##INFO=<ID=PNOISE,Number=1,Type=Float,Description="Fraction of panel containing non-reference noise at this site">
+##INFO=<ID=PNOISE2,Number=1,Type=Float,Description="Fraction of panel containing more than one non-reference noise obs at this site">
+##INFO=<ID=POP_AF,Number=1,Type=Float,Description="population allele frequencies of alt alleles">
+##INFO=<ID=P_CONTAM,Number=1,Type=Float,Description="Posterior probability for alt allele to be due to contamination">
+##INFO=<ID=P_GERMLINE,Number=1,Type=Float,Description="Posterior probability for alt allele to be germline variants">
+##INFO=<ID=QD,Number=1,Type=Float,Description="Variant Confidence/Quality by Depth">
+##INFO=<ID=QSI,Number=1,Type=Integer,Description="Quality score for any somatic variant, ie. for the ALT haplotype to be present at a significantly different frequency in the tumor and normal">
+##INFO=<ID=QSI_NT,Number=1,Type=Integer,Description="Quality score reflecting the joint probability of a somatic variant and NT">
+##INFO=<ID=QSS,Number=1,Type=Integer,Description="Quality score for any somatic snv, ie. for the ALT allele to be present at a significantly different frequency in the tumor and normal">
+##INFO=<ID=QSS_NT,Number=1,Type=Integer,Description="Quality score reflecting the joint probability of a somatic variant and NT">
+##INFO=<ID=RAW_MQ,Number=1,Type=Float,Description="Raw data for RMS Mapping Quality">
+##INFO=<ID=RC,Number=1,Type=Integer,Description="Number of times RU repeats in the reference allele">
+##INFO=<ID=RPA,Number=.,Type=Integer,Description="Number of times tandem repeat unit is repeated, for each allele (including reference)">
+##INFO=<ID=RSEQ,Number=1,Type=String,Description="3' flanking seq">
+##INFO=<ID=RU,Number=1,Type=String,Description="Smallest repeating sequence unit in inserted or deleted sequence">
+##INFO=<ID=ReadPosRankSum,Number=1,Type=Float,Description="Z-score from Wilcoxon rank sum test of Alt Vs. Ref read-position in the tumor">
+##INFO=<ID=SAGE_HOTSPOT,Number=1,Type=String,Description="SAGE Hotspot Type: known, inframe">
+##INFO=<ID=SAMPLE,Number=1,Type=String,Description="Sample name (with whitespace translated to underscores)">
+##INFO=<ID=SEGDUP,Number=0,Type=Flag,Description="calculated by flag of overlapping values in column 3 from /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/problem_regions/segdup.bed.gz">
+##INFO=<ID=SGT,Number=1,Type=String,Description="Most likely somatic genotype excluding normal noise states">
+##INFO=<ID=SHIFT3,Number=1,Type=Integer,Description="No. of bases to be shifted to 3 prime for deletions due to alternative alignment">
+##INFO=<ID=SNVSB,Number=1,Type=Float,Description="Somatic SNV site strand bias">
+##INFO=<ID=SOMATIC,Number=0,Type=Flag,Description="Somatic event">
+##INFO=<ID=SOR,Number=1,Type=Float,Description="Odds ratio">
+##INFO=<ID=SSF,Number=1,Type=Float,Description="P-value">
+##INFO=<ID=STATUS,Number=1,Type=String,Description="Somatic or germline status">
+##INFO=<ID=STR,Number=0,Type=Flag,Description="Variant is a short tandem repeat">
+##INFO=<ID=SomaticEVS,Number=1,Type=Float,Description="Somatic Empirical Variant Score (EVS) expressing the phred-scaled probability of the call being a false positive observation.">
+##INFO=<ID=TLOD,Number=1,Type=Float,Description="Tumor LOD score">
+##INFO=<ID=TQSI,Number=1,Type=Integer,Description="Data tier used to compute QSI">
+##INFO=<ID=TQSI_NT,Number=1,Type=Integer,Description="Data tier used to compute QSI_NT">
+##INFO=<ID=TQSS,Number=1,Type=Integer,Description="Data tier used to compute QSS">
+##INFO=<ID=TQSS_NT,Number=1,Type=Integer,Description="Data tier used to compute QSS_NT">
+##INFO=<ID=TYPE,Number=1,Type=String,Description="Variant Type: SNV Insertion Deletion Complex">
+##INFO=<ID=VD,Number=1,Type=Integer,Description="Variant Depth">
+##INFO=<ID=ac_adj_exac_afr,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_AFR from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_amr,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_AMR from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_eas,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_EAS from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_fin,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_FIN from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_nfe,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_NFE from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_oth,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_OTH from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_adj_exac_sas,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_SAS from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=ac_exac_all,Number=1,Type=Float,Description="calculated by max of overlapping values in field AC_Adj from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz">
+##INFO=<ID=af_1kg_afr,Number=1,Type=Float,Description="calculated by max of overlapping values in field AFR_AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_1kg_all,Number=1,Type=Float,Description="calculated by max of overlapping values in field AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_1kg_amr,Number=1,Type=Float,Description="calculated by max of overlapping values in field AMR_AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_1kg_eas,Number=1,Type=Float,Description="calculated by max of overlapping values in field EAS_AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_1kg_eur,Number=1,Type=Float,Description="calculated by max of overlapping values in field EUR_AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_1kg_sas,Number=1,Type=Float,Description="calculated by max of overlapping values in field SAS_AF from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ALL.wgs.phase3_shapeit2_mvncall_integrated_v5a.20130502.sites.tidy.vcf.gz">
+##INFO=<ID=af_adj_exac_afr,Number=A,Type=Float,Description="calculated field: af_adj_exac_afr">
+##INFO=<ID=af_adj_exac_amr,Number=A,Type=Float,Description="calculated field: af_adj_exac_amr">
+##INFO=<ID=af_adj_exac_eas,Number=A,Type=Float,Description="calculated field: af_adj_exac_eas">
+##INFO=<ID=af_adj_exac_fin,Number=A,Type=Float,Description="calculated field: af_adj_exac_fin">
+##INFO=<ID=af_adj_exac_nfe,Number=A,Type=Float,Description="calculated field: af_adj_exac_nfe">
+##INFO=<ID=af_adj_exac_oth,Number=A,Type=Float,Description="calculated field: af_adj_exac_oth">
+##INFO=<ID=af_adj_exac_sas,Number=A,Type=Float,Description="calculated field: af_adj_exac_sas">
+##INFO=<ID=af_esp_aa,Number=1,Type=Float,Description="calculated by lua:ratio(vals) of overlapping values in field AA_AC from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ESP6500SI.all.snps_indels.tidy.v2.vcf.gz">
+##INFO=<ID=af_esp_all,Number=1,Type=Float,Description="calculated by lua:ratio(vals) of overlapping values in field TAC from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ESP6500SI.all.snps_indels.tidy.v2.vcf.gz">
+##INFO=<ID=af_esp_ea,Number=1,Type=Float,Description="calculated by lua:ratio(vals) of overlapping values in field EA_AC from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ESP6500SI.all.snps_indels.tidy.v2.vcf.gz">
+##INFO=<ID=af_exac_all,Number=A,Type=Float,Description="calculated field: af_exac_all">
+##INFO=<ID=an_adj_exac_afr,Number=1,Type=Integer,Description="African/African American Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_amr,Number=1,Type=Integer,Description="American Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_eas,Number=1,Type=Integer,Description="East Asian Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_fin,Number=1,Type=Integer,Description="Finnish Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_nfe,Number=1,Type=Integer,Description="Non-Finnish European Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_oth,Number=1,Type=Integer,Description="Other Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_adj_exac_sas,Number=1,Type=Integer,Description="South Asian Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=an_exac_all,Number=1,Type=Integer,Description="Adjusted Chromosome Count (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=clinvar_disease_name,Number=.,Type=String,Description="Variant disease name (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/clinvar_20170130.tidy.vcf.gz)">
+##INFO=<ID=clinvar_pathogenic,Number=.,Type=String,Description="Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/clinvar_20170130.tidy.vcf.gz)">
+##INFO=<ID=clinvar_sig,Number=.,Type=String,Description="calculated field: clinvar_sig">
+##INFO=<ID=common_pathogenic,Number=0,Type=Flag,Description="calculated field: common_pathogenic">
+##INFO=<ID=cosmic_ids,Number=.,Type=String,Description="calculated by uniq of overlapping values in field ID from /data/cephfs/punim0010/local/development/bcbio/gemini_data/cosmic-v68-GRCh37.tidy.vcf.gz">
+##INFO=<ID=cpg_island,Number=0,Type=Flag,Description="calculated by flag of overlapping values in column 2 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19.CpG.bed.gz">
+##INFO=<ID=cse-hiseq,Number=0,Type=Flag,Description="calculated by flag of overlapping values in column 2 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/cse-hiseq-8_4-2013-02-20.bed.gz">
+##INFO=<ID=dgv,Number=.,Type=String,Description="calculated by uniq of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19.dgv.bed.gz">
+##INFO=<ID=encode_consensus_gm12878,Number=.,Type=String,Description="calculated by concat of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=encode_consensus_h1hesc,Number=.,Type=String,Description="calculated by concat of overlapping values in column 5 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=encode_consensus_helas3,Number=.,Type=String,Description="calculated by concat of overlapping values in column 6 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=encode_consensus_hepg2,Number=.,Type=String,Description="calculated by concat of overlapping values in column 7 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=encode_consensus_huvec,Number=.,Type=String,Description="calculated by concat of overlapping values in column 8 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=encode_consensus_k562,Number=.,Type=String,Description="calculated by concat of overlapping values in column 9 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/encode.6celltypes.consensus.bedg.gz">
+##INFO=<ID=fitcons,Number=1,Type=Float,Description="calculated by mean of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19_fitcons_fc-i6-0_V1-01.bed.gz">
+##INFO=<ID=gerp_elements,Number=1,Type=Float,Description="calculated by mean of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19.gerp.elements.bed.gz">
+##INFO=<ID=gnomAD_AF,Number=A,Type=Float,Description="Maximum allele frequency across populations (excluding samples of Ashkenazi, Finnish, and indeterminate ancestry) (from /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/gnomad_genome.r2.1.common_pass_clean.norm.vcf.gz)">
+##INFO=<ID=gwas_pubmed_trait,Number=.,Type=String,Description="calculated by uniq of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19.gwas.bed.gz">
+##INFO=<ID=hapmap1,Number=1,Type=Float,Description="calculated by mean of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/genetic_map_HapMapII_GRCh37.gz">
+##INFO=<ID=hapmap2,Number=1,Type=Float,Description="calculated by mean of overlapping values in column 5 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/genetic_map_HapMapII_GRCh37.gz">
+##INFO=<ID=max_aaf_all,Number=A,Type=Float,Description="calculated field: max_aaf_all">
+##INFO=<ID=num_exac_Het,Number=A,Type=Integer,Description="Adjusted Heterozygous Counts (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=num_exac_Hom,Number=A,Type=Integer,Description="Adjusted Homozygous Counts (from /data/cephfs/punim0010/local/development/bcbio/gemini_data/ExAC.r0.3.sites.vep.tidy.vcf.gz)">
+##INFO=<ID=rmsk,Number=.,Type=String,Description="calculated by uniq of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/hg19.rmsk.bed.gz">
+##INFO=<ID=rs_ids,Number=.,Type=String,Description="calculated by concat of overlapping values in field ID from /data/cephfs/punim0010/local/development/bcbio/gemini_data/dbsnp.b147.20160601.tidy.vcf.gz">
+##INFO=<ID=stam_mean,Number=1,Type=Float,Description="calculated by mean of overlapping values in column 5 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/stam.125cells.dnaseI.hg19.bed.gz">
+##INFO=<ID=stam_names,Number=.,Type=String,Description="calculated by uniq of overlapping values in column 6 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/stam.125cells.dnaseI.hg19.bed.gz">
+##INFO=<ID=tfbs,Number=.,Type=String,Description="calculated by uniq of overlapping values in column 4 from /data/cephfs/punim0010/local/development/bcbio/gemini_data/wgEncodeRegTfbsClusteredV2.cell_count.20130213.bed.gz">
+##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic Depth">
+##FORMAT=<ID=ADJAF,Number=1,Type=Float,Description="Adjusted AF for indels due to local realignment">
+##FORMAT=<ID=AF,Number=.,Type=Float,Description="Allele Frequency">
+##FORMAT=<ID=ALD,Number=2,Type=Integer,Description="Variant forward, reverse reads">
+##FORMAT=<ID=AU,Number=2,Type=Integer,Description="Number of 'A' alleles used in tiers 1,2">
+##FORMAT=<ID=BCN50,Number=1,Type=Float,Description="Fraction of filtered reads within 50 bases of the indel.">
+##FORMAT=<ID=BIAS,Number=1,Type=String,Description="Strand Bias Info">
+##FORMAT=<ID=CU,Number=2,Type=Integer,Description="Number of 'C' alleles used in tiers 1,2">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=DP2,Number=1,Type=Integer,Description="Read depth for tier2">
+##FORMAT=<ID=DP50,Number=1,Type=Float,Description="Average tier1 read depth within 50 bases">
+##FORMAT=<ID=F1R2,Number=R,Type=Integer,Description="Count of reads in F1R2 pair orientation supporting each allele">
+##FORMAT=<ID=F2R1,Number=R,Type=Integer,Description="Count of reads in F2R1 pair orientation supporting each allele">
+##FORMAT=<ID=FDP,Number=1,Type=Integer,Description="Number of basecalls filtered from original read depth for tier1">
+##FORMAT=<ID=FDP50,Number=1,Type=Float,Description="Average tier1 number of basecalls filtered from original read depth within 50 bases">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GU,Number=2,Type=Integer,Description="Number of 'G' alleles used in tiers 1,2">
+##FORMAT=<ID=HIAF,Number=1,Type=Float,Description="Allele frequency using only high quality bases">
+##FORMAT=<ID=MBQ,Number=R,Type=Integer,Description="median base quality">
+##FORMAT=<ID=MFRL,Number=R,Type=Integer,Description="median fragment length">
+##FORMAT=<ID=MMQ,Number=1,Type=Integer,Description="median mapping quality">
+##FORMAT=<ID=MPOS,Number=1,Type=Integer,Description="median distance from end of read">
+##FORMAT=<ID=MQ,Number=1,Type=Float,Description="Mean Mapping Quality">
+##FORMAT=<ID=NM,Number=1,Type=Float,Description="Mean mismatches in reads">
+##FORMAT=<ID=ODDRATIO,Number=1,Type=Float,Description="Strand Bias Odds ratio">
+##FORMAT=<ID=PGT,Number=1,Type=String,Description="Physical phasing haplotype information, describing how the alternate alleles are phased in relation to one another">
+##FORMAT=<ID=PID,Number=1,Type=String,Description="Physical phasing ID information, where each unique ID within a given sample (but not across samples) connects records within a phasing group">
+##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
+##FORMAT=<ID=PMEAN,Number=1,Type=Float,Description="Mean position in reads">
+##FORMAT=<ID=PSTD,Number=1,Type=Float,Description="Position STD in reads">
+##FORMAT=<ID=QSTD,Number=1,Type=Float,Description="Quality score STD in reads">
+##FORMAT=<ID=QUAL,Number=1,Type=Float,Description="Mean quality score in reads">
+##FORMAT=<ID=RD,Number=2,Type=Integer,Description="Reference forward, reverse reads">
+##FORMAT=<ID=SA_MAP_AF,Number=3,Type=Float,Description="MAP estimates of allele fraction given z">
+##FORMAT=<ID=SA_POST_PROB,Number=3,Type=Float,Description="posterior probabilities of the presence of strand artifact">
+##FORMAT=<ID=SBF,Number=1,Type=Float,Description="Strand Bias Fisher p-value">
+##FORMAT=<ID=SDP,Number=1,Type=Integer,Description="Number of reads with deletions spanning this site at tier1">
+##FORMAT=<ID=SN,Number=1,Type=Float,Description="Signal to noise">
+##FORMAT=<ID=SUBDP,Number=1,Type=Integer,Description="Number of reads below tier1 mapping quality threshold aligned across this site">
+##FORMAT=<ID=SUBDP50,Number=1,Type=Float,Description="Average number of reads below tier1 mapping quality threshold aligned across sites within 50 bases">
+##FORMAT=<ID=TAR,Number=2,Type=Integer,Description="Reads strongly supporting alternate allele for tiers 1,2">
+##FORMAT=<ID=TIR,Number=2,Type=Integer,Description="Reads strongly supporting indel allele for tiers 1,2">
+##FORMAT=<ID=TOR,Number=2,Type=Integer,Description="Other reads (weak support or insufficient indel breakpoint overlap) for tiers 1,2">
+##FORMAT=<ID=TU,Number=2,Type=Integer,Description="Number of 'T' alleles used in tiers 1,2">
+##FORMAT=<ID=VD,Number=1,Type=Integer,Description="Variant Depth">
+##bcftools_viewVersion=1.9+htslib-1.9
+##bcftools_viewCommand=view work/E190__PRJ180253_E190-T01-D/sage/call/E190__PRJ180253_E190-T01-D.vcf.gz; Date=Wed Feb 20 00:23:32 2019
+##bcftools_viewCommand=view -s PRJ180253_E190-T01-D,PRJ180254_E190-B01-D -Oz -o work/E190__PRJ180253_E190-T01-D/sage/reoder_samples/E190__PRJ180253_E190-T01-D.vcf.gz work/E190__PRJ180253_E190-T01-D/sage/rename_anno/E190__PRJ180253_E190-T01-D.vcf.gz; Date=Wed Feb 20 00:23:35 2019
+##bcftools_viewCommand=view -f.,PASS -Oz -o work/E190__PRJ180253_E190-T01-D/sage/pass/E190__PRJ180253_E190-T01-D.vcf.gz work/E190__PRJ180253_E190-T01-D/sage/reoder_samples/E190__PRJ180253_E190-T01-D.vcf.gz; Date=Wed Feb 20 00:23:35 2019
+##Depth_1=32.00
+##GATKCommandLine=<ID=FilterMutectCalls,CommandLine="FilterMutectCalls  --output /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/bcbiotx/tmp3rsHMS/E190-1_0_16991917-raw-filt.vcf.gz --variant /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/bcbiotx/tmp3rsHMS/E190-1_0_16991917-raw.vcf.gz  --log-somatic-prior -6.0 --tumor-lod 5.3 --normal-artifact-lod 0.0 --normal-p-value-threshold 0.001 --max-germline-posterior 0.1 --max-alt-allele-count 1 --min-pcr-slippage-size 8 --pcr-slippage-rate 0.1 --pcr-slippage-p-value 0.001 --min-median-mapping-quality 30 --min-median-base-quality 20 --max-median-fragment-length-difference 10000 --min-median-read-position 5 --max-events-in-region 2 --max-strand-artifact-probability 0.99 --min-strand-artifact-allele-fraction 0.01 --max-contamination-probability 0.1 --unique-alt-read-count 0 --dont-trim-active-regions false --max-disc-ar-extension 25 --max-gga-ar-extension 300 --padding-around-indels 150 --padding-around-snps 20 --kmer-size 10 --kmer-size 25 --dont-increase-kmer-sizes-for-cycles false --allow-non-unique-kmers-in-ref false --num-pruning-samples 1 --recover-dangling-heads false --do-not-recover-dangling-branches false --min-dangling-branch-length 4 --consensus false --max-num-haplotypes-in-population 128 --error-correct-kmers false --min-pruning 2 --debug-graph-transformations false --kmer-length-for-read-error-correction 25 --min-observations-for-kmer-to-be-solid 20 --likelihood-calculation-engine PairHMM --base-quality-score-threshold 18 --pair-hmm-gap-continuation-penalty 10 --pair-hmm-implementation FASTEST_AVAILABLE --pcr-indel-model CONSERVATIVE --phred-scaled-global-read-mismapping-rate 45 --native-pair-hmm-threads 4 --native-pair-hmm-use-double-precision false --debug false --use-filtered-reads-for-annotations false --bam-writer-type CALLED_HAPLOTYPES --dont-use-soft-clipped-bases false --capture-assembly-failure-bam false --error-correct-reads false --do-not-run-physical-phasing false --min-base-quality-score 10 --smith-waterman JAVA --use-new-qual-calculator false --annotate-with-num-discovered-alleles false --heterozygosity 0.001 --indel-heterozygosity 1.25E-4 --heterozygosity-stdev 0.01 --standard-min-confidence-threshold-for-calling 10.0 --max-alternate-alleles 6 --max-genotype-count 1024 --sample-ploidy 2 --num-reference-samples-if-no-call 0 --genotyping-mode DISCOVERY --genotype-filtered-alleles false --contamination-fraction-to-filter 0.0 --output-mode EMIT_VARIANTS_ONLY --all-site-pls false --interval-set-rule UNION --interval-padding 0 --interval-exclusion-padding 0 --interval-merging-rule ALL --read-validation-stringency SILENT --seconds-between-progress-updates 10.0 --disable-sequence-dictionary-validation false --create-output-bam-index true --create-output-bam-md5 false --create-output-variant-index true --create-output-variant-md5 false --lenient false --add-output-sam-program-record true --add-output-vcf-command-line true --cloud-prefetch-buffer 40 --cloud-index-prefetch-buffer -1 --disable-bam-index-caching false --sites-only-vcf-output false --help false --version false --showHidden false --verbosity INFO --QUIET false --use-jdk-deflater false --use-jdk-inflater false --gcs-max-retries 20 --disable-tool-default-read-filters false",Version=4.0.6.0,Date="August 6, 2018 10:23:27 PM AEST">
+##Mutect Version=2.1
+##SnpEffCmd="SnpEff  -cancer -i vcf -o vcf -csvStats /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/vardict/E190-effects-stats.csv -s /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/vardict/E190-effects-stats.html GRCh37.75 /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/vardict/E190.vcf.gz "
+##SnpEffVersion="4.3t (build 2017-11-24 10:18), by Pablo Cingolani"
+##bcftools_annotateCommand=annotate -h /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/bcbiotx/tmpavlBG_/E190-1_0_16991917-contig_header.txt; Date=Sun Aug  5 19:25:52 2018
+##bcftools_annotateVersion=1.8+htslib-1.8
+##bcftools_filterCommand=filter -i 'QUAL >= 0'; Date=Sun Aug  5 19:25:52 2018
+##bcftools_filterVersion=1.8+htslib-1.8
+##cmdline=/data/cephfs/punim0010/local/development/bcbio/anaconda/share/strelka-2.9.4-0/bin/configureStrelkaSomaticWorkflow.py --referenceFasta=/data/cephfs/punim0010/local/development/bcbio/genomes/Hsapiens/GRCh37/seq/GRCh37.fa --callRegions=/data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/strelka2/1/E190-1_0_16991917-raw-regions.bed.gz --runDir=/data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/bcbiotx/tmpixfXSD/E190-1_0_16991917-work --normalBam=/data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/align/PRJ180254_E190-B01-D/PRJ180254_E190-B01-D-sort.bam --tumorBam=/data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/align/PRJ180253_E190-T01-D/PRJ180253_E190-T01-D-sort.bam
+##content=strelka somatic snv calls
+##fileDate=20180807
+##filtering_status=These calls have been filtered by FilterMutectCalls to label false positives with a list of failed filters and true positives with PASS.
+##normal_sample=PRJ180254_E190-B01-D
+##priorSomaticIndelRate=1e-06
+##priorSomaticSnvRate=0.0001
+##reference=file:///data/cephfs/punim0010/local/development/bcbio/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+##source=strelka
+##source_version=2.9.4
+##startTime=Tue Aug  7 00:20:50 2018
+##tumor_sample=PRJ180253_E190-T01-D
+##SnpEffCmd="SnpEff  -cancer -i vcf -o vcf -csvStats /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/ensemble/E190/E190-ensemble-effects-stats.csv -s /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/ensemble/E190/E190-ensemble-effects-stats.html GRCh37.75 /data/cephfs/punim0010/projects/Tothill_A5/2018-07-31T0005_Tothill-A5_WGS-merged/work/ensemble/E190/E190-ensemble.vcf.gz "
+##bcftools_concatVersion=1.9+htslib-1.9
+##bcftools_concatCommand=concat -a -Oz -o work/E190__PRJ180253_E190-T01-D/small_variants/sage_add/E190__PRJ180253_E190-T01-D-somatic-ensemble-sage.vcf.gz work/E190__PRJ180253_E190-T01-D/sage/pass/E190__PRJ180253_E190-T01-D.vcf.gz work/E190__PRJ180253_E190-T01-D/small_variants/pass_sort/E190__PRJ180253_E190-T01-D-somatic-ensemble.vcf.gz; Date=Wed Feb 20 00:23:38 2019
+##INFO=<ID=TRICKY,Number=1,Type=String,Description="Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR">
+##bcftools_filterVersion=1.9+htslib-1.9
+##bcftools_filterCommand=filter -i SAGE_HOTSPOT='inframe' -Oz -o sage_test.vcf.gz E190__PRJ180253_E190-T01-D-somatic-ensemble-somatic.vcf.gz; Date=Wed Feb 20 00:34:28 2019
+##INFO=<ID=TUMOR_AF,Number=1,Type=Float,Description="AF in tumor sample">
+##INFO=<ID=NORMAL_AF,Number=1,Type=Float,Description="AF in control sample">
+##INFO=<ID=TUMOR_DP,Number=1,Type=Integer,Description="DP in tumor sample">
+##INFO=<ID=NORMAL_DP,Number=1,Type=Integer,Description="DP in control sample">
+##INFO=<ID=TUMOR_VD,Number=A,Type=Integer,Description="VD in tumor sample">
+##INFO=<ID=NORMAL_VD,Number=A,Type=Integer,Description="VD in control sample">
+##INFO=<ID=TUMOR_MQ,Number=1,Type=Float,Description="MQ in tumor sample">
+##INFO=<ID=NORMAL_MQ,Number=1,Type=Float,Description="MQ in control sample">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	PRJ180253_E190-T01-D	PRJ180254_E190-B01-D
+3	49723321	.	AGCGCTG	A	431	PASS	AF=0.19;SAGE_HOTSPOT=inframe;AC=2;AN=4;HMF_MAPPABILITY=0.5,0.333333;SEGDUP;TRICKY=heng_um75-hs37d5|gc70to75;TUMOR_AF=0.19047619047619047;NORMAL_AF=0.0;TUMOR_DP=63;NORMAL_DP=33;TUMOR_VD=12;NORMAL_VD=0	GT:AD:DP	0/1:51,12:63	0/1:33,0:33
+X	70360647	.	ACAG	A	173	PASS	AF=0.083;SAGE_HOTSPOT=inframe;AC=2;AN=4;HMF_GIAB_CONF;HMF_MAPPABILITY=1;TRICKY=LCR|heng_um75-hs37d5;TUMOR_AF=0.08333333333333333;NORMAL_AF=0.0;TUMOR_DP=60;NORMAL_DP=18;TUMOR_VD=5;NORMAL_VD=0	GT:AD:DP	0/1:55,5:60	0/1:18,0:18
