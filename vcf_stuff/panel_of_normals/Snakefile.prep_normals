@@ -13,7 +13,6 @@ from ngs_utils.logger import warn
 from vcf_stuff.panel_of_normals import package_path
 
 from hpc_utils import hpc
-loc = hpc.get_loc()
 
 
 def str_to_lua_variable_name(name):
@@ -34,7 +33,7 @@ PON_FILE = f'GRCh37/panel_of_normals.vcf.gz'
 def _load_data():
     vcf_by_sample = dict()
 
-    if loc.name == 'spartan':
+    if hpc.name == 'spartan':
         with open(verify_file(join(package_path(), 'normals.tsv'))) as f:
             # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
 
@@ -98,7 +97,7 @@ def _load_data():
               f'For {not_found_vcf} sample(s), could not find normal VCFs; '
               f'For {found_multiple_vcfs} sample(s), found multiple normal VCFs.')
 
-    if loc.name == 'vlad':
+    if hpc.name == 'vlad':
         vcf_by_sample = {
             'MB_normal_50x': '/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test/test-2.vcf.gz',
             'MB': '/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test/test-benchmark.vcf.gz',
@@ -235,8 +234,8 @@ gunzip -c {input.vcf} \
 rule to_hg38_unsorted:
     input:
         vcf = rules.to_hg19.output.vcf,
-        chain = loc.hg19ToHg38,
-        hg38_fa = hpc.get_ref_file('hg38', loc=loc)
+        chain = hpc.get_ref_file(key='hg19ToHg38'),
+        hg38_fa = hpc.get_ref_file('hg38', key='fa')
     output:
         vcf = temp(add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38') + '.unsorted')
     shell:
@@ -245,7 +244,7 @@ rule to_hg38_unsorted:
 rule to_hg38:
     input:
         vcf = temp(rules.to_hg38_unsorted.output.vcf),
-        hg38_noalt_bed = join(loc.extras, 'hg38_noalt.bed'),
+        hg38_noalt_bed = join(hpc.extras, 'hg38_noalt.bed'),
     output:
         vcf = add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38')
     shell:
