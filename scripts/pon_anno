@@ -6,7 +6,7 @@ import click
 import os
 import tempfile
 from ngs_utils.call_process import run_simple
-from hpc_utils.hpc import get_ref_file
+from hpc_utils import hpc
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
 from ngs_utils.file_utils import verify_file, verify_dir, add_suffix, splitext_plus, safe_mkdir
 from ngs_utils.utils import set_locale; set_locale()
@@ -46,7 +46,7 @@ def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir):
         verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
         pon_dir = verify_dir(pon_dir, is_critical=True)
     else:
-        pon_dir = get_ref_file(genome, key='panel_of_normals_dir')
+        pon_dir = hpc.get_ref_file(genome, key='panel_of_normals_dir')
 
     run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()} > {fixed_snps_toml}')
     run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} > {fixed_indels_toml}')

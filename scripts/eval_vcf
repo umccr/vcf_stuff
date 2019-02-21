@@ -5,12 +5,9 @@ import click
 from ngs_utils.file_utils import splitext_plus, verify_file
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
-from hpc_utils.hpc import find_loc, get_ref_file, get_genomes_dict
+from hpc_utils import hpc
 from vcf_stuff.eval_vcf import package_path
 from ngs_utils.utils import set_locale; set_locale()
-
-loc = find_loc()
-
 
 @click.command()
 @click.argument('truth')
@@ -27,8 +24,9 @@ loc = find_loc()
 @click.option('--anno-gnomad', 'anno_gnomad', is_flag=True)
 @click.option('--unlock', 'unlock', is_flag=True)
 @click.option('--fast', 'fast', is_flag=True)
+@click.option('--genomes-dir', 'genomes_dir')
 def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, jobs=1, anno_tricky=False, anno_dp_af=False,
-         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None, fast=False):
+         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None, fast=False, genomes_dir=None):
     if not vcfs:
         raise click.BadParameter('Provide at least one VCF file')
 
@@ -48,6 +46,8 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
     if regions:
         conf['sample_regions'] = abspath(regions)
 
+    if genomes_dir:
+        hpc.genomes_dir = genomes_dir
     get_ref(genome, conf, truth, ref_fasta)
 
     run_snakemake(join(package_path(), "vcf.smk"), conf, jobs, output_dir, unlock=unlock)
@@ -66,11 +66,9 @@ def get_ref(genome, conf, truth, ref_fasta):
     if ref_fasta:
         conf['reference_fasta'] = verify_file(ref_fasta, is_critical=True)
         genome = splitext_plus(basename(genome))[0]
-    elif loc:
-        conf['reference_fasta'] = get_ref_file(genome, loc=loc)
-        genome_d = get_genomes_dict(genome, loc=loc)
     else:
-        critical(f'Genome {genome}: fasta file does not exist, or cannot automatically find it by location.')
+        conf['reference_fasta'] = hpc.get_ref_file(genome, 'fa')
+        genome_d = hpc.get_genomes_dict(genome)
 
     # Truth set
     if isfile(truth):
@@ -81,7 +79,7 @@ def get_ref(genome, conf, truth, ref_fasta):
             critical(f'First argument must be either a VCF file, or a value from:'
                      f' {", ".join(genome_d.get("truth_sets").keys())}.'
                      f' Truth set "{truth}" was not found in the file system or in hpc.py'
-                     f' for genome "{genome}" at file system "{loc.name}"')
+                     f' for genome "{genome}" at file system "{hpc.name}"')
 
         conf['truth_variants'] = abspath(truth_set_d['vcf'])
         if 'bed' in truth_set_d:

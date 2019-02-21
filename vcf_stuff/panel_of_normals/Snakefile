@@ -2,7 +2,6 @@
 # Usage:
 # snakemake -p --configfile=config.yaml
 
-from hpc_utils.hpc import get_ref_file
 
 shell.prefix("")
 

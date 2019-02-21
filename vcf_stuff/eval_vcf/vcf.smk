@@ -10,7 +10,7 @@ import csv
 
 from ngs_utils.file_utils import add_suffix, open_gzipsafe
 from ngs_utils.vcf_utils import get_tumor_sample_name
-from hpc_utils.hpc import get_loc, get_ref_file
+from hpc_utils import hpc
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
 from vcf_stuff.evaluation import dislay_stats_df, f_measure
 from vcf_stuff.eval_vcf import vcf_stats_to_df
@@ -232,11 +232,9 @@ if config.get('anno_pon'):
 
 if config.get('anno_tricky'):
     # Overlap normalised calls with tricky regions and annotate into INFO:
-    loc = get_loc()
-
     rule prep_giab_bed:
         input:
-            get_ref_file(config['genome'], ['truth_sets', 'giab', 'bed'])
+            hpc.get_ref_file(config['genome'], ['truth_sets', 'giab', 'bed'])
         output:
             'anno_tricky_regions/giab_conf.bed.gz'
         shell:
@@ -244,7 +242,7 @@ if config.get('anno_tricky'):
 
     rule prep_tricky_toml:
         input:
-            tricky_bed = get_ref_file(run.genome_build, key='tricky'),
+            tricky_bed = hpc.get_ref_file(run.genome_build, key='tricky'),
             giab_conf_bed = rules.prep_giab_bed.output[0]
         output:
             'anno_tricky_regions/tricky_vcfanno.toml'
@@ -289,7 +287,7 @@ ops=["flag"]
 if config.get('anno_gnomad'):
     rule prep_gn_toml:
         input:
-            gnomad_vcf = get_ref_file(config['genome'], 'gnomad'),
+            gnomad_vcf = hpc.get_ref_file(config['genome'], 'gnomad'),
             giab_conf_bed = rules.prep_giab_bed.output[0]
         output:
             'anno_gnomad/gnomad_vcfanno.toml'

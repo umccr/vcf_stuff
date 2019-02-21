@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import click
-from hpc_utils.hpc import get_ref_file
+from hpc_utils import hpc
 from ngs_utils.call_process import run
 from ngs_utils.utils import set_locale; set_locale()
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
@@ -18,7 +18,7 @@ def main(input_file, output_file, genome=None, ref_fasta=None):
     - splits MNP into single SNPs
     - left-aligns indels
     """
-    reference_fasta = get_ref_file(genome=genome, path=ref_fasta)
+    reference_fasta = hpc.get_ref_file(genome=genome, path=ref_fasta)
     cmd = make_normalise_cmd(input_file, output_file, reference_fasta)
     run(cmd)
 
