@@ -102,8 +102,11 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     #        SEGDUP,
     #        mappability<1
     else:
-        # if rec.INFO['TUMOR_AF'] < 0.1:
-        #     add_cyvcf2_filter(rec, 'AF10')
+        af = rec.INFO.get('TUMOR_AF')
+        assert af, rec
+
+        if af < 0.1:
+            add_cyvcf2_filter(rec, 'AF10')
 
         if rec.INFO.get('TRICKY') is None:
             tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
@@ -122,8 +125,6 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
         if pon is not None and pon >= PON_HITS:
             add_cyvcf2_filter(rec, 'PoN')
 
-        af = rec.INFO.get('TUMOR_AF')
-        assert af, rec
         dp = rec.INFO.get('TUMOR_DP')
         if af is not None and dp is not None:
             vd = round(af * dp)
