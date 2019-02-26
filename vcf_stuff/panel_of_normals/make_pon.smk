@@ -11,14 +11,6 @@ from vcf_stuff.panel_of_normals import package_path
 from hpc_utils import hpc
 
 
-def str_to_lua_variable_name(name):
-    name = os.path.basename(name)
-    name = name.replace('.vcf.gz', '')
-    name = re.sub('[^0-9a-zA-Z_]', '_', name) # Remove invalid characters
-    name = re.sub('^[^a-zA-Z_]+', '_', name)  # Remove leading characters until we find a letter or underscore
-    return name
-
-
 do_merge_multiallelic = True  # True if want to compare SITE, False if ALT
 
 
@@ -35,119 +27,6 @@ if hpc.name == 'spartan' and config.get('test') != 'yes':
 normals_tsv = verify_file(join(package_path(), normals_tsv), is_critical=True)
 
 
-def _load_data():
-    def _find_bcbio_run(bcbio_path):
-        run = None
-
-        def _find_handle_datestamps(bp):
-            try:
-                run = BcbioProject(bp, silent=True)
-            except NoDateStampsException:
-                warn(f'WARN: cannot parse bcbio run {bp} - no datestamp dir found')
-            except MultipleDateStampsException:
-                warn(f'WARN: cannot parse bcbio run {bp} - multiple datestamp dirs found')
-            else:
-                return run
-
-        try:
-            run = _find_handle_datestamps(bcbio_path)
-        except NoConfigDirException:
-            subdirs = os.listdir(bcbio_path)
-            if len(subdirs) == 1:
-                bcbio_path = join(bcbio_path, subdirs[0])
-                try:
-                    run = _find_handle_datestamps(bcbio_path)
-                except NoConfigDirException:
-                    warn(f'WARN: cannot parse bcbio run {bcbio_path} - no config dir')
-        return run
-
-    bam_by_sample = dict()
-
-    with open(normals_tsv) as f:
-        # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
-
-        total_bcbio_runs = 0
-        total_samples = 0
-        cannot_read_project = 0
-        found_normals = 0
-        not_found_vcf = 0
-        found_multiple_vcfs = 0
-
-        not_found_bam = 0
-
-        for line in f:
-            total_bcbio_runs += 1
-            bcbio_path, sample_ids = line.strip().split('\t')
-            sample_ids = set(sample_ids.split(','))
-            total_samples += len(sample_ids)
-
-            bcbio = _find_bcbio_run(bcbio_path)
-            if not bcbio:
-                cannot_read_project += 1
-                continue
-            normals = []
-            for b in bcbio.batch_by_name.values():
-                if b.normal:
-                    if b.normal.name not in sample_ids:
-                        print(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio.final_dir}: {sample_ids}')
-                    else:
-                        normals.append(b.normal)
-                        if b.normal.name == 'PRJ180156_1567_8073315T':
-                            print('Found PRJ180156_1567_8073315T in normals in project ', bcbio.final_dir)
-            if not normals:
-                warn(f'WARN: not found normals in run {bcbio.final_dir}')
-            for n in normals:
-                # found_vcfs = glob.glob(join(bcbio.date_dir, f'{n.name}*-ensemble*.vcf.gz'))
-                # if not found_vcfs:
-                #     warn(f'WARN: not found VCF for normal {n.name}, run {bcbio.final_dir}')
-                #     not_found_vcf += 1
-                # elif len(found_vcfs) > 1:
-                #     warn(f'WARN: Found multiple VCF for normal {n.name}: {found_vcfs}, run {bcbio.final_dir}')
-                #     found_multiple_vcfs += 1
-                # else:
-                #     vcf_by_sample[n.name] = found_vcfs[0]
-                #     found_normals += 1
-
-                if not n.bam or not verify_file(n.bam):
-                    not_found_bam += 1
-                    warn(f'WARN: not found BAM for normal {n.name}, run {bcbio.final_dir}')
-                else:
-                    bam_by_sample[n.name] = n.bam
-
-                    # normal = b.normal if b.normal else b.tumor
-                    # if normal.name == row['SampleName'] or normal.name == row['SampleID']:
-                    #     found_a_sample = True
-                    #     found_vcf = glob.glob(join(bcbio.date_dir, f'{normal.name}*-ensemble*.vcf.gz'))
-                # if not found_a_sample:
-                #     warn(f'WARN: Not found sample "{row["SampleName"]}"/"{row["SampleID"]}" for run {row["Results"]}')
-                #     not_found_in_run += 1
-
-    print(f'Done. From {total_bcbio_runs} bcbio, found {found_normals} normal VCFs from {total_samples} samples in normals.csv. '
-          f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
-          f'For {not_found_vcf} sample(s), could not find normal VCFs; '
-          f'For {found_multiple_vcfs} sample(s), found multiple normal VCFs.\n'
-          f'For {not_found_bam} sample(s), not found BAM file.')
-
-    # cohort_by_sample = dict()
-    # vcf_by_sample = dict()
-    #
-    # for entry in data:
-    #     if isinstance(entry, str):  # VCF path
-    #         sname = VCF(entry).samples[0]
-    #         cohort_by_sample[sname] = sname
-    #         vcf_by_sample[sname] = entry
-    #     else:  # single-item dict {cohort: [VCF paths]}
-    #         cohort_name, vcf_paths = list(entry.items())[0]
-    #         for vcf_path in vcf_paths:
-    #             sname = VCF(vcf_path).samples[0]
-    #             cohort_by_sample[sname] = cohort_name
-    #             vcf_by_sample[sname] = vcf_path
-
-    return bam_by_sample
-
-bam_by_sample = _load_data()
-
-
 rule all:
     input:
         add_suffix(PON_FILE, 'snps'),
@@ -156,15 +35,94 @@ rule all:
         add_suffix(PON_FILE, 'indels').replace('GRCh37', 'hg38'),
 
 
-rule recall:
+checkpoint load_data:
     input:
-        vcf = 'work/gatk_merged.vcf.gz',
-        tbi = 'work/gatk_merged.vcf.gz.tbi'
+        normals_tsv
+    output:
+        'work/bams.tsv'
+    run:
+        def _find_bcbio_run(bcbio_path):
+            run = None
 
+            def _find_handle_datestamps(bp):
+                try:
+                    run = BcbioProject(bp, silent=True)
+                except NoDateStampsException:
+                    warn(f'WARN: cannot parse bcbio run {bp} - no datestamp dir found')
+                except MultipleDateStampsException:
+                    warn(f'WARN: cannot parse bcbio run {bp} - multiple datestamp dirs found')
+                else:
+                    return run
+
+            try:
+                run = _find_handle_datestamps(bcbio_path)
+            except NoConfigDirException:
+                subdirs = os.listdir(bcbio_path)
+                if len(subdirs) == 1:
+                    bcbio_path = join(bcbio_path, subdirs[0])
+                    try:
+                        run = _find_handle_datestamps(bcbio_path)
+                    except NoConfigDirException:
+                        warn(f'WARN: cannot parse bcbio run {bcbio_path} - no config dir')
+            return run
+
+        bam_by_sample = dict()
+
+        with open(input[0]) as f:
+            # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
+
+            total_bcbio_runs = 0
+            total_samples = 0
+            cannot_read_project = 0
+            found_normals = 0
+            not_found_bam = 0
+
+            for line in f:
+                total_bcbio_runs += 1
+                bcbio_path, sample_ids = line.strip().split('\t')
+                sample_ids = set(sample_ids.split(','))
+                total_samples += len(sample_ids)
+
+                bcbio = _find_bcbio_run(bcbio_path)
+                if not bcbio:
+                    cannot_read_project += 1
+                    continue
+                normals = []
+                for b in bcbio.batch_by_name.values():
+                    if b.normal:
+                        if b.normal.name not in sample_ids:
+                            print(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio.final_dir}: {sample_ids}')
+                        else:
+                            normals.append(b.normal)
+                            if b.normal.name == 'PRJ180156_1567_8073315T':
+                                print('Found PRJ180156_1567_8073315T in normals in project ', bcbio.final_dir)
+                if not normals:
+                    warn(f'WARN: not found normals in run {bcbio.final_dir}')
+                for n in normals:
+                    if not n.bam or not verify_file(n.bam):
+                        not_found_bam += 1
+                        warn(f'WARN: not found BAM for normal {n.name}, run {bcbio.final_dir}')
+                    else:
+                        found_normals += 1
+                        bam_by_sample[n.name] = n.bam
+
+        print(f'Done. From {total_bcbio_runs} bcbio, found {found_normals} normal VCFs from {total_samples} samples in normals.csv. '
+              f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
+              f'For {not_found_bam} sample(s), not found BAM file.')
+
+        with open(output[0], 'w') as out:
+            for sn, bam in bam_by_sample.items():
+                out.write(f'{sn}\t{bam}\n')
+
+
+def recall_with_mutect_input(wc):
+    with open(checkpoints.load_data.get().output[0]) as f_:
+        bam_by_sample = dict(l.strip().split() for l in f_.readlines())
+        return bam_by_sample[wc.sample]
 
 rule recall_with_mutect:
     input:
-        bam = lambda wc: bam_by_sample[wc.sample],
+        bam = recall_with_mutect_input,
         ref_fa = hpc.get_ref_file('GRCh37', key='fa'),
     output:
         vcf = 'work/recall/{sample}.vcf.gz'
@@ -233,16 +191,23 @@ rule normalise_vcf:
         'norm_vcf {input} -o {output.vcf}'
 
 
+def combine_vcfs_bcftools_input(wildcards):
+    with open(checkpoints.load_data.get().output[0]) as f_:
+        bam_by_sample = dict(l.strip().split() for l in f_.readlines())
+        return expand(rules.normalise_vcf.output.vcf, sample=bam_by_sample.keys())
+
 # Merge VCFs, make multiallelic indels as we will ignore ALT for indels
 rule combine_vcfs_bcftools:
     input:
-        expand(rules.normalise_vcf.output.vcf, sample=bam_by_sample.keys()),
+        combine_vcfs_bcftools_input
     output:
         vcf = 'work/clean_merged.vcf.gz',
         tbi = 'work/clean_merged.vcf.gz.tbi'
     threads: 32
-    shell:
-        'bcftools merge -m indels {input} --threads {threads} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
+    run:
+        assert all(i.endswith('.vcf.gz') for i in input)
+        shell('bcftools merge -m indels {input} --threads {threads} -Oz -o {output.vcf} '
+              '&& tabix -p vcf {output.vcf}')
         # 'bcftools concat {input} -d all --allow-overlaps --threads {threads} -Oz -o {output}'
 
 

@@ -326,6 +326,8 @@ bcbio_nextgen.py -w template bcbio.yaml bcbio.csv /data/cephfs/punim0010/data/Re
 bcbio_nextgen.py ../config/bcbio.yaml -n 30
 ```
 
+Not working: bcbio errors out.
+
 Trying [GATK4](https://software.broadinstitute.org/gatk/documentation/tooldocs/4.beta.4/org_broadinstitute_hellbender_tools_walkers_mutect_Mutect2.php).
 
 > (iii) To create the panel of normals (PoN), call on each normal sample using Mutect2's tumor-only mode and then use GATK4's CreateSomaticPanelOfNormals. This contrasts with the GATK3 workflow, which uses an artifact mode in MuTect2 and CombineVariants for PoN creation. In GATK4, omitting filtering with FilterMutectCalls achieves the same artifact mode.
