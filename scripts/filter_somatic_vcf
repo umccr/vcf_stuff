@@ -57,7 +57,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
             rec.INFO.get('COSMIC_CNT', 0) >= 5 or \
             rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or \
             rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3 or \
-            rec.INFO.get('SAGE_HOTSPOT') is not None
+            rec.INFO.get('SAGE_HOTSPOT') == 'known'
 
     # Keeping all PCGR and HMF known hotspots, as well as variants with tier 1, 2:
     # Tier 1 - variants of strong clinical significance
