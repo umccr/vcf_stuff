@@ -1,5 +1,0 @@
-samples:
-    syn3-vardict: syn3-effects-annotated-sample.vcf.gz
-    syn3-ensemble: syn3-ensemble-sample.vcf.gz
-
-hits_thresholds: [1, 2, 3]

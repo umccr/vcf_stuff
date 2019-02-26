@@ -1,7 +1,0 @@
-samples:
-    ensemble: ../MB_100vs50-ensemble-annotated.vcf.gz
-    vardict: ../MB_100vs50-vardict-annotated.vcf.gz
-    mutect2: ../MB_100vs50-mutect2-annotated.vcf.gz
-    strelka: ../MB_100vs50-strelka2-annotated.vcf.gz
-
-hits_thresholds: [1, 2, 3]
