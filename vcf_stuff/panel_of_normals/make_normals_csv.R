@@ -1,7 +1,7 @@
 library(tidyverse)
 
-df <- read_csv('/Users/vsaveliev/Downloads/UMCCR Samples.csv')
-df %>%
+df <- read_csv('/Users/vsaveliev/Downloads/UMCCR Samples - Sheet1.csv')
+(normals <- df %>%
   select(sname = 'SampleName', type = 'Type', phenotype = 'Phenotype', bcbio_path = 'Results', notes = 'Notes') %>% 
   filter(!is.na(bcbio_path) & bcbio_path != 'n/a') %>% 
   filter(phenotype == "normal", type == "WGS") %>% 
@@ -20,6 +20,8 @@ df %>%
   mutate(sname = str_replace(sname, "PRJ170052_IPMN1957_N_S4", "IPMN1957")) %>% 
   select(bcbio_path, sname) %>% 
   group_by(bcbio_path) %>% 
-  summarise(samples = str_c(sname, collapse = ",")) %>% 
-  write_tsv('/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/normals.tsv', col_names = F)
+  summarise(samples = str_c(sname, collapse = ","))
+)
+  
+normals %>% write_tsv('/Users/vsaveliev/git/umccr/vcf_stuff/vcf_stuff/panel_of_normals/normals.tsv', col_names = F)
 
