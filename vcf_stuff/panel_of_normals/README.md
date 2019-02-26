@@ -3,22 +3,48 @@ Panel of normals
 
 Using a sample from a normal tissue as a baseline for cancer variant calling allows to get rid of pre-existing "germline" calls in the tissue. 
 However due to the following issues this method might still fail to filter out some false positives:
+
 - sequencing or alignment artefacts that failed to be filtered in "tumor",
 - real germline variants, not called in "normal" due to insufficient coverage in normal samples in those regions (e.g. due to low GC, unbalanced structural variants).
 
 Applying a set unrelated normal samples to filter false positives might help to reduce the FP number by partly addressing the second factor. The poorly covered regions from the matched normal might turn out to be sufficiently covered in unrelated normals.
 
-Matt Eldridge used an SNV panel from 149 blood normals from the oesophageal ICGC project to flag variants that are observed in:
-* at least 5 unrelated normals
-* in each, minimum variant allele fraction of 0.05
-* in each, minimum allele count of 3.
-He evaluated against two validation truth sets:
-1. MuTect2 from DREAM challenge synthetic 4 dataset results: precision 0.91 -> 0.97 while the sensitivity is only marginally reduced, remaining at 0.75.
-2. ICGC benchmark datasets, MuTect2 and Strelka: improves not in quite such spectacular fashion, possibly reflecting the relative similarity of the sequencing carried out for these datasets compared with that run on our oesophageal samples.
+
+## Usage
+
+We are building a panel from germline calls from normal (non-cancer) samples used in UMCCR. To generate, export the [samples doc](https://docs.google.com/spreadsheets/d/1DwvyfVrgr5TIcYtGVXZeIWWRbld-nuX-4o4z2kZHNWs/edit#gid=0)
+ to csv, and run `make_normals_csv.R` to generate `normals.tsv`. Then on Spartan run the following to produce the panel of normal VCFs:
+
+```  
+snakemake -s prep_normals.smk -j30
+```
+
+The script recalls variants in normal samples at AF>5%. We are not using ready germline calling VCFs because germline calls can be filtered by running against gnomAD, and we want to cover artefacts that would appear in lower freqs.
+
+Called VCFs are [normalized](https://github.com/umccr/vcf_stuff#vcf-normalisation) and merged into 2 VCFs, with indels and SNPs corresponsingly. Repetitive variants collased and put into `PoN_CNT` field with a number of occurrences of that variant.  The resulting merged VCFs are lifted over to hg19 and hg38 with the same snakefile.
+
+For annotation/fitlering your target somatic calls with panel of normals, see the [vcf_stuff README.md](https://github.com/umccr/vcf_stuff#panel-of-normals). The panel is also used by umccrise 
+
 
 ## Designing the panel
 
-We are building a panel from germline calls from normal (non-cancer) samples used in UMCCR. Currently, [this list](normals.yaml) is used.
+Matt Eldridge used an SNV panel from 149 blood normals from the oesophageal ICGC project to flag variants that are observed in:
+
+* at least 5 unrelated normals
+* in each, minimum variant allele fraction of 0.05
+* in each, minimum allele count of 3.
+
+See [slides](https://bioinformatics-core-shared-training.github.io/cruk-summer-school-2017/Day3/somatic_snv_filtering.html#25) and [also](https://github.com/bioinformatics-core-shared-training/cruk-summer-school-2016/blob/master/Day3/SNV_filtering.Rmd#L511).
+
+Matt has evaluated against two validation truth sets:
+
+1. MuTect2 from DREAM challenge synthetic 4 dataset results: precision 0.91 -> 0.97 while the sensitivity is only marginally reduced, remaining at 0.75.
+2. ICGC benchmark datasets (MB), MuTect2 and Strelka: improves not in quite such spectacular fashion, possibly reflecting the relative similarity of the sequencing carried out for these datasets compared with that run on our oesophageal samples.
+
+
+### Using germline calls
+
+The first iteration is taking the germline VCFs called from normal (non-cancer) samples used in UMCCR.
 
 We want to explore the following things:
 
@@ -27,7 +53,9 @@ We want to explore the following things:
 - To call a hit, should require the exact allele matching, or just variant location is enough?
 - Should we split multiallelics in the panel of normals? Might correllate with the previous point.
 
-The panel if built by merging preliminary [normalized](https://github.com/umccr/vcf_stuff#vcf-normalisation) VCFs. Repetitive variants we collapse and put a `PoN_CNT` field with a number of occurrences of that variant (see code in `Snakemake.prep_normals`). For the testing pusposes, we put separate `PoN_samples` and `PoN_cohorts` to explore if we want to collapse cohorts. Also for testing, we make 4 versions panels, using all combinations of the following:
+VCFs are [normalized](https://github.com/umccr/vcf_stuff#vcf-normalisation) and merged. Repetitive variants we collapse and put a `PoN_CNT` field with a number of occurrences of that variant. 
+For the testing pusposes, we put separate `PoN_samples` and `PoN_cohorts` to explore if we want to collapse cohorts. Also for testing, we make 4 versions panels, using all combinations of the following:
+
   - With merged multiallelics:
 	- merged with `bcftools merge -m all`
   - With split multiallelics:
@@ -259,33 +287,71 @@ cd test_mb_300_50
 cd test_colo
 ```
 
-## Lifting to hg38
+### Recalling on low frequency
 
-Download the hg19toHg38 chain file. GRCh-to-hg files don't work, so we have to add `chr` prefixes manually.
+
+However, this approach is rather a germline filter than an artefact filter. We can cover germline calls by filtering against gnomAD, and indeed they overlap a lot. To cover artefacts, we should try to recall 
+variants from normals allowing for 5% allele frequency (like in Matt's slides).
+
+Using Caveman to generate Matt's panel.
+
+Install Caveman:
 
 ```
-wget https://github.com/AstraZeneca-NGS/reference_data/blob/master/over.chain/hg19ToHg38.over.chain.gz\?raw\=true -O /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz
+cd /data/cephfs/punim0010/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals
+git clone https://github.com/cancerit/CaVEMan
+cd CaVEMan
+./setup.sh install
+export PATH=/data/cephfs/punim0010/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/CaVEMan/install/bin:/data/cephfs/punim0010/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/CaVEMan/bin:$PATH
 ```
 
+Running following [the generation of unmatchedNormal.bed.gz docs](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6097605/):
+
 ```
-cd /data/cephfs/punim0010/extras/panel_of_normals
-mkdir hg38
-cd hg38
-
-# Convert to hg19
-gunzip -c ../panel_of_normals.indels.vcf.gz | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.indels.hg19.vcf.gz
-gunzip -c ../panel_of_normals.snps.vcf.gz   | py -x "x.replace('##contig=<ID=', '##contig=<ID=chr') if x.startswith('#') else 'chr' + x" | py -x "x.replace('chrMT', 'chrM')" | grep -v chrG | gzip -c > panel_of_normals.snps.hg19.vcf.gz
-
-# Convert to hg38
-CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.indels.hg19.vcf.gz /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.indels.unsorted.vcf
-CrossMap.py vcf /data/cephfs/punim0010/extras/hg19ToHg38.over.chain.gz panel_of_normals.snps.hg19.vcf.gz   /data/cephfs/punim0010/local/stable/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa panel_of_normals.snps.unsorted.vcf
-
-# Remove alternative chromosomes that appear after lifting over; sort and tabix the result:
-bcftools view panel_of_normals.snps.unsorted.vcf   -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.snps.vcf.gz
-bcftools view panel_of_normals.indels.unsorted.vcf -T /data/cephfs/punim0010/extras/hg38_noalt.bed | bcftools sort -Oz -o panel_of_normals.indels.vcf.gz
-tabix -p vcf panel_of_normals.snps.vcf.gz
-tabix -p vcf panel_of_normals.indels.vcf.gz
+generateCavemanUMNormVCF\
+  --out-file play/unmatchedNormal.vcf \
+  --reference GRCh37.fa \
+  --split-sections GRCh37_noalt.bed \
+  --species human \
+  --spp-vers GRCh37d5 \
+  --bam-files ../work/bam/*.bam
 ```
+
+Not working.
+
+Trying to call with AF 5% in bcbio:
+
+```
+bcbio_nextgen.py -w template bcbio.yaml bcbio.csv /data/cephfs/punim0010/data/Results/Patients/2019-02-11/SFRC01122/final/PRJ190085_SFRC01122B/PRJ190085_SFRC01122B-ready.bam
+bcbio_nextgen.py ../config/bcbio.yaml -n 30
+```
+
+Trying [GATK4](https://software.broadinstitute.org/gatk/documentation/tooldocs/4.beta.4/org_broadinstitute_hellbender_tools_walkers_mutect_Mutect2.php).
+
+> (iii) To create the panel of normals (PoN), call on each normal sample using Mutect2's tumor-only mode and then use GATK4's CreateSomaticPanelOfNormals. This contrasts with the GATK3 workflow, which uses an artifact mode in MuTect2 and CombineVariants for PoN creation. In GATK4, omitting filtering with FilterMutectCalls achieves the same artifact mode.
+
+> Single normal sample for panel of normals (PoN) creation
+> To create a panel of normals (PoN), call on each normal sample as if a tumor sample. Then use CreateSomaticPanelOfNormals to output a PoN of germline and artifactual sites. This contrasts with the GATK3 workflow, which uses CombineVariants to retain variant sites called in at least two samples and then uses Picard MakeSitesOnlyVcf to simplify the callset for use as a PoN.
+
+```
+gatk --java-options "-Xmx4g" Mutect2 \
+   -R /data/cephfs/punim0010/extras/umccrise/genomes/GRCh37/GRCh37.fa \
+   -I /data/cephfs/punim0010/data/Results/Tothill-A5/2018-08-11/final/PRJ180495_E199-B01-D/PRJ180495_E199-B01-D-ready.bam \
+   -tumor PRJ180495_E199-B01-D \
+   -O work/recall/PRJ180495_E199-B01-D.vcf.gz
+```
+
+Combine with:
+
+```
+gatk --java-options "-Xmx4g" CreateSomaticPanelOfNormals \
+   -vcfs work/recall/PRJ180495_E199-B01-D.vcf.gz \
+   -O work/gatk_combined_pon.vcf.gz
+```
+
+
+
+
 
 ## Discussion
 
@@ -293,7 +359,7 @@ tabix -p vcf panel_of_normals.indels.vcf.gz
 
 We can check if the population frequency of the variant matches its frequency in the panel, and only apply it if it is significantly higher. Because otherwise it might be not an artefact, but a common pre-existing variant. 
 
-E .g. if we see more than 5 times the dbSNP GMAF or gnomad AF - then keep it in the panel. For instance, if the GMAF is 0.05 - which means it's common to see it 1 in 20 by chance - we'd expect around 2,5 samples in the panel to have it. If that's the case, than we shoule remove it from the panel. If we see it more often - then it's probably an artefact.
+E.g. if we see more than 5 times the dbSNP GMAF or gnomAD AF - then keep it in the panel. For instance, if the GMAF is 0.05 - which means it's common to see it 1 in 20 by chance - we'd expect around 2,5 samples in the panel to have it. If that's the case, we should remove it from the panel. If we see it more often - then it's probably an artefact. Though we are not interested in germline calls as well, so maybe do not need this approach.
 
 
 ## Playground

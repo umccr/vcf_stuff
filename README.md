@@ -175,6 +175,7 @@ The tools will write the report into `results_eval_cnv/report.tsv`, and the per-
 
 To consistently determine the genes affected by events, the tools re-annotates all events with the [bed_annotation](https://github.com/vladsaveliev/bed_annotation) package that assigns gene names to Ensembl genomic regions.
 
+
 ## Panel of normals
 
 Removing variants detected as germline in a set of unrelated normal tissue samples helps to reduce the FP rate when it was caused by unbalanced coverage in matching regions normals.
@@ -207,7 +208,12 @@ pon_pipeline data/test-vardict.vcf.gz data/test-strelka.vcf.gz -o results_pon -h
 
 The filtered VCF files will be written to `results_pon/pon_filter/`.
 
-Scripts only know about the panel location on Spartan and Raijin, so won't work outside.
+Scripts only know about the panel location on Spartan and Raijin, so to work outside, provide the path to the panel with `--pon-dir`.
+
+The script is also used withing a bigger [`anno_somatic_vcf`](https://github.com/umccr/vcf_stuff/blob/master/scripts/anno_somatic_vcf), which
+annotates against various sources that then can be used by [`filter_somatic_vcf`](https://github.com/umccr/vcf_stuff/blob/master/scripts/filter_somatic_vcf)
+to filter a somatic VCF. Both script are used in [Umccrise](https://github.com/umccr/umccrise).
+
 
 ### Building the panel
 
@@ -215,7 +221,7 @@ On Spartan:
 
 ```
 cd /data/cephfs/punim0010/extras/panel_of_normals
-snakemake -s Snakefile.prep_normals -p -j 20
+snakemake -s prep_normals.smk -p -j30
 ```
 
 ## VCF normalisation

@@ -39,5 +39,5 @@ rule pon_anno:
         ht = lambda wildcards: wildcards.ht,
         pon_dir = normals_dir
     shell:
-        'pon_anno {input.vcf} -h {params.ht} --pon-dir {params.pon_dir}' \
-        ' | bcftools view -f.,PASS -Oz -o {output} && tabix -p vcf {output}'
+        'pon_anno {input.vcf} -h {params.ht} --pon-dir {params.pon_dir} | '
+        'bcftools view -f.,PASS -Oz -o {output} && tabix -p vcf {output}'
