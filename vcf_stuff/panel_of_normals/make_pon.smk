@@ -68,8 +68,8 @@ rule recall_with_mutect:
         tmp_dir = 'work/recall/tmp/{chrom}/{sample}',
     resources:
         mem_mb = 4000
-    log:
-        'log/{chrom}/{sample}/mutect.log'
+    # log:
+    #     'log/{chrom}/{sample}/mutect.log'
     run:
         safe_mkdir(params.tmp_dir)
         shell('gatk --java-options "-Xms{params.xms}m -Xmx{params.xmx}m -Djava.io.tmpdir={params.tmp_dir}" '
@@ -78,7 +78,7 @@ rule recall_with_mutect:
               '-I {input.bam} '
               '-tumor {wildcards.sample} '
               '-O {output.vcf} '
-              '-L {wildcards.chrom} > {log} 2>&1')
+              '-L {wildcards.chrom}')
 
 
 # CreateSomaticPanelOfNormals is experimental and doesn't work:

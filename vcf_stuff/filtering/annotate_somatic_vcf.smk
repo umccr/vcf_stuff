@@ -34,12 +34,6 @@ if config.get('genomes_dir'):
     hpc.genomes_dir = config.get('genomes_dir')
 
 
-# REMOVE_GERMLINE = config.get('remove_germline', 'no') == 'yes'
-
-
-#############################
-
-
 rule all:
     input:
         vcf = OUTPUT_VCF,
