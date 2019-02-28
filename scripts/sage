@@ -1,0 +1,64 @@
+#!/usr/bin/env python
+import sys
+from os.path import dirname, abspath, join, basename, isfile, isdir
+import click
+
+from ngs_utils import logger
+from ngs_utils.file_utils import which, safe_mkdir, splitext_plus, verify_file
+from ngs_utils.logger import critical
+from ngs_utils.snakemake_utils import run_snakemake
+from vcf_stuff.filtering import package_path
+from ngs_utils.utils import set_locale; set_locale()
+
+
+@click.command()
+@click.option('-t', '--tumor-bam', 'tumor_bam', type=click.Path())
+@click.option('-n', '--normal-bam', 'normal_bam', type=click.Path())
+@click.option('-v', '--existing-vcf', 'existing_vcf', type=click.Path())
+@click.option('-g', 'genome', default='GRCh37')
+@click.option('-o', 'output_file', type=click.Path())
+@click.option('-w', '--work-dir', 'work_dir', type=click.Path())
+@click.option('--genomes-dir', 'genomes_dir')
+
+@click.option('--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
+                                                             'to be run without actually executing them.')
+@click.option('--unlock', 'unlock', is_flag=True)
+@click.option('--report', 'report', help='Propagated to snakemake. Create an HTML report with results and statistics. '
+                                         'Needs to end in ".html".')
+@click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
+                                                 'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
+def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
+         work_dir=None, genomes_dir=None, dryrun=None, unlock=None, report=None, dag=None):
+
+    if not output_file:
+        raise click.BadParameter('Provide path to output VCF file with -o')
+    if not (output_file.endswith('.vcf') or output_file.endswith('.vcf.gz')):
+        raise click.BadParameter('Path to output VCF must end with .vcf.gz')
+    if output_file.endswith('.vcf'):
+        output_file = output_file + '.gz'
+    if not genome:
+        raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
+
+    conf = {
+        'tumor_bam': verify_file(tumor_bam, is_critical=True),
+        'normal_bam': verify_file(normal_bam, is_critical=True),
+        'existing_vcf': abspath(existing_vcf),
+        'output_vcf': abspath(output_file),
+        'sample': basename(splitext_plus(output_file)[0]),
+        'genome': genome,
+    }
+    if genomes_dir:
+        conf['genomes_dir'] = genomes_dir
+
+    if not work_dir:
+        work_dir = output_file + '_work'
+    safe_mkdir(work_dir)
+
+    run_snakemake(join(package_path(), "sage.smk"), conf, output_dir=work_dir,
+                  unlock=unlock, dryrun=dryrun, report=report, dag=dag)
+    logger.info(f'Ouptut VCF: {output_file}')
+
+
+
+if __name__ == '__main__':
+    main()
