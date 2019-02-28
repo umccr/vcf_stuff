@@ -77,9 +77,7 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     #     mappability<1
     else:
         af = rec.INFO.get('TUMOR_AF')
-        assert af, rec
-
-        if af < 0.1:
+        if af is not None and af < 0.1:
             add_cyvcf2_filter(rec, 'AF10')
 
         if rec.INFO.get('TRICKY') is None:
