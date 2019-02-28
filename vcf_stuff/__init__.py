@@ -49,7 +49,7 @@ def iter_vcf(input_file, output_file, proc_rec, proc_hdr=None, postproc_hdr=None
 
     for rec in vcf:
         if proc_rec:
-            rec_res = proc_rec(rec, **kwargs)
+            rec_res = proc_rec(rec, vcf, **kwargs)
             if rec_res is not None:
                 # if w is not None:
                 #     sys.stderr.write('Writing record', rec_res, '\n')
