@@ -19,21 +19,22 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-g', '--genome', default='GRCh37')
 @click.option('-d', '--debug', is_flag=True)
 @click.option('--pon-dir', 'pon_dir', default=None)
-@click.option('--work-dir', default=None)
-def main(vcf, output_file=None, filter_hits=None, genome=None, debug=False, pon_dir=None, work_dir=None):
+@click.option('--field', 'field', default='PoN_CNT', help='ANNO field to set that will contain the number of hits in the PoN')
+@click.option('-w', '--work-dir', default=None)
+def main(vcf, output_file=None, filter_hits=None, genome=None, debug=False, pon_dir=None, field=None, work_dir=None):
     """
     Annotate records in the VCF file `vcf` with `INFO/PoN_CNT, optionally flag INFO/PoN_CNT>=filter_hits with FILTER=PoN`
     """
 
     vcf = abspath(vcf)
     if work_dir:
-        run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir)
+        run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir, field)
     else:
         with tempfile.TemporaryDirectory() as tmpdir:
-            run(vcf, output_file, filter_hits, genome, pon_dir, debug, tmpdir)
+            run(vcf, output_file, filter_hits, genome, pon_dir, debug, tmpdir, field)
 
 
-def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir):
+def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir, field):
     if work_dir:
         work_dir = safe_mkdir(work_dir)
     fixed_snps_toml = join(work_dir, 'fixed_snps.toml')
@@ -48,14 +49,14 @@ def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir):
     else:
         pon_dir = hpc.get_ref_file(genome, key='panel_of_normals_dir')
 
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()} > {fixed_snps_toml}')
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} > {fixed_indels_toml}')
+    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()}   | sed s#PoN_CNT#{field}# > {fixed_snps_toml}')
+    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} | sed s#PoN_CNT#{field}# > {fixed_indels_toml}')
 
-    cmd = f'vcfanno {fixed_snps_toml} {vcf} | ' \
-          f'vcfanno -permissive-overlap {fixed_indels_toml} /dev/stdin'
+    cmd = f'vcfanno {fixed_snps_toml} {vcf} 2>/dev/null | ' \
+          f'vcfanno -permissive-overlap {fixed_indels_toml} /dev/stdin 2>/dev/null'
 
     if filter_hits:
-        cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter PoN --mode + '
+        cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter {field} --mode + '
     else:
         cmd += ' | bcftools view'
 
