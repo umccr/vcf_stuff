@@ -1,11 +1,11 @@
-from vcf_stuff import iter_vcf
 localrules: all, link_bams, link_bam
 
+from vcf_stuff import iter_vcf
 import sys
 import os
 import glob
 import re
-from os.path import join, dirname
+from os.path import join, dirname, isfile
 from cyvcf2 import VCF, Writer
 from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix, verify_file, safe_mkdir
 from ngs_utils.bcbio import BcbioProject, NoConfigDirException, NoDateStampsException, MultipleDateStampsException
@@ -49,7 +49,7 @@ rule link_bam:
         'ln -s {input.bam}.bai {output.bai}'
 
 
-# Warning when running in parallel on on node!
+# WARNING: when running in parallel on one cluster node
 # https://gatkforums.broadinstitute.org/gatk/discussion/comment/46465/#Comment_46465
 # > It seems like this may be caused by running out of memory in the docker container. My guess is that '-Xmx32g is
 #   larger than the memory available to docker. Try reducing the -Xmx` value to less than the memory available to
@@ -68,8 +68,6 @@ rule recall_with_mutect:
         tmp_dir = 'work/recall/tmp/{chrom}/{sample}',
     resources:
         mem_mb = 4000
-    # log:
-    #     'log/{chrom}/{sample}/mutect.log'
     run:
         safe_mkdir(params.tmp_dir)
         shell('gatk --java-options "-Xms{params.xms}m -Xmx{params.xmx}m -Djava.io.tmpdir={params.tmp_dir}" '
@@ -149,7 +147,8 @@ rule count_hits:
         # get_ungz_gz(PON_FILE)[0]
     run:
         def hdr(vcf):
-            vcf.add_info_to_header({'ID': 'PoN_samples', 'Description': 'Panel of normal hits', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PoN_samples', 'Description': 'Panel of normal hits',
+                                    'Type': 'Integer', 'Number': '1'})
         def func(rec, vcf):
             v_samples = [s for s, gt in zip(vcf.samples, rec.genotypes) if not any([g == -1 for g in gt])]
             rec.INFO['PoN_samples'] = len(v_samples)
@@ -184,8 +183,11 @@ rule concat_chroms:
         'bcftools concat {input} -n -Oz -o {output.vcf} ; tabix -p vcf {output.vcf}'
 
 
-# convert already concatenated
-rule to_hg19:  # need to do that before converting to hg38. GRCh-to-hg liftover files don't work, so we have to add `chr` prefixes manually.
+#################
+## Lift over concatenated GRCh37 VCF
+
+rule to_hg19:  # need to do that before converting to hg38. GRCh-to-hg liftover files don't work,
+               # so we have to add `chr` prefixes manually.
     input:
         vcf = add_suffix(PON_FILE, '{type}'),
     output:
@@ -198,7 +200,6 @@ gunzip -c {input.vcf} \
 | gzip -c > {output.vcf}
 '''
 
-
 rule to_hg38_unsorted:
     input:
         vcf = rules.to_hg19.output.vcf,
@@ -210,7 +211,6 @@ rule to_hg38_unsorted:
     shell:
         'CrossMap.py vcf {input.chain} {input.vcf} {input.hg38_fa} {output.vcf}'
 
-
 rule to_hg38:
     input:
         vcf = rules.to_hg38_unsorted.output.vcf,
@@ -219,8 +219,8 @@ rule to_hg38:
         vcf = add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38'),
         # vcf = 'work/{chrom}/hg38/pon.{type}.vcf.gz',
     shell:
-        'bcftools view {input.vcf} -T {input.hg38_noalt_bed}' \
-        ' | bcftools sort -Oz -o {output.vcf}' \
+        'bcftools view {input.vcf} -T {input.hg38_noalt_bed}'
+        ' | bcftools sort -Oz -o {output.vcf}'
         ' && tabix -p vcf {output.vcf}'
 
 
