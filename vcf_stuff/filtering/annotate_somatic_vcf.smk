@@ -172,7 +172,9 @@ rule maybe_subset_highly_mutated:
             warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
             def func(rec):
                 gnomad_af = rec.INFO.get('gnomAD_AF')
-                if gnomad_af is not None and gnomad_af >= 0.01 and not rec.INFO.get('HMF_HOTSPOT') and not rec.INFO.get('SAGE_HOTSPOT'):
+                if gnomad_af is not None and gnomad_af >= 0.01 \
+                        and not rec.INFO.get('HMF_HOTSPOT')\
+                        and not rec.INFO.get('SAGE_HOTSPOT'):
                     return None
                 else:
                     return rec

@@ -187,7 +187,7 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
             if wrn not in warnings:
                 warn(f'{wrn} at record: {rec}\n' 
                      'This warning may appear multiple times. Showing once.')
-            warnings.add(warn)
+            warnings.add(wrn)
             return None
 
     if af is None:  # strelka2 before bcbio populated AFs? or SAGE?
