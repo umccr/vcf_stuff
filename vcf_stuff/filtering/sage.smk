@@ -170,7 +170,7 @@ rule annotate_from_sage:
         def proc_hdr(vcf):
             vcf.add_filter_to_header({'ID': 'SAGE_lowconf', 'Description': 'SAGE assigned low confidence to this call'})
 
-        def proc_rec(rec, tumor_index, normal_index):
+        def proc_rec(rec, vcf, tumor_index, normal_index):
             key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0])
             sage_call = sage_calls.get(key)
             if sage_call is not None:

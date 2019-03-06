@@ -43,7 +43,7 @@ def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, v
              )
 
 
-def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None, **kwargs):
+def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None, **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
@@ -140,6 +140,18 @@ def _somatic_vcf_filter_rec(rec, tumor_index=None, strand_bias=True, hp_coef=Non
     return rec
 
 
+def mq_filter(rec, vcf, tumor_index, vd):
+    mq = rec.INFO.get('TUMOR_MQ')
+
+    if 'NM' in vcf.FORMAT:  # vardict only
+        if len(_callers(rec)) < 3:  # we wanna filter only vardict
+            nm = float(rec.format('NM')[tumor_index])
+            if vd < 6 & (mq < 60.0 and nm > 2.0 or mq < 55.0 and nm > 1.0):
+                add_cyvcf2_filter(rec, 'NM_MQ_filter')
+
+    return rec
+
+
 def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
     vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
@@ -217,10 +229,8 @@ def _check_hp(rec, af, _coef=None):
     # if chg_len > 2 * hp_len:  # caucious with long changes cause it might be real
     #     return rec
 
-    if rec.INFO.get('CALLERS') is not None:
-        callers = rec.INFO.get('CALLERS').split(',')
-        if len(callers) == 3:  # we wanna only filter vardict
-            return rec
+    if len(_callers(rec)) == 3:  # we wanna filter only vardict
+        return rec
 
     af_threshold = (hp_repeated - 1) / _coef
     af_threshold = min(af_threshold, 0.35)
@@ -238,6 +248,14 @@ def _check_hp(rec, af, _coef=None):
     if hp_repeated >= 3 and af < af_threshold:
         add_cyvcf2_filter(rec, 'HP')
     return rec
+
+
+def _callers(rec):
+    if rec.INFO.get('CALLERS') is not None:
+        callers = rec.INFO.get('CALLERS').split(',')
+        return callers
+    else:
+        return 0
 
 
 def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):

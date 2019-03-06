@@ -170,7 +170,7 @@ rule maybe_subset_highly_mutated:
         vars_cancer_genes = None
         if total_vars > 500_000:
             warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
-            def func(rec):
+            def func(rec, vcf):
                 gnomad_af = rec.INFO.get('gnomAD_AF')
                 if gnomad_af is not None and gnomad_af >= 0.01 \
                         and not rec.INFO.get('HMF_HOTSPOT')\
@@ -185,7 +185,7 @@ rule maybe_subset_highly_mutated:
                 warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
                      f'So _instead_ subsetting to cancer genes.')
                 genes = get_key_genes_set()
-                def func(rec):
+                def func(rec, vcf):
                     if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
                         return rec
                 iter_vcf(input.vcf, output.vcf, func)
@@ -228,7 +228,7 @@ rule somatic_vcf_clean_info:
                     new_hdr.append(l)
             return '\n'.join(new_hdr)
 
-        def func(rec):
+        def func(rec, vcf):
             if rec.INFO.get('ANN') is not None:
                 del rec.INFO['ANN']
             tricky_flags = [k.replace('TRICKY_', '') for k, v in rec.INFO if k.startswith('TRICKY_')]
@@ -339,7 +339,7 @@ rule somatic_vcf_pcgr_anno:
             vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG',       'Description': 'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',                            'Type': 'String',  'Number': '1'})
             vcf.add_info_to_header({'ID': 'COSMIC_CNT',                'Description': 'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',                                           'Type': 'Integer', 'Number': '1'})
             vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS',           'Description': 'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file', 'Type': 'Integer', 'Number': '1'})
-        def func(rec):
+        def func(rec, vcf):
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
             pcgr_d = pcgr_fields_by_snp.get(change, {})
             if pcgr_d:
