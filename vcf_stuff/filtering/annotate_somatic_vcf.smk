@@ -76,7 +76,7 @@ rule prep_anno_toml:
         gnomad_vcf      = hpc.get_ref_file(GENOME, key='gnomad'),
         hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
         hmf_giab        = hpc.get_ref_file(GENOME, key='hmf_giab_conf'),
-        hmf_mappability = hpc.get_ref_file(GENOME, key='hmf_mappability'),
+        # hmf_mappability = hpc.get_ref_file(GENOME, key='hmf_mappability'),
     output:
         f'somatic_anno/tricky_vcfanno.toml'
     run:
@@ -99,12 +99,6 @@ file = "{input.hmf_giab}"
 names = ["HMF_GIAB_CONF"]
 columns = [3]
 ops = ["flag"]
-
-[[annotation]]
-file = "{input.hmf_mappability}"
-names = ["HMF_MAPPABILITY_float"]
-columns = [5]
-ops = ["concat"]
 
 [[annotation]]
 file = "{input.lcr}"
