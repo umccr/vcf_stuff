@@ -6,21 +6,24 @@ source("evaluation.R")
 dir = "/Users/vsaveliev/Analysis/snv_validation/mb/ICGC_MB/"
 truth_file = "MB-benchmark.ANNO.FILT.vcf.gz"
 called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.vcf.gz"
+tumor_sample = "tumor_downsample"
 
 # dir = "/Users/vsaveliev/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test_chr1/old/compare/"
 # dir = "/Users/vsaveliev/Analysis/snv_validation/mb/new_pon/"
 # truth_file = "MB-benchmark.ANNO.FILT.1.PON_OLD_NEW.vcf.gz"
 # called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.1.PON_OLD_NEW.vcf.gz"
 
-truth_vcf = read.vcf(str_c(dir, truth_file), split.info = T, split.samples = T)
+dir = "/Users/vsaveliev/rjn/projects/Saveliev_SNV_Filtering/cancer-giab-na12878-na24385/final/20161212_giab-mixture/"
+truth_file = "na12878-na24385-somatic-truth-NORM-ANNO-FILT.vcf.gz"
+called_file = "24385-ensemble-annotated.ANNO.FILT.vcf.gz"
+tumor_sample = "X24385.12878.30.200"
+
+truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T)
 called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
 
-merged = merge_called_and_truth(truth_vcf, called_vcf)
+truth_vcf$vcf <- truth_vcf$vcf %>% rename(TRUTH_DP = DP)
 
-merged = merged %>% mutate(
-  PoN_NEW = nonna(PoN_NEW.called, PoN_NEW.truth),
-  PoN_OLD = nonna(PoN_OLD.called, PoN_OLD.truth)
-) %>% count_status()
+merged = merge_called_and_truth(truth_vcf, called_vcf, tumor_sample)
 
 
 ##############
@@ -127,6 +130,11 @@ passed2 %>% count(TCGA >= 5)
 
 ################
 ## Exploring new PoN
+
+merged = merged %>% mutate(
+  PoN_NEW = nonna(PoN_NEW.called, PoN_NEW.truth),
+  PoN_OLD = nonna(PoN_OLD.called, PoN_OLD.truth)
+) %>% count_status()
 
 drop_pon = merged %>% rescue_if(str_detect(FILT, "PoN"))
 show_stats(
@@ -245,7 +253,7 @@ brads = resc_pon_af %>% reject_if(AF * DP < 6 &&
                                   MQ < 60.0 && NM > 2.0 ||
                                   DP < 10 ||
                                   VD_QUAL < 45))
-brads2 = resc_pon_af %>% reject_if(AF * DP < 6)
+brads2 = resc_pon_af %>% reject_if(VD < 6)
 show_stats(resc_all, resc_pon_af, nm_mq, brads, brads2)
 # rescue_if and reject_if(rescue = T) are worse than just reject_if
 # brads and brads_rc is better than either brads2 or brads2_rc. So we must consider NM and MQ before filtering.

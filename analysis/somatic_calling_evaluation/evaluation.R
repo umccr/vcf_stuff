@@ -38,11 +38,12 @@ count_status <- function(.data) {
   )
 }
 
-fix_fields <- function(data) {
+fix_somatic_anno_fields <- function(data) {
   renamed <- data %>% 
     mutate(
       HMF_MAPPABILITY = map_dbl(map(str_split(HMF_MAPPABILITY, ","), as.double), min)
     ) %>% 
+    select(-matches("^GENE$|^CLNSIG$")) %>% 
     rename(
       GENE = PCGR_SYMBOL,
       TCGA = PCGR_TCGA_PANCANCER_COUNT,
@@ -73,28 +74,60 @@ nonna <- function(a, b) {
 #   vcf
 # }
 
-merge_called_and_truth = function(truth_vcf, called_vcf) {
-  called_vcf$vcf = called_vcf$vcf %>% 
-    mutate(NM      = str_split(tumor_downsample, ":", simplify = T)[, 10] %>% as.double(),
-           VD_QUAL = str_split(tumor_downsample, ":", simplify = T)[, 15] %>% as.double(),
-           SBF     = str_split(tumor_downsample, ":", simplify = T)[, 17] %>% as.double())
-  #called_vcf$vcf$FORMAT
+extract_fmt_field = function(format, sample_data, field) {
+  ind = format %>% str_split(":") %>% map(~ which(. == field))
+  val = sample_data %>% str_split(":")
+  map2_dbl(val, ind, function(v, i) { possibly(parse_double, NA)(v[[i]]) })
+  
+  # data %>% 
+  #   mutate(
+  #     tmp_fld_pos = FORMAT %>% str_split(":") %>% possibly(map_int, otherwise = c(NA))(~ which(. == field))
+  #   ) %>% 
+  #   mutate(
+  #     !!new_fld_q := str_split(eval(sn, .), ":") %>% map(~ .[tmp_fld_pos][[1]])
+  #   ) %>% 
+  #   select(-tmp_fld_pos)
+}
+
+# "FORMAT:TTT" %>% str_split(":") %>% possibly(map_int, otherwise = c(NA))(~ which(. == 'TT'))
+#called$FORMAT %>% head(43)
+# extract_fmt_field(called$FORMAT %>% head(), called[[tumor_sample]] %>% head(), "NM", new_field = "NM_VD")
+# called$NM = extract_fmt_field(called_vcf$vcf$FORMAT, called_vcf$vcf[[tumor_sample]], "NM", new_field = "NM_VD")
+# add_format_field(called, "NM", tumor_sample, new_field = "NM_VD")
+
+#merge_called_and_truth(truth_vcf, called_vcf, tumor_sample)
+
+merge_called_and_truth = function(truth_vcf, called_vcf, tumor_sample) {
+#  tumor_sample = substitute(tumor_sample)
+  
+  truth_data = truth_vcf$vcf %>% as_tibble()
+  called_data = called_vcf$vcf %>% as_tibble()
+  
+  # print(tumor_sample)
+  # print(class(tumor_sample))
+  # print(called_data[[tumor_sample]])
+  # print(called_data[[eval(tumor_sample)]])
+  called_data$NM      = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "NM")
+  called_data$VD_QUAL = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "QUAL")
+  called_data$SBF     = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "SBF")
+  
+  # a = called_data %>% head()
+  # a$NM = extract_fmt_field(a$FORMAT, a[[tumor_sample]], "NM")
+  # called_data %>%  select(CALLERS, VD, NM, MQ) %>% mutate(NM * MQ)
+  # called_data %>% count(!is.na(NM), !is.na(TUMOR_MQ))
   
   merged <- full_join(
-    truth_vcf$vcf %>% as_tibble() %>% fix_fields(), 
-    called_vcf$vcf %>% as_tibble() %>% fix_fields() %>% select(-TIERS),
+    truth_data %>% fix_somatic_anno_fields(), 
+    called_data %>% fix_somatic_anno_fields(),
     by = c('CHROM', 'POS', 'REF', 'ALT'),
     suffix = c('.truth', '.called')) %>% 
-    select(
-      -AF,
-      -VD,
-      -DP
-    ) %>% 
+    select(-matches("^AF$|^VD$|^DP$|^MQ$")) %>% 
     rename(
       AF = TUMOR_AF.called,
       VD = TUMOR_VD.called,
       DP = TUMOR_DP.called,
-      FILT = FILTER.called
+      FILT = FILTER.called,
+      MQ = TUMOR_MQ.called,
       # 'COSM', 'ENCODE', 'GIAB', 'MBL', 'HMF_HS', 'ICGC', 'PCGR_TIER', 'CLNSIG', 
       # 'CSQ', 'DRIVER', 'PCGR_HS', 'TCGA', 'GENE', 'TRICKY', 'PoN'
     ) %>% 
@@ -104,11 +137,10 @@ merge_called_and_truth = function(truth_vcf, called_vcf) {
       is_called = !is.na(FILT),
       umccrise_passed = is_called & FILT == 'PASS',
       is_passed = umccrise_passed,
-      is_true = !is.na(TIERS),
+      is_true = !is.na(FILTER.truth),
       AF = as.double(AF),
       DP = as.integer(DP),
-      VD = round(AF * DP),
-      MQ = TUMOR_MQ.called
+      VD = round(AF * DP)
     ) %>% 
     mutate(
       GENE = nonna(GENE.called, GENE.truth),
@@ -132,11 +164,6 @@ merge_called_and_truth = function(truth_vcf, called_vcf) {
     ) %>% 
     count_status()
 }
-
-called_vcf$vcf %>% 
-  mutate(NM   = str_split(tumor_downsample, ":", simplify = T)[, 10] %>% as.double(),
-         QUAL = str_split(tumor_downsample, ":", simplify = T)[, 15] %>% as.double()) %>% 
-  count(NM, QUAL)
 
 
 ############
