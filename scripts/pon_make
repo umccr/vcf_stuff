@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import glob
 import os
 import sys
 from os.path import isfile, join, dirname, abspath
@@ -27,6 +28,8 @@ from hpc_utils import hpc
 @click.argument('target_rule', nargs=-1)
 @click.option('-o', 'output_dir', type=click.Path(), help='Output directory [def: umccrised]')
 @click.option('--genomes', '--genomes-dir', 'genomes_dir', help='Path to the reference data')
+@click.option('--use-ensemble-vcfs', 'use_ensembl_vcfs', is_flag=True, help='Use existing ensemble germline VCFs')
+@click.option('--use-gatk-vcfs', 'use_gatk_vcfs', is_flag=True, help='Use existing GATK germline VCFs')
 
 # Cluster:
 @click.option('-j', '--jobs', 'jobs', default=1, help='Maximum number of cores to use at single time (works both for '
@@ -36,7 +39,7 @@ from hpc_utils import hpc
 # Snakemake:
 @click.option('--forcerun', 'forcerun', help='Comma-separated rules that will be run even if the outputs exist. Propagated to snakemake, space-separated.')
 @click.option('--unlock', is_flag=True, help='Use when you are rerunning after Ctrl+C. Propagated to snakemake.')
-@click.option('--restart-times', default=0, help='Propagated to snakemake. Default is 0.')
+@click.option('--restart-times', 'restart_times', default=0, help='Propagated to snakemake. Default is 0.')
 @click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
                                                              'to be run without actually executing them.')
 @click.option('--report', 'report', help='Propagated to snakemake. Create an HTML report with results and statistics. '
@@ -44,7 +47,7 @@ from hpc_utils import hpc
 @click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                                                  'Usage: umccrise –-dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
 
-def main(normals_tsv, target_rule=list(), output_dir=None, test=False, genomes_dir=None,
+def main(normals_tsv, target_rule=list(), output_dir=None, genomes_dir=None, use_ensembl_vcfs=False, use_gatk_vcfs=False,
          jobs=None, cluster=False,
          forcerun=None, unlock=False, restart_times=None, dryrun=False, report=None, dag=False):
 
@@ -53,11 +56,24 @@ def main(normals_tsv, target_rule=list(), output_dir=None, test=False, genomes_d
     log_dir = safe_mkdir(join(output_dir, 'log'))
     logger.init(log_fpath_=join(log_dir, 'command.txt'), save_previous=True)
 
+    vcfs_tsv = join(output_dir, 'vcfs.tsv')
     bams_tsv = join(output_dir, 'bams.tsv')
-    print('Finding normal BAM files')
-    find_bams(normals_tsv, bams_tsv)
 
-    conf = dict(bams_tsv=bams_tsv)
+    conf = dict()
+
+    if use_ensembl_vcfs:
+        info('Finding normal germline ensemble VCFs')
+        find_vcfs(normals_tsv, vcfs_tsv, caller='ensemble')
+        conf['vcfs_tsv'] = vcfs_tsv
+    elif use_gatk_vcfs:
+        info('Finding normal germline GATK VCFs')
+        find_vcfs(normals_tsv, vcfs_tsv, caller='gatk-haplotype')
+        conf['vcfs_tsv'] = vcfs_tsv
+    else:
+        info('Finding normal BAM files')
+        find_bams(normals_tsv, bams_tsv)
+        conf['bams_tsv'] = bams_tsv
+
     if genomes_dir:
         conf['genomes_dir'] = verify_dir(genomes_dir, is_critical=True)
 
@@ -71,37 +87,36 @@ def main(normals_tsv, target_rule=list(), output_dir=None, test=False, genomes_d
                   dryrun=dryrun, report=report, dag=dag, target_rules=target_rule)
 
 
-def find_bams(normals_tsv, bams_tsv):
-    def _find_bcbio_run(bcbio_path):
-        run = None
+def _find_bcbio_run(bcbio_path):
+    run = None
 
-        def _find_handle_datestamps(bp):
-            try:
-                run = BcbioProject(bp, silent=True)
-            except NoDateStampsException:
-                warn(f'WARN: cannot parse bcbio run {bp} - no datestamp dir found')
-            except MultipleDateStampsException:
-                warn(f'WARN: cannot parse bcbio run {bp} - multiple datestamp dirs found')
-            else:
-                return run
-
+    def _find_handle_datestamps(bp):
         try:
-            run = _find_handle_datestamps(bcbio_path)
-        except NoConfigDirException:
-            subdirs = os.listdir(bcbio_path)
-            if len(subdirs) == 1:
-                bcbio_path = join(bcbio_path, subdirs[0])
-                try:
-                    run = _find_handle_datestamps(bcbio_path)
-                except NoConfigDirException:
-                    warn(f'WARN: cannot parse bcbio run {bcbio_path} - no config dir')
-        return run
+            run = BcbioProject(bp, silent=True)
+        except NoDateStampsException:
+            warn(f'WARN: cannot parse bcbio run {bp} - no datestamp dir found')
+        except MultipleDateStampsException:
+            warn(f'WARN: cannot parse bcbio run {bp} - multiple datestamp dirs found')
+        else:
+            return run
 
+    try:
+        run = _find_handle_datestamps(bcbio_path)
+    except NoConfigDirException:
+        subdirs = os.listdir(bcbio_path)
+        if len(subdirs) == 1:
+            bcbio_path = join(bcbio_path, subdirs[0])
+            try:
+                run = _find_handle_datestamps(bcbio_path)
+            except NoConfigDirException:
+                warn(f'WARN: cannot parse bcbio run {bcbio_path} - no config dir')
+    return run
+
+
+def find_bams(normals_tsv, bams_tsv):
     bam_by_sample = dict()
 
     with open(normals_tsv) as f:
-        # reader = csv.DictReader(f, fieldnames=f.readline().strip().split('\t'), delimiter='\t')
-
         total_bcbio_runs = 0
         total_samples = 0
         cannot_read_project = 0
@@ -122,11 +137,9 @@ def find_bams(normals_tsv, bams_tsv):
             for b in bcbio.batch_by_name.values():
                 if b.normal:
                     if b.normal.name not in sample_ids:
-                        print(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio.final_dir}: {sample_ids}')
+                        warn(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio.final_dir}: {sample_ids}')
                     else:
                         normals.append(b.normal)
-                        if b.normal.name == 'PRJ180156_1567_8073315T':
-                            print('Found PRJ180156_1567_8073315T in normals in project ', bcbio.final_dir)
             if not normals:
                 warn(f'WARN: not found normals in run {bcbio.final_dir}')
             for n in normals:
@@ -137,17 +150,67 @@ def find_bams(normals_tsv, bams_tsv):
                     found_normals += 1
                     bam_by_sample[n.name] = n.bam
 
-    print(f'Done. From {total_bcbio_runs} bcbio, found {found_normals} normal VCFs from {total_samples} samples in normals.csv. '
-          f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
-          f'For {not_found_bam} sample(s), not found BAM file.')
+    info(f'Done. From {total_bcbio_runs} bcbio run(s), found {found_normals} BAMs from {total_samples} samples in normals.csv. '
+         f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
+         f'For {not_found_bam} sample(s), not found BAM file.')
 
     with open(bams_tsv, 'w') as out:
         for sn, bam in bam_by_sample.items():
-            # symlink_bam = f'work/bam/{sn}.bam'
-            # safe_mkdir(dirname(symlink_bam))
-            # shell(f'ln -s {bam} {symlink_bam}')
-            # shell(f'ln -s {bam}.bai {symlink_bam}.bai')
             out.write(f'{sn}\t{bam}\n')
+
+
+def find_vcfs(normals_tsv, vcfs_tsv, caller='ensemble'):
+    vcf_by_sample = dict()
+
+    with open(normals_tsv) as f:
+        total_bcbio_runs = 0
+        total_samples = 0
+        cannot_read_project = 0
+        found_normals = 0
+        not_found_vcf = 0
+        found_multiple_vcfs = 0
+
+        for line in f:
+            total_bcbio_runs += 1
+            bcbio_path, sample_ids = line.strip().split('\t')
+            sample_ids = set(sample_ids.split(','))
+            total_samples += len(sample_ids)
+
+            bcbio = _find_bcbio_run(bcbio_path)
+            if not bcbio:
+                cannot_read_project += 1
+                continue
+
+            normals = []
+            for b in bcbio.batch_by_name.values():
+                if b.normal:
+                    if b.normal.name not in sample_ids:
+                        warn(f'WARN: {b.normal.name} not in requested normals.tsv samples for project {bcbio_path}: {sample_ids}')
+                    else:
+                        normals.append(b.normal)
+            if not normals:
+                warn(f'WARN: not found normals in run {bcbio_path}')
+            for n in normals:
+                found_vcf = glob.glob(join(bcbio.date_dir, f'{n.name}*-{caller}*.vcf.gz'))
+                if not found_vcf:
+                    warn(f'WARN: not found VCF for normal {n.name}, run {bcbio_path}')
+                    not_found_vcf += 1
+                elif len(found_vcf) > 1:
+                    warn(f'WARN: Found multiple VCF for normal {n.name}: {found_vcf}, run {bcbio_path}')
+                    found_multiple_vcfs += 1
+                else:
+                    vcf_by_sample[n.name] = found_vcf[0]
+                    found_normals += 1
+
+    info(f'Done. From {total_bcbio_runs} bcbio run(s), found {found_normals} normal VCFs from {total_samples} samples in normals.csv. '
+         f'For {cannot_read_project} bcbio run(s), could not parse folder structure. '
+         f'For {not_found_vcf} sample(s), could not find normal VCFs; '
+         f'For {found_multiple_vcfs} sample(s), found multiple normal VCFs.')
+
+    with open(vcfs_tsv, 'w') as out:
+        for sn, vcf in vcf_by_sample.items():
+            out.write(f'{sn}\t{vcf}\n')
+    return vcf_by_sample
 
 
 if __name__ == '__main__':
