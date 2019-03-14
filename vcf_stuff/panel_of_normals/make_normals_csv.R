@@ -17,8 +17,8 @@ df <- read_csv('/Users/vsaveliev/Downloads/UMCCR Samples - Sheet1.csv')
   mutate(sname = str_replace(sname, "2984Nor-PRJ170090", "IPMN2984_normal")) %>% 
   mutate(sname = str_replace(sname, "PRJ170062-2219-8073022ddnm_S2", "IPMN2219_normal")) %>% 
   mutate(sname = str_replace(sname, "3541Nor-PRJ170104", "IPMN3541_normal")) %>% 
-  mutate(sname = str_replace(sname, "PRJ170052_IPMN1957_N_S4", "IPMN1957")) %>% 
-  select(bcbio_path, sname) %>% 
+  mutate(sname = str_replace(sname, "PRJ170052_IPMN1957_N_S4", "IPMN1957")) %>%
+  select(bcbio_path, sname) %>%
   group_by(bcbio_path) %>% 
   summarise(samples = str_c(sname, collapse = ","))
 )

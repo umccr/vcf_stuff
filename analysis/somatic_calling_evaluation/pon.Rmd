@@ -1,0 +1,221 @@
+---
+title: "pon"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(knitr)
+library(kableExtra)
+p <- function(df) { df %>% kable() %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "float_left") }
+
+source("evaluation.R")
+```
+
+
+
+```{r parse_mb}
+dir = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/tests/"
+truth_file = "MB-benchmark.ANNO.FILT.PON_NEW.vcf.gz"
+called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.PON_NEW.vcf.gz"
+tumor_sample = "tumor_downsample"
+
+truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T)
+called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
+truth_vcf$vcf = truth_vcf$vcf %>% filter(str_detect(TIERS, "tier1|tier2"))
+```
+
+```{r parse_mixture}
+dir = "/Users/vsaveliev/rjn/projects/Saveliev_SNV_Filtering/cancer-giab-na12878-na24385/final/20161212_giab-mixture/"
+truth_file = "na12878-na24385-somatic-truth-NORM-ANNO-FILT.vcf.gz"
+called_file = "24385-ensemble-annotated.ANNO.FILT.vcf.gz"
+tumor_sample = "X24385.12878.30.200"
+
+truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T)
+called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
+
+truth_vcf$vcf <- truth_vcf$vcf %>% rename(TRUTH_DP = DP)
+```
+
+```{r parse_patient}
+dir = "/Users/vsaveliev/spa/data/Results/Patients/2019-02-17/SFRC01116/umccrised/SFRC01116__PRJ190052_SFRC01116T/small_variants/"
+called_file = "SFRC01116__PRJ190052_SFRC01116T-somatic-ensemble-ANNO-FILT.vcf.gz"
+called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
+truth_vcf = NULL
+```
+
+
+```{r prep_df}
+resc_ponaf = merge_called_and_truth(truth_vcf, called_vcf, tumor_sample) %>% 
+  # Dropping the old PoN as we are going to be evaluation the new one
+  rescue_if(FILT == "PoN") %>% 
+  # Dropping AF10 filter as well because there are a lot true calls below 10% and we want to test how we call them
+  rescue_if(FILT == "AF10") %>% 
+  # mutate(
+  #   PoN_NEW = nonna(nonna(PoN_NEW.called, PoN_NEW.truth), 0),
+  #   PoN_OLD = nonna(nonna(PoN.called, PoN.truth), 0)
+  # ) %>% 
+  count_status()
+
+# Leaving gnomAD_common from comparison:
+resc_ponaf_nogno = resc_ponaf %>% filter(is.na(FILT) | !str_detect(FILT, "gnomAD_common"))
+
+# Also rescuing called variants for comparison:
+resc_all       = resc_ponaf %>% mutate(is_passed = is_called)
+nogno_resc_all = resc_ponaf_nogno %>% mutate(is_passed = is_called)
+```
+
+The new panel of normals has a shape of 2 distributions: spike at low counts (1-5), and a hill at ~115 (which is 50% of total sample counts). Wondering what is the nature of the variants making the normal distribution.
+
+```{r}
+resc_ponaf %>% 
+  ggplot() + 
+  geom_freqpoly(aes(PoN_NEW), binwidth = 1) + 
+  geom_freqpoly(aes(PoN_OLD), binwidth = 1, color = 'red') +
+  ylim(0, 100)
+```
+
+Though not so clear bell shape if we remove gnomAD variants. Now a step-shaped plot, with a flat line until 50% of total samples, then a lower level.
+
+```{r new_pon}
+resc_ponaf_nogno %>% 
+  ggplot() + 
+  geom_freqpoly(aes(PoN_NEW), binwidth = 1) + 
+  geom_freqpoly(aes(PoN_OLD), binwidth = 1, color = 'red') +
+  ylim(0, 100)
+```
+
+Hypothesis: gnomAD is helpful enough for the MB benchmark.
+
+```{r new_pon}
+resc_ponaf
+resc_gno = resc_ponaf %>% rescue_if(FILT == "gnomAD_common")
+filt_gno = resc_ponaf %>% reject_if(str_detect(FILT, "gnomAD_common"))
+
+resc_ponaf_new1 = resc_ponaf %>% reject_if(PoN_NEW >= 1)
+resc_ponaf_new2 = resc_ponaf %>% reject_if(PoN_NEW >= 2)
+resc_ponaf_new5 = resc_ponaf %>% reject_if(PoN_NEW >= 5)
+
+resc_gno_new1 = resc_gno %>% reject_if(PoN_NEW >= 1)
+resc_gno_new2 = resc_gno %>% reject_if(PoN_NEW >= 2)
+resc_gno_new5 = resc_gno %>% reject_if(PoN_NEW >= 5)
+
+filt_gno_new1 = filt_gno %>% reject_if(PoN_NEW >= 1)
+filt_gno_new2 = filt_gno %>% reject_if(PoN_NEW >= 2)
+filt_gno_new5 = filt_gno %>% reject_if(PoN_NEW >= 5)
+
+show_stats(
+  resc_ponaf_new1,
+  resc_ponaf_new2,
+  resc_ponaf_new5,
+  resc_ponaf,
+  resc_gno_new1,
+  resc_gno_new2,
+  resc_gno_new5,
+  resc_gno,
+  filt_gno_new1,
+  filt_gno_new2,
+  filt_gno_new5,
+  filt_gno
+) %>% p
+```
+
+We see that PoN and gnomAD are complementary to each other and PoN always add something to F2 regardless of gnomAD.
+
+Also we see that neither don't't help much with MB benchmark.
+
+Hypothesis: PoN should have the highest effect in the areas of gaps of coverage in normals.
+
+```{r normal_depth}
+ggplot() + 
+  geom_density(data = resc_ponaf %>% filter(str_detect(FILT, 'gnomAD')), 
+               aes(NORMAL_DP), color = 'red') +
+  geom_density(data = resc_ponaf %>% filter(PoN_NEW >= 5),
+               aes(NORMAL_DP), color = 'blue') +
+  geom_density(data = resc_ponaf %>% filter(PoN_OLD >= 5),
+               aes(NORMAL_DP), color = 'green') +
+  geom_density(data = resc_ponaf %>% filter(!str_detect(FILT, 'gnomAD'), !PoN_OLD >= 5, !PoN_NEW >= 5), 
+               aes(NORMAL_DP), color = 'black')
+```
+
+No correlation between presence in PoN/gnomAD and normal depth. So germline leackage can't be explained by normal coverage gaps. 
+
+Exploring variants in PoN/gnomAD with high normal depth in detail.
+
+```{r normal_depth}
+resc_ponaf %>% 
+  filter(is_snp, str_detect(FILT, 'gnomAD') | PoN_NEW >= 5) %>% 
+  filter(is_true) %>%
+  filter(NORMAL_DP > 30) %>%
+  # filter(NORMAL_VD == 0) %>%
+  mutate(AF = format(AF * 100, digits = 3),
+         NORMAL_AF = format(NORMAL_AF * 100, digits = 3)
+  ) %>% 
+  select(PCGR_TIER, GENE, VD, AF, DP, MQ, NORMAL_DP, NORMAL_AF, NORMAL_VD, NORMAL_MQ, CHROM, POS, REF, ALT, PoN_OLD, PoN_NEW, FILT, CALLS)
+```
+
+44 gnomAD or PoN variants have no support is normal match. What are they?
+
+TODO: report germline leakage in MultiQC or Rmd? gnomAD and germline PoN (old-style PoN) with high enough normal depth?
+
+How many variants are unique to the new PoN or the old PoN:
+
+```{r}
+# New PoN is missing 42:
+resc_ponaf %>% filter(PoN_OLD >= 2 & PoN_NEW < 5) %>% 
+  select(TIERS.truth, VD, AF, DP, MQ, NORMAL_VD, NORMAL_AF, NORMAL_DP, NORMAL_MQ, CHROM, POS, is_snp, PoN_OLD, PoN_NEW, FILT, CALLS) %>% p
+
+# Old PoN is missing 293:
+resc_ponaf %>% filter(PoN_OLD < 2 & PoN_NEW >= 5) %>% 
+  select(TIERS.truth, VD, AF, DP, MQ, NORMAL_VD, NORMAL_AF, NORMAL_DP, NORMAL_MQ, CHROM, POS, is_snp, PoN_OLD, PoN_NEW, FILT, CALLS) %>% p
+
+```
+
+For a UMCCR internal sample:
+
+```{r}
+resc_gno %>% 
+  filter(is_passed) %>%
+  filter(NORMAL_DP > 30) %>%
+  # filter(VD > 5) %>% 
+  filter(str_detect(FILT, 'gnomAD')) %>% count(FILT)
+  # select(VD, AF, DP, MQ, NORMAL_VD, NORMAL_AF, NORMAL_DP, NORMAL_MQ, CHROM, POS, is_snp, FILT) %>% p
+  group_by(vartype.called) %>% 
+  summarize(koef = mean(str_detect(FILT, 'gnomAD') & PoN >= 2, na.rm = T))
+
+?mean
+```
+
+Plot NORMAL_DP and NORMAL_VD for this in gnomAD, for those in PoN, and others:
+```{r}
+resc_gno %>% 
+  filter(is_passed) %>% 
+  mutate(is_gnomAD = str_detect(FILT, 'gnomAD'), in_pon = PoN >= 2) %>% 
+  ggplot() +
+  geom_freqpoly(aes(NORMAL_DP, color = is_gnomAD), binwidth = 1) +
+  xlim(0, 100)
+  
+```
+```{r}
+resc_gno %>% 
+  filter(is_passed) %>% 
+  mutate(is_gnomAD = str_detect(FILT, 'gnomAD'), in_pon = PoN >= 2) %>% 
+  ggplot() +
+  geom_density(aes(NORMAL_AF, color = is_gnomAD), binwidth = 1)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

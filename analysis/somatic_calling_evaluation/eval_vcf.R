@@ -1,6 +1,7 @@
 source("evaluation.R")
 
 
+
 ##############
 ## Parsing
 dir = "/Users/vsaveliev/Analysis/snv_validation/mb/ICGC_MB/"
@@ -8,10 +9,10 @@ truth_file = "MB-benchmark.ANNO.FILT.vcf.gz"
 called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.vcf.gz"
 tumor_sample = "tumor_downsample"
 
-# dir = "/Users/vsaveliev/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/test_chr1/old/compare/"
+dir = "/Users/vsaveliev/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/tests/"
 # dir = "/Users/vsaveliev/Analysis/snv_validation/mb/new_pon/"
-# truth_file = "MB-benchmark.ANNO.FILT.1.PON_OLD_NEW.vcf.gz"
-# called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.1.PON_OLD_NEW.vcf.gz"
+truth_file = "MB-benchmark.ANNO.FILT.PON_NEW.vcf.gz"
+called_file = "batch1-ensemble-annotated.ANNO.FILT.TP.SAMPLE.PON_NEW.vcf.gz"
 
 dir = "/Users/vsaveliev/rjn/projects/Saveliev_SNV_Filtering/cancer-giab-na12878-na24385/final/20161212_giab-mixture/"
 truth_file = "na12878-na24385-somatic-truth-NORM-ANNO-FILT.vcf.gz"
@@ -24,6 +25,7 @@ called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
 truth_vcf$vcf <- truth_vcf$vcf %>% rename(TRUTH_DP = DP)
 
 merged = merge_called_and_truth(truth_vcf, called_vcf, tumor_sample)
+
 
 
 ##############
@@ -47,6 +49,8 @@ plot_freq(resc_pon_af, "VD")
 # 2. False positive indels are at any freq but mostly only below 0.35.
 #    False negative inels are on 0.4-0.5, with VD at 40x - 
 #    same shape as AF, so does not depend on DP much
+
+
 
 ###################
 ## Exploring filters
@@ -131,101 +135,59 @@ passed2 %>% count(TCGA >= 5)
 ################
 ## Exploring new PoN
 
-merged = merged %>% mutate(
+df = resc_pon_af %>% mutate(
   PoN_NEW = nonna(PoN_NEW.called, PoN_NEW.truth),
-  PoN_OLD = nonna(PoN_OLD.called, PoN_OLD.truth)
+  PoN_OLD = nonna(PoN.called, PoN.truth)
 ) %>% count_status()
 
-drop_pon = merged %>% rescue_if(str_detect(FILT, "PoN"))
-show_stats(
-  merged,
-  drop_pon,
-  drop_pon %>% reject_if(PoN >= 1),
-  drop_pon %>% reject_if(PoN_NEW >= 1),
-  drop_pon %>% reject_if(PoN_OLD >= 1),
-  drop_pon %>% reject_if(PoN >= 2),
-  drop_pon %>% reject_if(PoN_NEW >= 2),
-  drop_pon %>% reject_if(PoN_OLD >= 2)
-)
-# Best result in SNPs: PoN_NEW>=2: F2=84.6%, achieving max TP and min FN, with the same FP as PoN_NEW>=1
-# Best result in indels: PoN_OLD>=2, however PoN_NEW>=2 is fine also. The new one removes much more FP (8 vs 20), however misses 6 calls vs 4. 
-# Explore on indels: trying without permissive overlap.
-po = merged %>% rescue_if(str_detect(FILT, "PoN"))
-show_stats(
-  drop_pon,
-  drop_pon %>% reject_if(PoN >= 1),
-  drop_pon %>% reject_if(PoN >= 2),
-  drop_pon %>% reject_if(PoN_NEW >= 1),
-  po %>% reject_if(PoN_NEW >= 1),
-  drop_pon %>% reject_if(PoN_OLD >= 1),
-  po %>% reject_if(PoN_OLD >= 1),
-  drop_pon %>% reject_if(PoN_NEW >= 2),
-  po %>% reject_if(PoN_NEW >= 2),
-  drop_pon %>% reject_if(PoN_OLD >= 2),
-  po %>% reject_if(PoN_OLD >= 2)
-)
-# Indel stats got worse (F2 67% down to 57-58%) due to a higher number of FP. TODO: revisit idea of filtering surrounding indels.
-# SNP stats changed slightly to become worse as well, due to overlap with indels in the PoN (e.g. variant like 
-# indels:       1       35534250        .       AAT     A,AATAT,ATAT    0       .       PoN_samples=7
-# snps:         1       35534250        .       A       T       0       .       PoN_samples=1
-# )
-# 
-# Maybe make permissive overlap for SNPs too?
-po = merged %>% rescue_if(str_detect(FILT, "PoN"))
-show_stats(
-  drop_pon,
-  drop_pon %>% reject_if(PoN >= 1),
-  drop_pon %>% reject_if(PoN >= 2),
-  drop_pon %>% reject_if(PoN_NEW >= 1),
-  po %>% reject_if(PoN_NEW >= 1),
-  drop_pon %>% reject_if(PoN_OLD >= 1),
-  po %>% reject_if(PoN_OLD >= 1),
-  drop_pon %>% reject_if(PoN_NEW >= 2),
-  po %>% reject_if(PoN_NEW >= 2),
-  drop_pon %>% reject_if(PoN_OLD >= 2),
-  po %>% reject_if(PoN_OLD >= 2)
-)
-# +1 missed call with NEW>=1, and same result with >=2 and the OLD one.
+new1 = df %>% reject_if(PoN_NEW >= 1)
+new2 = df %>% reject_if(PoN_NEW >= 2)
+new3 = df %>% reject_if(PoN_NEW >= 3)
+new4 = df %>% reject_if(PoN_NEW >= 4)
+new5 = df %>% reject_if(PoN_NEW >= 5)
+new6 = df %>% reject_if(PoN_NEW >= 6)
 
-# Back to the old approach with permissive overlap only for indels.
-# Now trying >=3
-show_stats(
-  merged,
-  drop_pon,
-  drop_pon %>% reject_if(PoN_NEW >= 1),
-  drop_pon %>% reject_if(PoN_OLD >= 1),
-  drop_pon %>% reject_if(PoN_NEW >= 2),
-  drop_pon %>% reject_if(PoN_OLD >= 2),
-  drop_pon %>% reject_if(PoN_NEW >= 3),
-  drop_pon %>% reject_if(PoN_OLD >= 3)
-)
-# The old approach getting worse (especially for indels), but the new approach stays the same.
+old1 = df %>% reject_if(PoN_OLD >= 1)
+old2 = df %>% reject_if(PoN_OLD >= 2)
+old3 = df %>% reject_if(PoN_OLD >= 3)
+old4 = df %>% reject_if(PoN_OLD >= 4)
+old5 = df %>% reject_if(PoN_OLD >= 5)
+old6 = df %>% reject_if(PoN_OLD >= 6)
 
-# Now removing gnomAD first to assess how the PoN helps specifically with artefacts.
-no_gno = merged %>% 
-  filter(!str_detect(FILT, "gnomAD_common"))
-drop_pon = no_gno %>% rescue_if(str_detect(FILT, "PoN"))
-
-new1 = drop_pon %>% reject_if(PoN_NEW >= 1)
-new2 = drop_pon %>% reject_if(PoN_NEW >= 2)
-new3 = drop_pon %>% reject_if(PoN_NEW >= 3)
-old1 = drop_pon %>% reject_if(PoN_OLD >= 1)
-old2 = drop_pon %>% reject_if(PoN_OLD >= 2)
-old3 = drop_pon %>% reject_if(PoN_OLD >= 3)
 show_stats(
-  merged,
-  no_gno,
-  drop_pon,
-  new1,
-  new2,
-  new3,
-  old1,
-  old2,
-  old3
+  merged
+  , no_gno
+  , drop_pon
+  , old1
+  , old2
+  , old3
+  , old4
+  , old5
+  , old6
+  , new1
+  , new2
+  , new3
+  , new4
+  , new5
+  , new6
 )
-# SNPs: the new panel whos the best result regardless of the threshold.
-# Indels: NEW>=1 cuts down the max FP, however misses 1 variant compared to >=2 and >=3. In any case, much better than the old one. 
-#   Also, even better than the current PoN run on all samples: removes 1 FP indel, keeping the rest stats the same.
+# Best result in SNPs: PoN_NEW >= 2 or 3: F2=90.3%
+# Best result in indels: PoN_OLD >= 3 
+# Explore on indels.
+# Trying without permissive overlap:
+#      Indel stats even wrose due to a higher number of FP.
+#      SNP stats changed slightly to become worse as well, due to overlap with indels in the PoN - e.g. variant like 
+#      indels:       1       35534250        .       AAT     A,AATAT,ATAT    0       .       PoN_samples=7
+#      snps:         1       35534250        .       A       T       0       .       PoN_samples=1
+#      Enabling permissive overlap for SNPs resulted +1 missed call with NEW>=1, and same result with >=2 and the OLD one.
+# TODO: revisit idea of filtering surrounding indels.
+# TODO: check normal DP in filtered sites
+# TODO: check with somatic mixture
+
+
+
+
+
 
 
 ##################
@@ -264,6 +226,8 @@ show_stats(resc_all, resc_pon_af, nm_mq, brads, brads2, brads3)
 # - Brad's filter is the best. Though it's already run in bcbio.
 # - NM * MQ < 40 filter is even better if applied to SNPs only.
 # - TODO: explore coupled with new PoN.
+
+show_stats(resc_pon_af, lcr_vd5, lcr_vd6)
 
 
 

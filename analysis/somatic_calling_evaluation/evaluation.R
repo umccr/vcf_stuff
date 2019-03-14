@@ -57,6 +57,27 @@ fix_somatic_anno_fields <- function(data) {
       MBL = HMF_MAPPABILITY,
       COSM = COSMIC_CNT,
       CSQ = PCGR_CONSEQUENCE
+    ) %>% 
+    mutate(
+      HS = HMF_HS | !is.na(DRIVER) | !is.na(PCGR_HS) | 
+        (!is.na(CLNSIG) & str_detect(CLNSIG, "pathogenic|uncertain")) |
+        TCGA >= 5 | ICGC >= 3 | COSM >= 5 | PCGR_TIER %in% c("TIER_1", "TIER_2"),
+      HS = replace_na(HS, F)
+    ) %>% 
+    select(-matches("^AF$|^VD$|^DP$|^MQ$")) %>% 
+    rename(
+      AF = TUMOR_AF,
+      VD = TUMOR_VD,
+      DP = TUMOR_DP,
+      FILT = FILTER,
+      MQ = TUMOR_MQ
+    ) %>% 
+    mutate(
+      vartype = get_type(REF, ALT),
+      is_snp = vartype == 'SNP',
+      AF = as.double(AF),
+      DP = as.integer(DP),
+      VD = round(AF * DP)
     )
 }
 
@@ -99,17 +120,18 @@ extract_fmt_field = function(format, sample_data, field) {
 
 merge_called_and_truth = function(truth_vcf, called_vcf, tumor_sample) {
 #  tumor_sample = substitute(tumor_sample)
+
+  called_data = called_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
   
-  truth_data = truth_vcf$vcf %>% as_tibble()
-  called_data = called_vcf$vcf %>% as_tibble()
+  if (!is.null(truth_vcf)) {
+    truth_data = truth_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
+  } else {
+    truth_data = called_data %>% head(0)
+  }
   
-  # print(tumor_sample)
-  # print(class(tumor_sample))
-  # print(called_data[[tumor_sample]])
-  # print(called_data[[eval(tumor_sample)]])
-  called_data$NM      = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "NM")
-  called_data$VD_QUAL = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "QUAL")
-  called_data$SBF     = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "SBF")
+  # called_data$NM      = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "NM")
+  # called_data$VD_QUAL = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "QUAL")
+  # called_data$SBF     = extract_fmt_field(called_data$FORMAT, called_data[[tumor_sample]], "SBF")
   
   # a = called_data %>% head()
   # a$NM = extract_fmt_field(a$FORMAT, a[[tumor_sample]], "NM")
@@ -117,50 +139,43 @@ merge_called_and_truth = function(truth_vcf, called_vcf, tumor_sample) {
   # called_data %>% count(!is.na(NM), !is.na(TUMOR_MQ))
   
   merged <- full_join(
-    truth_data %>% fix_somatic_anno_fields(), 
-    called_data %>% fix_somatic_anno_fields(),
+    truth_data, 
+    called_data,
     by = c('CHROM', 'POS', 'REF', 'ALT'),
     suffix = c('.truth', '.called')) %>% 
-    select(-matches("^AF$|^VD$|^DP$|^MQ$")) %>% 
-    rename(
-      AF = TUMOR_AF.called,
-      VD = TUMOR_VD.called,
-      DP = TUMOR_DP.called,
-      FILT = FILTER.called,
-      MQ = TUMOR_MQ.called,
-      # 'COSM', 'ENCODE', 'GIAB', 'MBL', 'HMF_HS', 'ICGC', 'PCGR_TIER', 'CLNSIG', 
-      # 'CSQ', 'DRIVER', 'PCGR_HS', 'TCGA', 'GENE', 'TRICKY', 'PoN'
+    mutate(
+      vartype    = nonna(vartype.called   , vartype.truth   ),
+      is_snp     = nonna(is_snp.called    , is_snp.truth    ),
+      AF         = nonna(AF.called        , AF.truth        ),
+      VD         = nonna(VD.called        , VD.truth        ),
+      DP         = nonna(DP.called        , DP.truth        ),
+      MQ         = nonna(MQ.called        , MQ.truth        ),
+      NORMAL_AF  = nonna(NORMAL_AF.called , NORMAL_AF.truth ),
+      NORMAL_VD  = nonna(NORMAL_VD.called , NORMAL_VD.truth ),
+      NORMAL_DP  = nonna(NORMAL_DP.called , NORMAL_DP.truth ),
+      NORMAL_MQ  = nonna(NORMAL_MQ.called , NORMAL_MQ.truth ),
+      FILT       = nonna(FILT.called      , FILT.truth      ),
+      GENE       = nonna(GENE.called      , GENE.truth      ),
+      TCGA       = nonna(TCGA.called      , TCGA.truth      ),
+      ICGC       = nonna(ICGC.called      , ICGC.truth      ),
+      DRIVER     = nonna(DRIVER.called    , DRIVER.truth    ),
+      CLNSIG     = nonna(CLNSIG.called    , CLNSIG.truth    ),
+      PCGR_HS    = nonna(PCGR_HS.called   , PCGR_HS.truth   ),
+      HMF_HS     = nonna(HMF_HS.called    , HMF_HS.truth    ),
+      GIAB       = nonna(GIAB.called      , GIAB.truth      ),
+      PoN        = nonna(PoN.called       , PoN.truth       ),
+      MBL        = nonna(MBL.called       , MBL.truth       ),
+      COSM       = nonna(COSM.called      , COSM.truth      ),
+      CSQ        = nonna(CSQ.called       , CSQ.truth       ),
+      PCGR_TIER  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
+      TRICKY     = nonna(TRICKY.called    , TRICKY.truth    ),
+      HS         = nonna(HS.called        , HS.truth        )
     ) %>% 
     mutate(
-      vartype = get_type(REF, ALT),
-      is_snp = vartype == "SNP",
       is_called = !is.na(FILT),
       umccrise_passed = is_called & FILT == 'PASS',
       is_passed = umccrise_passed,
-      is_true = !is.na(FILTER.truth),
-      AF = as.double(AF),
-      DP = as.integer(DP),
-      VD = round(AF * DP)
-    ) %>% 
-    mutate(
-      GENE = nonna(GENE.called, GENE.truth),
-      TCGA = nonna(TCGA.called, TCGA.truth),
-      ICGC = nonna(ICGC.called, ICGC.truth),
-      DRIVER = nonna(DRIVER.called, DRIVER.truth),
-      CLNSIG = nonna(CLNSIG.called, CLNSIG.truth),
-      PCGR_HS = nonna(PCGR_HS.called, PCGR_HS.truth),
-      HMF_HS = nonna(HMF_HS.called, HMF_HS.truth),
-      GIAB = nonna(GIAB.called, GIAB.truth),
-      PoN = nonna(PoN.called, PoN.truth),
-      MBL = nonna(MBL.called, MBL.truth),
-      COSM = nonna(COSM.called, COSM.truth),
-      CSQ = nonna(CSQ.called, CSQ.truth),
-      PCGR_TIER = nonna(PCGR_TIER.called, PCGR_TIER.truth),
-      TRICKY = nonna(TRICKY.called, TRICKY.truth),
-      HS = HMF_HS | !is.na(DRIVER) | !is.na(PCGR_HS) | 
-        (!is.na(CLNSIG) & str_detect(CLNSIG, "pathogenic|uncertain")) |
-        TCGA >= 5 | ICGC >= 3 | COSM >= 5 | PCGR_TIER %in% c("TIER_1", "TIER_2"),
-      HS = replace_na(HS, F)
+      is_true = !is.na(FILT.truth)
     ) %>% 
     count_status()
 }
@@ -256,6 +271,19 @@ reject_if = function(.data, cond, rescue = F) {
     mask = mask | eval(cond_q, .data) %in% c(F)
   }
   .data %>% mutate(is_passed = is_called & mask)
+}
+
+rescue_filt = function(.data, filt) {
+  filt = rlang::enquo(filt)
+  if (!"rescued_filters" %in% names(.data)) {
+    .data[["rescued_filters"]] = character()
+  }
+    
+  .data %>% 
+    mutate(
+      rescued_filters = str_c(rescued_filters, ',', filt),
+    ) %>% 
+    rescue_if(setdiff(str_split(FILT, ','), str_split(rescued_filters, ',')) == c())
 }
 
 rescue_if = function(.data, cond) {
