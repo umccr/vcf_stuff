@@ -5,6 +5,7 @@ library(readr)
 library(purrr)
 library(crayon)
 library(bedr)
+library(tibble)
 # devtools::install_github("r-lib/pillar")
 # library(pillar)
 library(patchwork)
@@ -81,8 +82,23 @@ fix_somatic_anno_fields <- function(data) {
     )
 }
 
-nonna <- function(a, b) {
-  ifelse(!is.na(a), a, b)
+# nonna <- function(...) {
+#   args = c(...)
+#   not_na_indices = which(!is.na(args))
+#   if (length(not_na_indices) == 0) {
+#     return(NA)
+#   } else {
+#     return(args[[min(not_na_indices)]])
+#   }
+# }
+
+set_tumor_field <- function(.data, field) {
+  if (!field %in% names(.data)) {
+    if (str_c(field, '.called') %in% names(.data)) {
+      .data[[field]] = .data[[str_c(field, '.called')]]
+    }
+  }
+  .data
 }
 
 # proc_tricky = function(vcf) {
@@ -116,9 +132,7 @@ extract_fmt_field = function(format, sample_data, field) {
 # called$NM = extract_fmt_field(called_vcf$vcf$FORMAT, called_vcf$vcf[[tumor_sample]], "NM", new_field = "NM_VD")
 # add_format_field(called, "NM", tumor_sample, new_field = "NM_VD")
 
-#merge_called_and_truth(truth_vcf, called_vcf, tumor_sample)
-
-merge_called_and_truth = function(truth_vcf, called_vcf, tumor_sample) {
+merge_called_and_truth = function(called_vcf, truth_vcf, tumor_sample) {
 #  tumor_sample = substitute(tumor_sample)
 
   called_data = called_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
@@ -142,42 +156,45 @@ merge_called_and_truth = function(truth_vcf, called_vcf, tumor_sample) {
     truth_data, 
     called_data,
     by = c('CHROM', 'POS', 'REF', 'ALT'),
-    suffix = c('.truth', '.called')) %>% 
-    mutate(
-      vartype    = nonna(vartype.called   , vartype.truth   ),
-      is_snp     = nonna(is_snp.called    , is_snp.truth    ),
-      AF         = nonna(AF.called        , AF.truth        ),
-      VD         = nonna(VD.called        , VD.truth        ),
-      DP         = nonna(DP.called        , DP.truth        ),
-      MQ         = nonna(MQ.called        , MQ.truth        ),
-      NORMAL_AF  = nonna(NORMAL_AF.called , NORMAL_AF.truth ),
-      NORMAL_VD  = nonna(NORMAL_VD.called , NORMAL_VD.truth ),
-      NORMAL_DP  = nonna(NORMAL_DP.called , NORMAL_DP.truth ),
-      NORMAL_MQ  = nonna(NORMAL_MQ.called , NORMAL_MQ.truth ),
-      FILT       = nonna(FILT.called      , FILT.truth      ),
-      GENE       = nonna(GENE.called      , GENE.truth      ),
-      TCGA       = nonna(TCGA.called      , TCGA.truth      ),
-      ICGC       = nonna(ICGC.called      , ICGC.truth      ),
-      DRIVER     = nonna(DRIVER.called    , DRIVER.truth    ),
-      CLNSIG     = nonna(CLNSIG.called    , CLNSIG.truth    ),
-      PCGR_HS    = nonna(PCGR_HS.called   , PCGR_HS.truth   ),
-      HMF_HS     = nonna(HMF_HS.called    , HMF_HS.truth    ),
-      GIAB       = nonna(GIAB.called      , GIAB.truth      ),
-      PoN        = nonna(PoN.called       , PoN.truth       ),
-      MBL        = nonna(MBL.called       , MBL.truth       ),
-      COSM       = nonna(COSM.called      , COSM.truth      ),
-      CSQ        = nonna(CSQ.called       , CSQ.truth       ),
-      PCGR_TIER  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
-      TRICKY     = nonna(TRICKY.called    , TRICKY.truth    ),
-      HS         = nonna(HS.called        , HS.truth        )
-    ) %>% 
-    mutate(
-      is_called = !is.na(FILT),
-      umccrise_passed = is_called & FILT == 'PASS',
-      is_passed = umccrise_passed,
-      is_true = !is.na(FILT.truth)
-    ) %>% 
-    count_status()
+    suffix = c('.truth', '.called')
+  ) %>%
+  set_tumor_field("vartype") %>% 
+  set_tumor_field("is_snp") %>%        #     = nonna(is_snp.called    , is_snp.truth    ),
+  set_tumor_field("AF") %>%        #         = nonna(AF.called        , AF.truth        ),
+  set_tumor_field("VD") %>%        #         = nonna(VD.called        , VD.truth        ),
+  set_tumor_field("DP") %>%        #         = nonna(DP.called        , DP.truth        ),
+  set_tumor_field("MQ") %>%        #         = nonna(MQ.called        , MQ.truth        ),
+  set_tumor_field("NORMAL_AF") %>%         #  = nonna(NORMAL_AF, NORMAL_AF.called , NORMAL_AF.truth ),
+  set_tumor_field("NORMAL_VD") %>%         #  = nonna(NORMAL_VD, NORMAL_VD.called , NORMAL_VD.truth ),
+  set_tumor_field("NORMAL_DP") %>%         #  = nonna(NORMAL_DP, NORMAL_DP.called , NORMAL_DP.truth ),
+  set_tumor_field("NORMAL_MQ") %>%         #  = nonna(NORMAL_MQ, NORMAL_MQ.called , NORMAL_MQ.truth ),
+  set_tumor_field("FILT") %>%        #       = nonna(FILT.called      , FILT.truth      ),
+  set_tumor_field("GENE") %>%        #       = nonna(GENE.called      , GENE.truth      ),
+  set_tumor_field("TCGA") %>%        #       = nonna(TCGA.called      , TCGA.truth      ),
+  set_tumor_field("ICGC") %>%        #       = nonna(ICGC.called      , ICGC.truth      ),
+  set_tumor_field("DRIVER") %>%        #     = nonna(DRIVER.called    , DRIVER.truth    ),
+  set_tumor_field("CLNSIG") %>%        #     = nonna(CLNSIG.called    , CLNSIG.truth    ),
+  set_tumor_field("PCGR_HS") %>%         #    = nonna(PCGR_HS.called   , PCGR_HS.truth   ),
+  set_tumor_field("HMF_HS") %>%        #     = nonna(HMF_HS.called    , HMF_HS.truth    ),
+  set_tumor_field("GIAB") %>%        #       = nonna(GIAB.called      , GIAB.truth      ),
+  set_tumor_field("PoN") %>%         #        = nonna(PoN.called       , PoN.truth       ),
+  set_tumor_field("MBL") %>%         #        = nonna(MBL.called       , MBL.truth       ),
+  set_tumor_field("COSM") %>%        #       = nonna(COSM.called      , COSM.truth      ),
+  set_tumor_field("CSQ") %>%         #        = nonna(CSQ.called       , CSQ.truth       ),
+  set_tumor_field("PCGR_TIER") %>%         #  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
+  set_tumor_field("TRICKY") %>%        #     = nonna(TRICKY.called    , TRICKY.truth    ),
+  set_tumor_field("HS") %>%        #         = nonna(HS.called        , HS.truth        )
+  mutate(
+    is_called = !is.na(FILT),
+    umccrise_passed = is_called & FILT == 'PASS',
+    is_passed = umccrise_passed,
+    is_true = !is.na(FILT.truth)
+  ) %>% 
+  mutate(
+    filters = str_split(FILT, ";"),
+    rescued_filters = list(character())
+  ) %>% 
+  count_status()
 }
 
 
@@ -240,6 +257,10 @@ show_stats = function(...) {
   res
 }
 
+percent <- function(x, digits = 2, format = "f", ...) {
+  paste0(formatC(100 * x, format = format, digits = digits, ...), "%")
+}
+
 
 #############
 ## Plotting
@@ -274,16 +295,35 @@ reject_if = function(.data, cond, rescue = F) {
 }
 
 rescue_filt = function(.data, filt) {
-  filt = rlang::enquo(filt)
-  if (!"rescued_filters" %in% names(.data)) {
-    .data[["rescued_filters"]] = character()
-  }
-    
-  .data %>% 
+  .data %>%
     mutate(
-      rescued_filters = str_c(rescued_filters, ',', filt),
-    ) %>% 
-    rescue_if(setdiff(str_split(FILT, ','), str_split(rescued_filters, ',')) == c())
+      rescued_filters = map2(rescued_filters, c(filt), union)
+    ) %>%
+    mutate(
+      filt_diff = map2(filters, rescued_filters, setdiff)
+      # rescued_filters = str_c(rescued_filters, sep = ';'),
+      # filt_diff = str_c(filt_diff, sep = ';')
+    ) %>%
+    rescue_if(map_int(filt_diff, length) == 0)
+}
+
+test_resc_filt = function() {
+  df = tribble(
+    ~is_called, ~is_passed, ~vartype, ~FILT,
+    TRUE,       TRUE,       "snp",    "", 
+    TRUE,       F,          "snp",    "PoN",
+    TRUE,       F,          "snp",    "gnomAD_common",
+    TRUE,       F,          "snp",    "PoN;gnomAD_common",
+    TRUE,       F,          "snp",    "LowVD", 
+    TRUE,       F,          "snp",    "LowVD;PoN",
+    TRUE,       F,          "snp",    "LowVD;gnomAD_common",
+    TRUE,       F,          "snp",    "PoN;LowVD;gnomAD_common"
+  ) %>% mutate(
+    filters = str_split(FILT, ";"),
+    rescued_filters = list(character())
+  )
+  
+  df %>% rescue_filt("PoN") %>% rescue_filt("LowVD")
 }
 
 rescue_if = function(.data, cond) {
@@ -292,23 +332,23 @@ rescue_if = function(.data, cond) {
   .data %>% mutate(is_passed = is_called & mask)
 }
 
-test_rescue = function() {
+test_rescue_if = function() {
   df = tribble(
     ~is_called, ~umccrise_passed, ~is_true, ~NM, ~vartype,
-    TRUE,       TRUE,             TRUE,     1,   "snp",
-    TRUE,       F,                TRUE,     1,   "snp",                
-    F,          F,                TRUE,     1,   "snp",
-    TRUE,       TRUE,             F,        1,   "snp",
-    TRUE,       F,                F,        1,   "snp",
-    TRUE,       TRUE,             TRUE,     0,   "snp",
-    TRUE,       F,                TRUE,     0,   "snp",                
-    F,          F,                TRUE,     0,   "snp",
-    TRUE,       TRUE,             F,        0,   "snp",
-    TRUE,       F,                F,        0,   "snp",
-    TRUE,       TRUE,             TRUE,     NA,  "snp",
-    TRUE,       F,                TRUE,     NA,  "snp",                
-    F,          F,                TRUE,     NA,  "snp",
-    TRUE,       TRUE,             F,        NA,  "snp",
+    TRUE,       TRUE,             TRUE,     1,   "snp",   
+    TRUE,       F,                TRUE,     1,   "snp",              
+    F,          F,                TRUE,     1,   "snp",   
+    TRUE,       TRUE,             F,        1,   "snp",   
+    TRUE,       F,                F,        1,   "snp",   
+    TRUE,       TRUE,             TRUE,     0,   "snp",   
+    TRUE,       F,                TRUE,     0,   "snp",   
+    F,          F,                TRUE,     0,   "snp",   
+    TRUE,       TRUE,             F,        0,   "snp",   
+    TRUE,       F,                F,        0,   "snp",   
+    TRUE,       TRUE,             TRUE,     NA,  "snp",   
+    TRUE,       F,                TRUE,     NA,  "snp",          
+    F,          F,                TRUE,     NA,  "snp",   
+    TRUE,       TRUE,             F,        NA,  "snp",   
     TRUE,       F,                F,        NA,  "snp"
   ) %>% 
     mutate(is_passed = is_called & umccrise_passed)
