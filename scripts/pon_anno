@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import glob
 from os.path import join, basename, abspath, isfile, isdir
 import sys
 import click
@@ -7,7 +7,7 @@ import os
 import tempfile
 from ngs_utils.call_process import run_simple
 from hpc_utils import hpc
-from ngs_utils.logger import critical
+from ngs_utils.logger import critical, warn
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
 from ngs_utils.file_utils import verify_file, verify_dir, add_suffix, splitext_plus, safe_mkdir
 from ngs_utils.utils import set_locale; set_locale()
@@ -53,11 +53,13 @@ def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir, field):
         join(pon_dir, genome, 'panel_of_normals'),
     ]
     pref = None
-    for pref in prefixes_to_check:
-        if isfile(pref + 'snps.vcf.gz'):
+    for p in prefixes_to_check:
+        if isfile(p + '.snps.vcf.gz'):
+            warn(f'Found panel of normals at {p}*')
+            pref = p
             break
     if pref is None:
-        critical(f'Error: not found panel of normal files in neither of {prefixes_to_check}')
+        critical(f'Error: not found panel of normal files in neither of {[p + "*" for p in prefixes_to_check]}')
 
     verify_file(pref + '.snps.vcf.gz', is_critical=True, description='Panel of normals SNPs file in user provided folder')
     verify_file(pref + '.snps.vcf.gz.tbi', is_critical=True, description='Please index panel of normal files with tabix')
