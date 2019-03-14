@@ -112,14 +112,15 @@ rule normalise_vcf:
 # Merge VCFs, make multiallelic indels as we will ignore ALT for indels
 rule combine_vcfs_bcftools:
     input:
-        expand(rules.normalise_vcf.output.vcf.replace('{chrom}', '{{chrom}}'),
-               sample=bam_by_sample.keys() if bam_by_sample else vcf_by_sample.keys())
+        expand(rules.normalise_vcf.output.vcf.replace('{chrom}', '{{chrom}}'), sample=bam_by_sample.keys()) \
+        if bam_by_sample else \
+        expand(rules.normalise_vcf.output.vcf, sample=vcf_by_sample.keys(), chrom=['all'])
     output:
         vcf = 'work/{chrom}/clean_merged.vcf.gz',
         tbi = 'work/{chrom}/clean_merged.vcf.gz.tbi'
     threads: 32
     resources:
-        mem_mb = 50000
+        mem_mb = 10000
     benchmark:
         'benchmarks/combine_vcfs_bcftools_{chrom}.tsv'
     run:
@@ -168,15 +169,24 @@ rule split_snps_indels:
 
 
 # split on snps and indels by chrom
-rule concat_chroms:
-    input:
-        expand('work/{chrom}/pon.{{type}}.vcf.gz', chrom = list(map(str, range(1, 22+1))) + ['X', 'Y', 'MT'])
-    output:
-        vcf = add_suffix(PON_FILE, '{type}')
-    resources:
-        mem_mb = 4000
-    shell:
-        'bcftools concat {input} -n -Oz -o {output.vcf} ; tabix -p vcf {output.vcf}'
+if bam_by_sample:
+    rule concat_chroms:
+        input:
+            expand('work/{chrom}/pon.{{type}}.vcf.gz', chrom = list(map(str, range(1, 22+1))) + ['X', 'Y', 'MT'])
+        output:
+            vcf = add_suffix(PON_FILE, '{type}')
+        resources:
+            mem_mb = 4000
+        shell:
+            'bcftools concat {input} -n -Oz -o {output.vcf} ; tabix -p vcf {output.vcf}'
+else:
+    rule copy_result:
+        input:
+            expand('work/all/pon.{{type}}.vcf.gz')
+        output:
+            vcf = add_suffix(PON_FILE, '{type}')
+        shell:
+            'cp -r {input} {output} ; cp -r {input}.tbi {output}.tbi'
 
 
 #################
