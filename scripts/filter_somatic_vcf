@@ -94,7 +94,7 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
 
         # in panel of normals => likely an artefact
         pon = rec.INFO.get('PoN_CNT')
-        if pon is not None and pon >= 2:
+        if pon is not None and pon >= 5:
             add_cyvcf2_filter(rec, 'PoN')
 
         dp = rec.INFO.get('TUMOR_DP')
