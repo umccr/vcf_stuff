@@ -1,5 +1,5 @@
 [[annotation]]
-file="panel_of_normals.indels.vcf.gz"
+file="pon.indels.vcf.gz"
 fields=["PoN_samples"]
 ops=["max"]
 names=["PoN_CNT"]

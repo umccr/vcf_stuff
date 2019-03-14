@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
-from os.path import join, basename, abspath
+from os.path import join, basename, abspath, isfile, isdir
 import sys
 import click
 import os
 import tempfile
 from ngs_utils.call_process import run_simple
 from hpc_utils import hpc
+from ngs_utils.logger import critical
 from vcf_stuff.panel_of_normals import get_snps_toml_path, get_indels_toml_path
 from ngs_utils.file_utils import verify_file, verify_dir, add_suffix, splitext_plus, safe_mkdir
 from ngs_utils.utils import set_locale; set_locale()
@@ -41,22 +42,36 @@ def run(vcf, output_file, filter_hits, genome, pon_dir, debug, work_dir, field):
     fixed_indels_toml = join(work_dir, 'fixed_indels.toml')
 
     if pon_dir:
-        verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz'), is_critical=True, description='Panel of normals SNPs file in user provided folder')
-        verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
-        verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz'), is_critical=True, description='Panel of normals indels file in user provided folder')
-        verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
-        pon_dir = verify_dir(pon_dir, is_critical=True)
+        verify_dir(pon_dir, is_critical=True, description='Panel of normals directory')
     else:
         pon_dir = hpc.get_ref_file(genome, key='panel_of_normals_dir')
 
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_snps_toml_path()}   | sed s#PoN_CNT#{field}# > {fixed_snps_toml}')
-    run_simple(f'sed s#file=\\\"#file=\\\"{pon_dir}/# {get_indels_toml_path()} | sed s#PoN_CNT#{field}# > {fixed_indels_toml}')
+    prefixes_to_check = [
+        join(pon_dir, 'pon'),
+        join(pon_dir, genome, 'pon'),
+        join(pon_dir, 'panel_of_normals'),
+        join(pon_dir, genome, 'panel_of_normals'),
+    ]
+    pref = None
+    for pref in prefixes_to_check:
+        if isfile(pref + 'snps.vcf.gz'):
+            break
+    if pref is None:
+        critical(f'Error: not found panel of normal files in neither of {prefixes_to_check}')
+
+    verify_file(pref + '.snps.vcf.gz', is_critical=True, description='Panel of normals SNPs file in user provided folder')
+    verify_file(pref + '.snps.vcf.gz.tbi', is_critical=True, description='Please index panel of normal files with tabix')
+    verify_file(pref + '.indels.vcf.gz', is_critical=True, description='Panel of normals indels file in user provided folder')
+    verify_file(pref + '.indels.vcf.gz.tbi', is_critical=True, description='Please index panel of normal files with tabix')
+
+    run_simple(f'sed s#file=\\\"pon#file=\\\"{pref}# {get_snps_toml_path()}   | sed s#PoN_CNT#{field}# > {fixed_snps_toml}')
+    run_simple(f'sed s#file=\\\"pon#file=\\\"{pref}# {get_indels_toml_path()} | sed s#PoN_CNT#{field}# > {fixed_indels_toml}')
 
     cmd = f'vcfanno {fixed_snps_toml} {vcf} 2>/dev/null | ' \
           f'vcfanno -permissive-overlap {fixed_indels_toml} /dev/stdin 2>/dev/null'
 
     if filter_hits:
-        cmd += f' | bcftools filter -e "INFO/PoN_CNT>={filter_hits}" --soft-filter {field} --mode + '
+        cmd += f' | bcftools filter -e "INFO/{field}>={filter_hits}" --soft-filter {field} --mode + '
     else:
         cmd += ' | bcftools view'
 
