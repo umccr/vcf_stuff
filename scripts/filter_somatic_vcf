@@ -57,7 +57,7 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or
         rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or
         any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or
-        rec.INFO.get('COSMIC_CNT', 0) >= 5 or
+        rec.INFO.get('COSMIC_CNT', 0) >= 10 or
         rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or
         rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3 or
         rec.INFO.get('SAGE_HOTSPOT') == 'known'):

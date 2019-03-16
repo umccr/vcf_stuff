@@ -97,7 +97,7 @@ def main(input_file, output_file=None):
         w.close()
     # vcf.close()
 
-    sys.stderr.write('Done')
+    sys.stderr.write('Done\n')
 
 
 def _parse_val(v):
