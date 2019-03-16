@@ -70,7 +70,7 @@ rule prep_hmf_hotspots:
 rule prep_anno_toml:
     input:
         ga4gh_dir       = join(hpc.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
-        encode          = join(hpc.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'wgEncodeDacMapabilityConsensusExcludable.bed.gz'),
+        encode          = join(hpc.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'blacklist.v2.bed'),
         lcr             = join(hpc.get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
         segdup          = join(hpc.get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
         gnomad_vcf      = hpc.get_ref_file(GENOME, key='gnomad'),
