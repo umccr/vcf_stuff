@@ -41,9 +41,9 @@ count_status <- function(.data) {
 
 fix_somatic_anno_fields <- function(data) {
   renamed <- data %>% 
-    mutate(
-      HMF_MAPPABILITY = map_dbl(map(str_split(HMF_MAPPABILITY, ","), as.double), min)
-    ) %>% 
+    # mutate(
+    #   HMF_MAPPABILITY = map_dbl(map(str_split(HMF_MAPPABILITY, ","), as.double), min)
+    # ) %>% 
     select(-matches("^GENE$|^CLNSIG$")) %>% 
     rename(
       GENE = PCGR_SYMBOL,
@@ -55,7 +55,7 @@ fix_somatic_anno_fields <- function(data) {
       HMF_HS = HMF_HOTSPOT,
       GIAB = HMF_GIAB_CONF,
       PoN = PoN_CNT,
-      MBL = HMF_MAPPABILITY,
+      # MBL = HMF_MAPPABILITY,
       COSM = COSMIC_CNT,
       CSQ = PCGR_CONSEQUENCE
     ) %>% 
@@ -178,12 +178,13 @@ merge_called_and_truth = function(called_vcf, truth_vcf, tumor_sample) {
   set_tumor_field("HMF_HS") %>%        #     = nonna(HMF_HS.called    , HMF_HS.truth    ),
   set_tumor_field("GIAB") %>%        #       = nonna(GIAB.called      , GIAB.truth      ),
   set_tumor_field("PoN") %>%         #        = nonna(PoN.called       , PoN.truth       ),
-  set_tumor_field("MBL") %>%         #        = nonna(MBL.called       , MBL.truth       ),
+  # set_tumor_field("MBL") %>%         #        = nonna(MBL.called       , MBL.truth       ),
   set_tumor_field("COSM") %>%        #       = nonna(COSM.called      , COSM.truth      ),
   set_tumor_field("CSQ") %>%         #        = nonna(CSQ.called       , CSQ.truth       ),
   set_tumor_field("PCGR_TIER") %>%         #  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
   set_tumor_field("TRICKY") %>%        #     = nonna(TRICKY.called    , TRICKY.truth    ),
   set_tumor_field("HS") %>%        #         = nonna(HS.called        , HS.truth        )
+  set_tumor_field("PoN") %>% 
   mutate(
     is_called = !is.na(FILT),
     umccrise_passed = is_called & FILT == 'PASS',
@@ -205,8 +206,8 @@ f_measure <- function(b, prec, recall) {
   Fmeasure <- (1 + b**2) * prec * recall / (b**2 * prec + recall)
 }
 
-build_stats <- function(.data) {
-  stats <- .data %>% 
+summarize_stats = function(.data) {
+  .data %>% 
     count_status() %>% 
     group_by(vartype) %>% 
     summarise(
@@ -219,7 +220,12 @@ build_stats <- function(.data) {
       recall = TP / true,
       prec = TP / passed,
       F2 = f_measure(2, prec, recall)
-    ) %>% 
+    )
+}
+
+build_stats <- function(.data) {
+  stats <- .data %>% 
+    summarize_stats() %>% 
     # select(-passed, -true) %>% 
     select(TP, FP, FN, F2, called, true, vartype) %>% 
     mutate_if(is.double, function(v) {str_c(round(v * 100, v), "%")})
@@ -297,10 +303,10 @@ reject_if = function(.data, cond, rescue = F) {
 rescue_filt = function(.data, filt) {
   .data %>%
     mutate(
-      rescued_filters = map2(rescued_filters, c(filt), union)
+      rescued_filters = rescued_filters %>% map2(c(filt), union) %>% map(~.[!is.na(.)])
     ) %>%
     mutate(
-      filt_diff = map2(filters, rescued_filters, setdiff)
+      filt_diff = filters %>% map(~.[!is.na(.)]) %>% map2(rescued_filters, setdiff)
       # rescued_filters = str_c(rescued_filters, sep = ';'),
       # filt_diff = str_c(filt_diff, sep = ';')
     ) %>%
