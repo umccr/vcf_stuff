@@ -186,6 +186,11 @@ merge_called_and_truth = function(called_vcf, truth_vcf, tumor_sample) {
   set_tumor_field("HS") %>%        #         = nonna(HS.called        , HS.truth        )
   set_tumor_field("PoN") %>% 
   mutate(
+    NORMAL_AF = as.double(NORMAL_AF),
+    NORMAL_DP = as.integer(NORMAL_DP),
+    NORMAL_VD = round(NORMAL_AF * NORMAL_DP)
+  ) %>% 
+  mutate(
     is_called = !is.na(FILT),
     umccrise_passed = is_called & FILT == 'PASS',
     is_passed = umccrise_passed,
@@ -301,9 +306,10 @@ reject_if = function(.data, cond, rescue = F) {
 }
 
 rescue_filt = function(.data, filt) {
+  new_filt_fields = c(filt)
   .data %>%
     mutate(
-      rescued_filters = rescued_filters %>% map2(c(filt), union) %>% map(~.[!is.na(.)])
+      rescued_filters = rescued_filters %>% map2(new_filt_fields, union) %>% map(~.[!is.na(.)])
     ) %>%
     mutate(
       filt_diff = filters %>% map(~.[!is.na(.)]) %>% map2(rescued_filters, setdiff)

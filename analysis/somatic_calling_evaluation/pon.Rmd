@@ -21,10 +21,12 @@ called_file = "batch1-ensemble-annotated.ANNO.FILT.vcf.gz"
 tumor_sample = "tumor_downsample"
 
 called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
-truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T)
+truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T)
 # mb_truth_vcf$vcf = mb_truth_vcf$vcf %>% filter(str_detect(TIERS, "tier1|tier2"))
 
-mb = merge_called_and_truth(called_vcf, truth_vcf, tumor_sample) %>%  mutate(sample = 'MB')
+mb = merge_called_and_truth(called_vcf, truth_vcf, tumor_sample) %>% 
+  mutate(cohort = 'MB',
+         sample = cohort)
 ```
 
 ```{r parse_mixture}
@@ -36,8 +38,32 @@ tumor_sample = "X24385.12878.30.200"
 called_vcf = read.vcf(str_c(dir, called_file), split.info = T)
 truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T)
 truth_vcf$vcf <- truth_vcf$vcf %>% rename(TRUTH_DP = DP)
+giab_mix = merge_called_and_truth(called_vcf, truth_vcf, tumor_sample) %>%
+  mutate(cohort = "GiaB_mix",
+         sample = cohort)
+```
 
-giab_mix = merge_called_and_truth(called_vcf, truth_vcf, tumor_sample) %>% mutate(sample = 'GiaB_mix')
+```{r parse_colo829}
+dir = "~/spa/projects/Saveliev_Somatic_validation/COLO829/"
+truth_file = str_c(dir, "truth.NORM.ANNO.FILT.vcf.gz")
+truth = read.vcf(truth_file, split.info = T)
+
+vcfs_colo = list( 
+  "COLO_40pt"  = "40pc.TP.ANNO.FILT.vcf.gz",
+  "COLO_60pt"  = "60pc.ANNO.FILT.vcf.gz",
+  "COLO_80pt"  = "80pc.ANNO.FILT.vcf.gz",
+  "COLO_100pt" = "100pc.ANNO.FILT.vcf.gz"
+) %>% 
+  map(~ str_c(dir, .)) %>% 
+  map(read.vcf, split.info = T)
+
+colo = vcfs_colo %>% 
+  map2(names(vcfs_colo), function(vcf, sample_name) { 
+    merge_called_and_truth(vcf, truth) %>% mutate(sample = sample_name)
+  }) %>% 
+  bind_rows() %>% 
+  mutate(cohort = "COLO829",
+         sample = cohort)
 ```
 
 Parsing real patients
@@ -74,12 +100,17 @@ data_tothill = vcfs_tothill %>%
 # Highly mutated sample
 dir = "~/spa/data/Results/Patients/2019-02-17/SFRC01116/umccrised_newpon/SFRC01116__PRJ190052_SFRC01116T/small_variants/"
 tumor_sample = "SFRC01116__PRJ190052_SFRC01116T"
-called_vcf = "SFRC01116__PRJ190052_SFRC01116T-somatic-ensemble-PASS-AF10.vcf.gz"
+called_vcf = "SFRC01116__PRJ190052_SFRC01116T-somatic-ensemble.vcf.gz"
 vcf = str_c(dir, called_vcf) %>% read.vcf(split.info = T)
 data_sfrc = merge_called_and_truth(vcf, NULL, tumor_sample) %>% 
-  mutate(sample = tumor_sample,
-         cohort = "SFRC01116")
+  mutate(cohort = "SFRC01116", 
+         sample = cohort) %>% 
+  filter(!AF < 0.1)
+```
 
+Combine samples into single data frame
+
+```{r combine_samples}
 data = data_tothill %>% 
   bind_rows(data_sfrc)
   
@@ -95,10 +126,14 @@ data = data %>%
 data = data %>% 
   bind_rows(giab_mix %>% filter(is_true) %>% mutate(sample = "GiaB_mix_truth")) %>% 
   bind_rows(giab_mix %>% filter(is_called) %>% mutate(sample = 'GiaB_mix_called')) %>% 
-  bind_rows(giab_mix %>% filter(is_fn) %>% mutate(sample = 'GiaB_mix_FN'))
+  bind_rows(giab_mix %>% filter(is_fn) %>% mutate(sample = 'GiaB_mix_missed'))
 
-data_af10 = data %>% filter(!AF < 0.1) %>% filter(
-  !sample %in% c("MB_truth_tier2", "MB_truth_tier3", "MB_truth_tier4", "MB_truth"))
+data = data %>% 
+  bind_rows(colo %>% filter(is_true) %>% mutate(sample = 'COLO829_truth')) %>% 
+  bind_rows(colo %>% filter(is_called) %>% mutate(sample = str_c(sample, '_called'))) %>% 
+  bind_rows(colo %>% filter(is_fn) %>% mutate(sample = str_c(sample, '_missed'))) 
+
+data_af10 = data %>% filter(!AF < 0.1)
 
 data_af10 %>% count(sample)
 
@@ -108,6 +143,8 @@ data_af10 = data_af10 %>%
     in_gnomAD = str_detect(FILT, 'gnomAD'),
     in_pon = PoN >= 5
   ) 
+
+#data_af10 = data_af10 %>% filter(cohort != "SFRC01116") %>% bind_rows(data_sfrc)
 
 # resc_ponaf = data %>% rescue_ponaf()
 # resc_ponafgno = resc_ponaf %>% rescue_filt("gnomAD_common")
@@ -128,23 +165,46 @@ For each sample, calculate:
 - proportion of good calls fitered by PoN or gnomAD and normal has high enough coverage and low AF
 
 ```{r}
-stats = data_af10 %>% 
+fct_case_when <- function(...) {
+  args <- as.list(match.call())
+  levels <- sapply(args[-1], function(f) f[[3]])  # extract RHS of formula
+  levels <- levels[!is.na(levels)]
+  factor(dplyr::case_when(...), levels=levels)
+}
+
+categorized = data_af10 %>% 
   mutate(
     cohort = ifelse(!is.na(cohort), cohort, sample),
-    sample = ifelse(cohort == "Tothill" , sample, cohort),  # explanding Tothill cohort
-    good_normal = NORMAL_DP > 30 & NORMAL_VD <= 1,
-    category = case_when(
-      in_gnomAD & in_pon & good_normal ~ "gnomAD+PoN, normal ok",
-      in_gnomAD & in_pon ~ "gnomAD+PoN, normal fail",
-      in_gnomAD & good_normal ~ "gnomAD, normal ok",
-      in_gnomAD ~ "gnomAD, normal fail",
-      in_pon & good_normal ~ "PoN, normal ok",
-      in_pon ~ "PoN, normal fail",
+    # expanding Tothill and COLO829 cohorts:
+    sample = ifelse(cohort %in% c("Tothill", "COLO829"), sample, cohort)
+  ) %>% 
+  mutate(  # sorting
+    sample = factor(sample, levels = unique(.data$sample))  # %>% fct_relevel("SFRC01116")
+  ) %>% 
+  mutate(
+    bad_normal = NORMAL_DP < 30 | NORMAL_VD >= 1,
+    category = factor(case_when(
+      in_pon & in_gnomAD & bad_normal ~ "PoN+gnomAD, normal fail",
+      in_pon & in_gnomAD ~ "PoN+gnomAD, normal ok",
+      in_pon & bad_normal ~ "PoN, normal fail",
+      in_pon ~ "PoN, normal ok",
+      in_gnomAD & bad_normal ~ "gnomAD, normal fail",
+      in_gnomAD ~ "gnomAD, normal ok",
       AF < 0.1 ~ "AF<10%", 
       !umccrise_passed ~ "other filtered",
       TRUE ~ "passed"
-    )
-  ) %>% 
+    ), levels = c("PoN, normal fail", "PoN, normal ok", 
+                  "PoN+gnomAD, normal fail", "PoN+gnomAD, normal ok",
+                  "gnomAD, normal fail", "gnomAD, normal ok",
+                  "other filtered", "passed"))
+  )
+
+# categorized %>% filter(sample == "SFRC01116") %>% count(in_gnomAD)
+# stats %>% filter(sample == "SFRC01116") %>% filter(category != "passed")
+
+all_stats = categorized %>% 
+  filter(!str_detect(sample, "COLO"), 
+         !str_detect(sample, "GiaB_mix")) %>% 
   group_by(vartype, sample) %>% 
   mutate(total_vars = n()) %>% 
   ungroup() %>% 
@@ -152,18 +212,67 @@ stats = data_af10 %>%
   summarize(
     cnt = n(),
     total_vars = mean(total_vars),
-    pct = cnt / total_vars
+    share = cnt / total_vars * 100
   )
 
-stats %>% 
-  filter(vartype == "SNP") %>% 
-  filter(!sample %in% c("MB_truth_tier4", "MB_truth")) %>% 
-  ggplot(aes(sample, pct * 100, group = category)) + 
+reject_only_stats = categorized %>% 
+  filter(!str_detect(sample, "COLO"), 
+         !str_detect(sample, "GiaB_mix")) %>% 
+  filter(category != 'passed') %>% 
+  group_by(vartype, sample) %>% 
+  mutate(total_vars = n()) %>% 
+  ungroup() %>% 
+  group_by(vartype, sample, category) %>% 
+  summarize(
+    cnt = n(),
+    total_vars = mean(total_vars),
+    share = cnt / total_vars
+  )
+```
+
+```{r fig.width=5}
+all_stats %>% 
+  # filter(vartype == "SNP") %>% 
+  ggplot(aes(sample, share, group = forcats::fct_rev(category))) + 
   geom_bar(aes(fill = category), stat = "identity", position = "stack") +
   geom_text(aes(label = cnt), check_overlap = T, position = position_stack(vjust = 0.5), size = 2.5) +
   # geom_text(aes(y = -2, label = total_vars), hjust = "right", size = 2.5) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   # ylim(-12, 101) +
+  coord_flip() +
+  facet_wrap(~vartype, nrow = 2)
+```
+
+```{r indels}
+all_stats %>% 
+  filter(vartype != "SNP") %>% 
+  ggplot(aes(sample, share, group = category)) + 
+  geom_bar(aes(fill = category), stat = "identity", position = "stack") +
+  geom_text(aes(label = cnt), check_overlap = T, position = position_stack(vjust = 0.5), size = 2.5) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip()
+```
+
+```{r filtered_only}
+reject_only_stats %>% 
+  filter(vartype == "SNP") %>% 
+  filter(!str_detect(sample, "COLO"), 
+         !str_detect(sample, "GiaB_mix")
+  ) %>% 
+  ggplot(aes(sample, share, group = category)) + 
+  geom_bar(aes(fill = category), stat = "identity", position = "stack") +
+  geom_text(aes(label = cnt), check_overlap = T, position = position_stack(vjust = 0.5), size = 2.5) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip()
+```
+
+```{r filtered_only_indels}
+reject_only_stats %>% 
+  filter(vartype != "SNP") %>% 
+  ggplot(aes(sample, share, group = category)) + 
+  geom_bar(aes(fill = category), stat = "identity", position = "stack") +
+  geom_text(aes(label = cnt), check_overlap = T, position = position_stack(vjust = 0.5), size = 2.5) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   coord_flip()
 ```
 
@@ -179,8 +288,14 @@ Build histogram (or even box plots?) of average NORMAL_VD and NORMAL_AF in PoN a
 boxplot_data = data_af10 %>% 
   mutate(
     cohort = ifelse(!is.na(cohort), cohort, sample),
-    sample = ifelse(cohort == "Tothill", sample, cohort)  # expanding Tothill cohort
-  )
+    # expanding Tothill and COLO829 cohorts:
+    sample = ifelse(cohort %in% c("Tothill", "COLO829"), sample, cohort)
+  ) %>% 
+  filter(sample != "GiaB_mix_truth", 
+         sample != "GiaB_mix_missed", 
+         !str_detect(sample, "missed"), 
+         !str_detect(sample, "FN")
+         )
 
 boxplot_data %>% 
   ggplot() +
@@ -211,6 +326,22 @@ data_af10 %>%
 
 ### Comparing old and new PoN
 
+Parsing entire PoN [don't do - too many variants]
+
+```{r}
+pons_snps = list(
+  "T-only Mutect2" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_Feb26/GRCh37/pon.snps.vcf.gz",
+  "Germline GATK" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_gatk/GRCh37/pon.snps.vcf.gz",
+  "Germline ensemble" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_ensemble/GRCh37/pon.snps.vcf.gz"
+) %>% map(~ .[])
+pons_indels = list(
+  "T-only Mutect2" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_Feb26/GRCh37/pon.indels.vcf.gz",
+  "Germline GATK" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_gatk/GRCh37/pon.indels.vcf.gz",
+  "Germline ensemble" = "~/spa/extras/vlad/synced/umccr/vcf_stuff/vcf_stuff/panel_of_normals/pon_ensemble/GRCh37/pon.indels.vcf.gz"
+)
+```
+
+
 Parse MB annotated with the recalled PoN, as well as built from ensemble and gatk germline calls.
 
 ```{r}
@@ -224,10 +355,10 @@ truth_vcf  = read.vcf(str_c(dir, truth_file ), split.info = T, split.samples = T
 # mb_truth_vcf$vcf = mb_truth_vcf$vcf %>% filter(str_detect(TIERS, "tier1|tier2"))
 
 mb = merge_called_and_truth(called_vcf, truth_vcf, tumor_sample) %>% mutate(sample = 'MB')
-mb_pons = mb %>% 
-  set_tumor_field("PoN") %>% 
-  set_tumor_field("PoN_ens") %>% 
-  set_tumor_field("PoN_gatk") %>% 
+mb_pons = mb %>%
+  set_tumor_field("PoN") %>%
+  set_tumor_field("PoN_ens") %>%
+  set_tumor_field("PoN_gatk") %>%
   mutate(
     PoN = ifelse(is.na(PoN), 0, PoN),
     PoN_ens = ifelse(is.na(PoN_ens), 0, PoN_ens),
@@ -243,7 +374,8 @@ mb_pons = mb %>%
   )
 ```
 
-```{r}
+
+```{r hit_distribution}
 mb_pons %>% 
   ggplot() + 
   geom_freqpoly(aes(PoN), binwidth = 1) + 
@@ -254,7 +386,7 @@ mb_pons %>%
 
 The new panel of normals has a shape of 2 distributions: spike at low counts (1-5), and a hill at ~115 (which is 50% of total sample counts). Wondering what is the nature of the variants making this bell shaped normal distribution?
 
-```{r new_pon}
+```{r hit_distribution_no_gnomad}
 mb_pons %>% filter(!str_detect(FILT, "gnomAD_common")) %>% 
   ggplot() + 
   geom_freqpoly(aes(PoN), binwidth = 1) + 
@@ -317,7 +449,8 @@ show_stats(
   nogno_new5,
   nogno_ens2,
   nogno_gatk2
-) %>% filter(!is.na(vartype))
+) %>% 
+  filter(!is.na(vartype))
 ```
 
 We see that PoN and gnomAD are complementary to each other and PoN always add something to F2 regardless of gnomAD.
@@ -349,8 +482,9 @@ resc_ponaf %>%
   filter(is_true) %>%
   filter(NORMAL_DP > 30) %>%
   # filter(NORMAL_VD == 0) %>%
-  mutate(AF = format(AF * 100, digits = 3),
-         NORMAL_AF = format(NORMAL_AF * 100, digits = 3)
+  mutate(
+    AF = format(AF * 100, digits = 3),
+    NORMAL_AF = format(NORMAL_AF * 100, digits = 3)
   ) %>% 
   select(PCGR_TIER, GENE, VD, AF, DP, MQ, NORMAL_DP, NORMAL_AF, NORMAL_VD, NORMAL_MQ, CHROM, POS, REF, ALT, PoN_ens, PoN_gatk, PoN, FILT, CALLS) %>% p
 ```
@@ -383,94 +517,146 @@ resc_ponaf %>% filter(PoN >= 5 & PoN_ens < 2) %>% nrow
 
 Determining the best threshold.
 
-```{r}
-pon_stats = tibble(cnt = integer(0), f2_snps = double(), f2_indels = double())
-ens_stats = tibble(cnt = integer(0), f2_snps = double(), f2_indels = double())
-gatk_stats = tibble(cnt = integer(0), f2_snps = double(), f2_indels = double())
+```{r, fig.width = 5}
+stats = tibble(hits = integer(0),
+               metric = character(0),
+               pon_type = character(0),
+               val = double(0)
+               )
 
-cutoffs = c(1:20)
+cutoffs = c(1:9, seq(10, max(resc_ponaf$PoN) + 19, by = 20))
 
 for (n in cutoffs) {
-  pon_stats = pon_stats %>% add_row(
-    cnt = !!n, 
-    f2_snps = resc_ponaf %>% reject_if(PoN >= !!n) %>% summarize_stats() %>% filter(vartype == "SNP") %>% .$F2,
-    f2_indels = resc_ponaf %>% reject_if(PoN >= !!n) %>% summarize_stats() %>% filter(vartype == "Indel") %>% .$F2
-  )
-  ens_stats = ens_stats %>% add_row(
-    cnt = !!n, 
-    f2_snps = resc_ponaf %>% reject_if(PoN_ens >= !!n) %>% summarize_stats() %>% filter(vartype == "SNP") %>% .$F2,
-    f2_indels = resc_ponaf %>% reject_if(PoN_ens >= !!n) %>% summarize_stats() %>% filter(vartype == "Indel") %>% .$F2
-  )
-  gatk_stats = gatk_stats %>% add_row(
-    cnt = !!n, 
-    f2_snps = resc_ponaf %>% reject_if(PoN_gatk >= !!n) %>% summarize_stats() %>% filter(vartype == "SNP") %>% .$F2,
-    f2_indels = resc_ponaf %>% reject_if(PoN_gatk >= !!n) %>% summarize_stats() %>% filter(vartype == "Indel") %>% .$F2
-  )
+  for (metric in c("F2", "prec", "recall")) {
+    for (pon_type in c("PoN", "PoN_ens")) {
+      val = resc_ponaf %>% reject_if(eval(sym(pon_type)) >= n) %>% summarize_stats() %>% filter(vartype == "SNP") %>% .[[metric]]
+      stats = stats %>% add_row(
+        hits = n,
+        metric = metric,
+        pon_type = pon_type,
+        val = val
+      )
+    }
+  }
 }
 
-(ggplot() + 
-  geom_line(data = pon_stats,  aes(as.integer(cnt), f2_snps), color = 'blue') +
-  geom_line(data = ens_stats,  aes(as.integer(cnt), f2_snps), color = 'red') +
-  geom_line(data = gatk_stats, aes(as.integer(cnt), f2_snps), color = 'green') +
-  scale_x_continuous(breaks=c(0, cutoffs))
-) / (
-ggplot() + 
-  geom_line(data = pon_stats,  aes(as.integer(cnt), f2_indels), color = 'blue') +
-  geom_line(data = ens_stats,  aes(as.integer(cnt), f2_indels), color = 'red') +
-  geom_line(data = gatk_stats, aes(as.integer(cnt), f2_indels), color = 'green') +
-  scale_x_continuous(breaks=c(0, cutoffs))
-)
+stats = stats %>% 
+  mutate(
+    label = ifelse(pon_type == "PoN", "Tumor only", "Germline"),
+    scale = ifelse(hits >= 10, "hits >= 10", "hits < 10")
+  )
+
+dl_method = list(dl.trans(x = x + 0.2), "maxvar.points", cex = 0.8)
+# nopon_stats = resc_ponaf %>% summarize_stats() %>% filter(vartype == "SNP")
+stats %>% 
+  ggplot(aes(x = hits, y = val, color = label, linetype = metric)) + 
+  geom_line() +
+  # scale_colour_discrete(guide = 'none') +
+  scale_x_continuous(breaks = c(0, cutoffs)) +  #, expand = expand_scale(add = c(1, 5))) +
+  # geom_dl(aes(y = val, label = str_c(metric, ", ", label)), method = dl_method) +
+  # geom_dl(aes(y = recall_snps, label = str_c("Recall, ", label)), method = geom_dl_m) +
+  # geom_dl(aes(y = prec_snps, label = str_c("Prec, ", label)), method = geom_dl_m) +
+  # geom_hline(yintercept = resc_ponaf %>% summarize_stats() %>% filter(vartype == "SNP") %>% .$F2,
+  #            color = label) +
+  # geom_hline(yintercept = resc_ponaf %>% summarize_stats() %>% filter(vartype == "SNP") %>% .$recall,
+  #            color = label) +
+  facet_wrap(~scale, nrow = 1, scales = "free_x") +
+  ylim(0.82, 0.95)
+ # +
+ #  geom_line(aes(y = nopon_recall)) +
+ #  geom_line(aes(y = nopon_prec))
+  
+  # facet_wrap(~vartype, nrow = 2, scales = "free_y")
 ```
 
 The best threshold for SNPs is 5 for the new PoN. For the old ones, it's 2.
 However, in terms of indels, the best is not to filter at all: probably the truth set has too many false positives.
 
 
+
+Other benchmarks to determine the best threshold:
+
+```{r, fig.width = 7}
+benchmarks = bind_rows(mb, colo, giab_mix) %>% rescue_ponaf()
+b2 = benchmarks %>% rescue_ponaf()
+
+bench_stats = tibble(
+  hits = integer(0),
+  metric = character(0),
+  cohort = character(0),
+  val = double(0)
+)
+
+for (n in cutoffs) {
+  for (metric in c("F2", "prec", "recall")) {
+    for (coh in c("MB", "COLO829", "GiaB_mix")) {
+      val = b2 %>% filter(cohort == coh) %>% reject_if(PoN >= n) %>% summarize_stats() %>% filter(vartype == "SNP") %>% .[[metric]]
+      bench_stats = bench_stats %>% add_row(
+        hits = n,
+        metric = metric,
+        cohort = coh,
+        val = val
+      )
+    }
+  }
+}
+
+library(directlabels)
+geom_dl_m = list(dl.trans(x = x + 0.2), "last.points", cex = 0.8)
+
+bench_stats %>% 
+  mutate(
+    scale = ifelse(hits >= 10, "hits >= 10", "hits < 10")
+  ) %>% 
+  ggplot(aes(x = hits, y = val, color = cohort, linetype = metric)) + 
+  ylab("3 benhcmarks, 3 metirc values for each") +
+  xlab("X: PoN hits (correspnds to variants after filtering those that hit the panel at least X times)") +
+  geom_line() +
+  geom_dl(aes(y = val, label = metric), method = geom_dl_m) +
+  scale_x_continuous(breaks = c(0, cutoffs), expand = expand_scale(add = c(0.1, 1))) +
+  # ylim(0.8, 0.95) +
+  facet_grid(cohort ~ scale, scales = "free")
+
+```
+
 Plotting NORMAL_DP and NORMAL_VD distributions for this in gnomAD, for those in PoN, and others.
 
-GnomAD variants have on avareage a lower depth in normal:
+GnomAD and PoN variants have on avareage a lower depth in normal, as well as AF:
 
 ```{r}
-resc_ponaf %>% 
-  group_by(in_gnomAD) %>% 
-  summarize(mean_normal_af = mean(NORMAL_DP, rm.na = T))
-```
-
-```{r}
-resc_ponaf %>% 
+mb_called = resc_ponaf %>% filter(is_called)
+(mb_called %>% 
   ggplot() +
-  geom_density(aes(NORMAL_DP, color = in_gnomAD), binwidth = 1) +
+  geom_density(aes(NORMAL_AF, color = in_gnomAD)) +
+  xlim(0, 0.05)
+) /
+(mb_called %>% 
+  ggplot() +
+  geom_density(aes(NORMAL_DP, color = in_gnomAD)) +
   xlim(0, 100)
-```
-
-As well as AF in normal, which is promising:
-
-```{r}
-resc_ponaf %>% 
-  group_by(in_gnomAD) %>% 
-  summarize(mean_normal_af = percent(mean(NORMAL_AF, rm.na = T)))
-```
-
-```{r}
-resc_ponaf %>% 
+) /
+(mb_called %>% 
   ggplot() +
-  geom_density(aes(NORMAL_AF, color = in_gnomAD), binwidth = 1)
-```
-
-Same for the PoN
-
-```{r}
-resc_ponaf %>% 
-  group_by(in_pon) %>% 
-  summarize(mean_normal_af = percent(mean(NORMAL_AF, rm.na = T)))
-```
-
-```{r}
-resc_ponaf %>% 
+  geom_density(aes(NORMAL_AF, color = in_pon)) +
+  xlim(0, 0.05)
+) /
+(mb_called %>% 
   ggplot() +
-  geom_density(aes(NORMAL_AF, color = in_pon))
+  geom_density(aes(NORMAL_DP, color = in_pon)) +
+  xlim(0, 100)
+)
 ```
 
+```{r}
+mb_called %>% 
+  group_by(in_gnomAD, in_pon) %>% 
+  mutate(NORMAL_VD = NORMAL_DP * NORMAL_AF) %>% 
+  summarize(
+    mean_normal_dp = format(mean(NORMAL_DP, na.rm = T), digits = 3),
+    mean_normal_vd = format(mean(NORMAL_VD, na.rm = T), digits = 3),
+    mean_normal_af = format(percent(mean(NORMAL_AF, na.rm = T)), digits = 3)
+  )
+```
 
 Same excersize for the patients:
 
