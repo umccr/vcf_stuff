@@ -7,11 +7,11 @@ In UMCCR, we use both. We rely upon the [gnomAD](https://gnomad.broadinstitute.o
 
 When preparing the panel, we tried to answer the following questions:
 
-	* How should we call variants in normals: using a germline caller, or a tumor-only somatic caller?
-	* How many hits in a panel should be required to remove a variant?
-	* To call a hit, should compare the exact allele base, or just the position match is enough?
-	* How well the panel really helps in regions of problematic normal coverage?
-	* How many unique the panel filters additionally to public databases like gnomAD?
+* How should we call variants in normals: using a germline caller, or a tumor-only somatic caller?
+* How many hits in a panel should be required to remove a variant?
+* To call a hit, should compare the exact allele base, or just the position match is enough?
+* How well the panel really helps in regions of problematic normal coverage?
+* How many unique the panel filters additionally to public databases like gnomAD?
 
 ### Normal variant calling
 As part of our standard pipeline, we call germline varaints in each normal sample (using GATK-haplotype, Vardict, and Strelka2, as well a 2-of-3 ensemble approach of all). 
