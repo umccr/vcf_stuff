@@ -6,6 +6,7 @@ Therefore, it makes sense to additionally rely on (1) public mutation databases 
 In UMCCR, we use both. We rely upon the [gnomAD](https://gnomad.broadinstitute.org) database as a public germline mutation source, by removing matching variants that occur with at least 5% population frequency in any ancestry. And as a source of in-house normals, we constructed a panel of matched normals from tumor/normal experiments done within past 18 months, which comprise 230 blood samples from healthy (non-cancer) unrelated individuals, all sequenced using the same protocol as we apply to our subject tumor samples. 
 
 When preparing the panel, we tried to answer the following questions:
+
 	* How should we call variants in normals: using a germline caller, or a tumor-only somatic caller?
 	* How many hits in a panel should be required to remove a variant?
 	* To call a hit, should compare the exact allele base, or just the position match is enough?
@@ -31,15 +32,6 @@ We determined that the better result is achieved by requiring exact allele base 
 
 > Regions of complex haplotype alterations are often called as multiple long indels which can make it more difficult to construct an effective PON, and sometimes we find residual artefacts at these locations. Hence we also filter inserts or deletes which are 3 bases or longer where there is a PoN filtered indel of 3 bases or longer within 10 bases in the same sample.  
 
-However, we did not get to evaluate this approach.
-
-### How well PoN perform on benchmarks?
-We evaluated the performance on 3 benchmark datasets with an existing curated "truth" set:
-	* `MB` : somatic T/N calls from [medulloblastoma tumor by ICGC](https://www.nature.com/articles/ncomms10001) 
-	* `COLO` - somatic T/N calls from [COLO829 cell lines]( https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349/, ), re-sequenced in-house in different tumor/normal proportions (40%, 60%, 80%, and 100% purity)
-	* `GiaB_mix` -  [emulated somatic dataset]( build from a mixture of NA12878 and NA24385 GiaB datasets  ) from 2 GiaB samples: NA12878 and NA24385.
-	
-	<F2 measure by PoN treshold plots here) 
 
 ### Normal depth
 We expect the panel to primarily aid in regions of lower normal coverage, or where there is some non-0 support of a normal variant. To figure this out, we compare distributions of normal depth and normal allele frequency in PoN variants and in non-PoN variants.
@@ -58,4 +50,4 @@ We can also define the "failed" normal coverage as coverage below <30x, with mor
 
 We also calculated the same metric for variants filtered with gnomAD, to compare how PoN is helpful versus the population database. We can see that both PoN and gnomAD mostly filter sites of failed normal coverage, and that also they only partially overlap in their filtering power.
 
-
+We can conclude that the panel of normals is helpful in cases of insufficient normal coverage, and works the best in couple with population filtering (gnomAD).
