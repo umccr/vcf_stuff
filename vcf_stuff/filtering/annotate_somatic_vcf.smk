@@ -109,8 +109,8 @@ ops = ["flag"]
 [[annotation]]
 file = "{input.encode}"
 names = ["ENCODE"]
-columns = [4]
-ops = ["concat"]
+columns = [3]
+ops = ["flag"]
 
 [[annotation]]
 file = "{input.segdup}"
