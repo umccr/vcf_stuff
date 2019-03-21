@@ -10,11 +10,11 @@ In UMCCR, we use both method. We rely upon the [gnomAD](https://gnomad.broadinst
 
 When preparing the panel, we tried to answer the following questions:
 
-	* What variant caller should we use to construct the panel? Germline, or somatic in tumor-only setting?
-	* How many samples should support the normal variant to keep in the panel?
-	* To call a hit, should we compare the exact allele base, or just the position match is enough?
-	* Does panel really help most in regions of coverage gaps?
-	* How does the panel compare with public databases like gnomAD?
+* What variant caller should we use to construct the panel? Germline, or somatic in tumor-only setting?
+* How many samples should support the normal variant to keep in the panel?
+* To call a hit, should we compare the exact allele base, or just the position match is enough?
+* Does panel really help most in regions of coverage gaps?
+* How does the panel compare with public databases like gnomAD?
 
 ### Normal variant calling
 As part of our standard pipeline, we call germline varaints in each normal sample (using GATK-haplotype, Vardict, and Strelka2, as well a 2-of-3 ensemble approach of all). 
@@ -34,9 +34,9 @@ We can also see that the optimal threshold of hits in PoN would be around 5, mea
 ### Combining and matching
 Because variants can be represented differently, especially indels, complex and multiallelic variants, we normalize both normal calls when building the panel, and target tumor calls before searching for hits. [Specifically](https://github.com/umccr/vcf_stuff#vcf-normalisation):
 
-	* Split multiallelic, e.g. A>T,C -> A>T, A>C
-	* Decompose multinucleotide variants (MNV), e.g. AG>CT -> A>C, G>T
-	* Left-align indels, e.g. CTCC>CCC,C,CCCC -> GCTC>G, CT>C, T>C
+* Split multiallelic, e.g. A>T,C -> A>T, A>C
+* Decompose multinucleotide variants (MNV), e.g. AG>CT -> A>C, G>T
+* Left-align indels, e.g. CTCC>CCC,C,CCCC -> GCTC>G, CT>C, T>C
 
 When combining normal variants or when matching against tumor, we ignore the actual allele bases for indels, and only compare chromosomal locations. We are doing that based on our benchmarks, but we rationalize it as follows. False positive indels often happen in homopolymers or other repetitive regions, and a variant there represent a different number of repeat units. Thus, it's likely that artifacts may look different in length, but still refer to the same erroneous event. For SNPs however, there may be tendency to certain types of changes, e.g. to be A>C more likely an artifact than A>G, thus the best result is achieved by match the exact allele bases.
 
