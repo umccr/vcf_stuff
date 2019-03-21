@@ -12,6 +12,7 @@ p <- function(df) { df %>% kable() %>% kable_styling(bootstrap_options = c("stri
 
 source("evaluation.R")
 library(patchwork)
+library(directlabels)
 ```
 
 ```{r parse_mb}
@@ -106,13 +107,23 @@ data_sfrc = merge_called_and_truth(vcf, NULL, tumor_sample) %>%
   mutate(cohort = "SFRC01116", 
          sample = cohort) %>% 
   filter(!AF < 0.1)
+
+# Bad normal
+called_vcf = "~/spa/extras/vlad/pon_analysis/GBB10.NORM.ANNO.FILT.vcf.gz" %>% read.vcf(split.info = T)
+
+data_gbb10 = called_vcf %>% 
+  merge_called_and_truth(called_vcf, NULL) %>% 
+  mutate(cohort = "GBB10", 
+         sample = cohort) %>% 
+  filter(!AF < 0.1)
 ```
 
 Combine samples into single data frame
 
 ```{r combine_samples}
 data = data_tothill %>% 
-  bind_rows(data_sfrc)
+  bind_rows(data_sfrc) %>% 
+  bind_rows(data_gbb10)
   
 data = data %>% 
   # bind_rows(mb %>% filter(is_true) %>% mutate(sample = 'MB_truth')) %>% 
@@ -284,24 +295,36 @@ We see that:
 
 Build histogram (or even box plots?) of average NORMAL_VD and NORMAL_AF in PoN and outside of PoN.
 
-```{r}
+```{r fig.height=5, fig.width=10}
 boxplot_data = data_af10 %>% 
+  filter(sample != "GBB10") %>% 
   mutate(
     cohort = ifelse(!is.na(cohort), cohort, sample),
     # expanding Tothill and COLO829 cohorts:
-    sample = ifelse(cohort %in% c("Tothill", "COLO829"), sample, cohort)
+    sample = ifelse(cohort %in% c("Tothill", "COLO829", "MB"), sample, cohort),
+    is_benchmark = cohort %in% c("MB", "COLO829")
   ) %>% 
   filter(sample != "GiaB_mix_truth", 
          sample != "GiaB_mix_missed", 
          !str_detect(sample, "missed"), 
          !str_detect(sample, "FN")
          )
-
-boxplot_data %>% 
+(boxplot_data %>% 
+  filter(!is_benchmark) %>% 
   ggplot() +
+  scale_colour_manual(values = c("dark green", "red")) +
   geom_boxplot(aes(sample, NORMAL_DP, color = in_pon)) +
   coord_flip() +
   ylim(0, 100)
+) / 
+(boxplot_data %>% 
+  filter(is_benchmark) %>% 
+  ggplot() +
+  scale_colour_manual(values = c("dark green", "red")) +
+  geom_boxplot(aes(sample, NORMAL_DP, color = in_pon)) +
+  coord_flip() +
+  ylim(0, 100)
+) + plot_layout(ncol = 1, heights = c(3, 1))
 ```
 
 Define for each sample a metric on % filtered with PoN and gnomAD in good normal:
@@ -546,6 +569,7 @@ stats = stats %>%
     scale = ifelse(hits >= 10, "hits >= 10", "hits < 10")
   )
 
+library(directlabels)
 dl_method = list(dl.trans(x = x + 0.2), "maxvar.points", cex = 0.8)
 # nopon_stats = resc_ponaf %>% summarize_stats() %>% filter(vartype == "SNP")
 stats %>% 
@@ -567,6 +591,20 @@ stats %>%
  #  geom_line(aes(y = nopon_prec))
   
   # facet_wrap(~vartype, nrow = 2, scales = "free_y")
+```
+
+```{r}
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
+stats %>% 
+  filter(scale == "hits < 10") %>%  
+  ggplot(aes(x = hits, y = val, linetype = metric)) + 
+  geom_line(color = gg_color_hue(2)[[2]]) +
+  scale_x_continuous(breaks = c(0, cutoffs), expand = expand_scale(add = c(0.1, 1))) +
+  geom_dl(aes(y = val, label = metric), method = dl_method)
 ```
 
 The best threshold for SNPs is 5 for the new PoN. For the old ones, it's 2.
@@ -625,24 +663,31 @@ GnomAD and PoN variants have on avareage a lower depth in normal, as well as AF:
 
 ```{r}
 mb_called = resc_ponaf %>% filter(is_called)
+# (mb_called %>% 
+#   ggplot() +
+#   scale_colour_manual(values = c("blue", "orange")) +
+#   geom_density(aes(NORMAL_AF, color = in_gnomAD)) +
+#   xlim(0, 0.05)
+# ) /
+# (mb_called %>% 
+#   ggplot() +
+#   geom_density(aes(NORMAL_DP, color = in_gnomAD)) +
+#   scale_colour_manual(values = c("blue", "orange")) +
+#   xlim(0, 100)
+# ) /
+  
 (mb_called %>% 
+  mutate(`In PoN` = in_pon) %>% 
   ggplot() +
-  geom_density(aes(NORMAL_AF, color = in_gnomAD)) +
+  scale_colour_manual(values = c("blue", "orange")) +
+  geom_density(aes(NORMAL_AF, color = `In PoN`)) +
   xlim(0, 0.05)
 ) /
 (mb_called %>% 
+  mutate(`In PoN` = in_pon) %>% 
   ggplot() +
-  geom_density(aes(NORMAL_DP, color = in_gnomAD)) +
-  xlim(0, 100)
-) /
-(mb_called %>% 
-  ggplot() +
-  geom_density(aes(NORMAL_AF, color = in_pon)) +
-  xlim(0, 0.05)
-) /
-(mb_called %>% 
-  ggplot() +
-  geom_density(aes(NORMAL_DP, color = in_pon)) +
+  scale_colour_manual(values = c("blue", "orange")) +
+  geom_density(aes(NORMAL_DP, color = `In PoN`)) +
   xlim(0, 100)
 )
 ```
