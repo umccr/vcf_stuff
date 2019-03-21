@@ -12,10 +12,10 @@ build:
 
 requirements:
   build:
-    - python ==3.6
+    - python ==3.7
     - ngs_utils >=2.3.16
   run:
-    - python ==3.6
+    - python ==3.7
     - ngs_utils >=2.3.16
     - bcftools
     - tabix
