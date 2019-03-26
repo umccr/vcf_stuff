@@ -12,7 +12,7 @@ from vcf_stuff import iter_vcf, count_vars, vcf_contains_field
 from ngs_utils.reference_data import get_key_genes_set
 
 
-localrules: prep_anno_toml, prep_giab_bed, annotate
+localrules: prep_anno_toml, annotate
 
 
 #############################

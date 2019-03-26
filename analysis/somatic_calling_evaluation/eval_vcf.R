@@ -186,10 +186,6 @@ show_stats(
 
 
 
-
-
-
-
 ##################
 ### Brad's vardict filter http://bcb.io/2016/04/04/vardict-filtering/
 
@@ -230,6 +226,64 @@ show_stats(resc_all, resc_pon_af, nm_mq, brads, brads2, brads3)
 show_stats(resc_pon_af, lcr_vd5, lcr_vd6)
 
 
+
+###### hg38
+path = "~/rjn/projects/Saveliev_hg38/2019-02-01T0241_Cromwell_WGS_2016.249.17.MH.P033/2019-02-01T0241_Cromwell_WGS_2016_249_17_MH_P033-merged_hg38/umccrised/2016_249_17_MH_P033__CCR170115b_MH17T002P033/small_variants/2016_249_17_MH_P033__CCR170115b_MH17T002P033-somatic-ensemble.CLEANFILT.FILT.vcf.gz"
+vcf = read.vcf(path, split.info = T)
+data = merge_called_and_truth(vcf) %>% 
+  mutate(PoN = ifelse(is.na(PoN), 0, PoN),
+         FILT = ifelse(is.na(FILT), "PASS", FILT)
+  )
+  
+
+data %>% 
+  ggplot() +
+  geom_bar(aes(FILT), stat = "count", position = "stack") +
+  coord_flip() +
+  facet_wrap(~vartype, scales = "free_x")
+
+data_filt_sep = data %>% 
+  group_by(vartype) %>%
+  mutate(total_vars = n()) %>% 
+  ungroup() %>% 
+  separate_rows(FILT, sep = ";")
+
+data_filt_sep %>% 
+  group_by(vartype, FILT) %>% 
+  summarize(cnt = n(), prop = cnt / mean(total_vars)) %>% 
+  ggplot() +
+  geom_bar(aes(reorder(FILT, prop), prop), stat = "identity", position = "stack") +
+  coord_flip() +
+  facet_wrap(~vartype, scales = "free_x")
+
+data %>% 
+  filter(PoN > 0) %>%
+  ggplot() +
+  geom_histogram(aes(PoN, fill = is_passed), binwidth = 5) +
+  facet_wrap(~vartype, scales = "free_y")
+  # coord_cartesian(xlim = c(0, 9)) +
+  # scale_x_continuous(breaks = 0:9)
+  
+data_filt_sep %>% 
+  filter(FILT == "PoN") %>% 
+  ggplot() +
+  geom_histogram(aes(PoN, fill = is_passed), binwidth = 1) +
+  facet_wrap(~vartype, scales = "free_y")
+
+
+
+# , fill = vartype
+
+# geom_bar(aes(fill = category), stat = "identity", position = "stack") +
+
+
+# build stacked histogram of all filter values which can be overlapping
+# each filter value corresponds to a colo
+# each column corresponds to a combination of filters?
+
+
+?separate
+?spread
 
 
 

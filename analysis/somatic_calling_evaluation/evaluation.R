@@ -132,7 +132,7 @@ extract_fmt_field = function(format, sample_data, field) {
 # called$NM = extract_fmt_field(called_vcf$vcf$FORMAT, called_vcf$vcf[[tumor_sample]], "NM", new_field = "NM_VD")
 # add_format_field(called, "NM", tumor_sample, new_field = "NM_VD")
 
-merge_called_and_truth = function(called_vcf, truth_vcf, tumor_sample) {
+merge_called_and_truth = function(called_vcf, truth_vcf=NULL, tumor_sample=NULL) {
 #  tumor_sample = substitute(tumor_sample)
 
   called_data = called_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
@@ -188,11 +188,12 @@ merge_called_and_truth = function(called_vcf, truth_vcf, tumor_sample) {
   mutate(
     NORMAL_AF = as.double(NORMAL_AF),
     NORMAL_DP = as.integer(NORMAL_DP),
-    NORMAL_VD = round(NORMAL_AF * NORMAL_DP)
+    NORMAL_VD = round(NORMAL_AF * NORMAL_DP),
+    FILT = ifelse(is.na(FILT), "PASS", FILT)
   ) %>% 
   mutate(
     is_called = !is.na(FILT),
-    umccrise_passed = is_called & FILT == 'PASS',
+    umccrise_passed = is_called & (FILT == 'PASS' | is.na(FILT)),
     is_passed = umccrise_passed,
     is_true = !is.na(FILT.truth)
   ) %>% 
