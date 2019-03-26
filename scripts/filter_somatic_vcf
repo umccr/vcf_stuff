@@ -87,7 +87,7 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
             # common in gnomAD => likely germline
             add_cyvcf2_filter(rec, 'gnomAD_common')
 
-        if rec.INFO.get('PoN_CNT', math.inf) >= 5:
+        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
             # in panel of normals => likely a germline or an artefact
             add_cyvcf2_filter(rec, 'PoN')
 
