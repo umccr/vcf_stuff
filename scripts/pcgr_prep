@@ -155,9 +155,6 @@ warnings = set()
 
 
 def _collect_vals_per_sample(rec, control_index, tumor_index):
-    if rec.POS == 63735:
-        pass
-
     # colleting the following values:
     dp = af = vd = ad = mq = None
 
@@ -192,7 +189,8 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
 
     if af is None:  # strelka2 before bcbio populated AFs? or SAGE?
         if vd is not None and dp is not None:
-            af = np.true_divide(vd.transpose(), dp, where=dp!=0).transpose()
+            vdt = vd.transpose()
+            af = np.true_divide(vdt, dp, where=dp!=0, out=np.zeros(vdt.shape)).transpose()
 
     if ad is None:
         if rec.REF + 'U' in rec.FORMAT:
