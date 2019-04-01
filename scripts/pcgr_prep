@@ -9,7 +9,7 @@ import re
 import numpy as np
 
 from ngs_utils.logger import warn, critical
-from ngs_utils.vcf_utils import get_sample_ids
+from ngs_utils.vcf_utils import get_sample_ids, add_cyvcf2_hdr
 
 from ngs_utils.utils import set_locale
 set_locale()
@@ -46,17 +46,16 @@ def main(input_file, output_file=None):
                 tumor_tag = tumor_prefix + tag
                 normal_tag = normal_prefix + tag
 
-                new_header.append(f'##INFO=<ID={tumor_tag},Number={number},Type={type},Description="{tag} in tumor sample">')
-                vcf.add_info_to_header({'ID': tumor_tag, 'Type': type, 'Number': number, 'Description': ''})
+                add_cyvcf2_hdr(vcf, new_header=new_header, id=tumor_tag, number=number, type=type,
+                               descr=f"{tag} in tumor sample")
                 if control_index is not None:
-                    new_header.append(f'##INFO=<ID={normal_tag},Number={number},Type={type},Description="{tag} in control sample">')
-                    vcf.add_info_to_header({'ID': normal_tag, 'Type': type, 'Number': number, 'Description': ''})
+                    add_cyvcf2_hdr(vcf, new_header=new_header, id=normal_tag, number=number, type=type,
+                                   descr=f"{tag} in control sample")
 
             if not any(h2.startswith(f'##FORMAT=<ID=AD,') for h2 in vcf.raw_header.split('\n')):
                 # need to add the AD field into FORMAT:
-                new_header.append('##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">')
-                vcf.add_format_to_header({'ID': 'AD', 'Number': 'R', 'Type': 'Integer',
-                                          'Description': 'Allelic depths for the ref and alt alleles in the order listed'})
+                add_cyvcf2_hdr(vcf, new_header=new_header, id='AD', number='R', type='Integer',
+                               descr=f"Allelic depths for the ref and alt alleles in the order listed")
 
         if not any(h.startswith(f'##INFO=<ID={p+tag},') for tag in ['AF', 'DP', 'VD', 'MQ'] for p in [tumor_prefix, normal_prefix]):
             # to make sure we don't add duplicated TUMOR_AF,... fields
