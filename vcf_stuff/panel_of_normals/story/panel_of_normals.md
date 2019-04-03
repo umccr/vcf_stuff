@@ -1,9 +1,6 @@
 ## Panel of normals
 To distinguish germline mutations from somatic in tumor, the common practice is to rely a matched normal - a sample from healthy tissue (typically blood) of the same individual. However, often a matched normal is sequenced in a lower depth, which, coupled with an uneven coverage (due to low/high GC or unbalanced structural variants), may lead to coverage gaps and otherwise problematic regions. Sometimes a matched normal may not be available at all (e.g. due to lack of funds or simply sample availability). And even a good matched normal can't always help with sequencing or mapping artifacts in tumor.
 
-![](panel_of_normals/Screen%20Shot%202019-03-18%20at%2022.31.35.png)
-_Mollusks have no blood, so if you are treating one, getting a matched blood normal might be a problem._
-
 Therefore, to distinguish somatic mutations, researchers additionally rely on (1) public variant databases and (2) a set of in-house unrelated normal genomes (so called panel of normals) sequenced using similar technology and preparation method. The former helps with missed germline variants common in a population in general, while the panel additionally aids in removing recurrent technical artifacts. 
 
 In UMCCR, we use both method. We rely upon the [gnomAD](https://gnomad.broadinstitute.org) database as a public germline mutation source, by removing matching variants that occur with at least 5% population frequency in any ancestry. And as a source of in-house normals, we constructed a panel of matched normals from tumor/normal experiments done within past 18 months, which comprise 230 blood samples from healthy (non-cancer) unrelated individuals, all sequenced using the same protocol as we apply to tumor tissues. 
