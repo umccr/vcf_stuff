@@ -54,7 +54,7 @@ rule run_sage:
         mem_mb = 20000
     group: "sage"
     shell:
-        'java -Xms{params.xms}m -Xmx{params.xmx}m -cp {params.jar} com.hartwig.hmftools.sage.SageHotspotApplication '
+        'java -Xms{params.xms}m -Xmx{params.xmx}m -jar {params.jar} '
         '-tumor {params.tumor_sname} -tumor_bam {input.tumor_bam} '
         '-reference {params.normal_sname} -reference_bam {input.normal_bam} '
         '-known_hotspots <(bcftools query -f "%CHROM\\t%POS\\t%REF\\t%ALT\\n" {input.hotspots_vcf}) '
