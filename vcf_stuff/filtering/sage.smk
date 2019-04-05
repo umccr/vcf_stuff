@@ -45,7 +45,7 @@ rule run_sage:
         sage_vcf = f'work/call/{SAMPLE}-sage.vcf.gz',
         sage_tbi = f'work/call/{SAMPLE}-sage.vcf.gz.tbi',
     params:
-        jar = join(package_path(), 'sage-1.0-jar-with-dependencies.jar'),
+        jar = join(package_path(), 'sage-1.0.jar'),
         normal_sname = NORMAL_NAME,
         tumor_sname  = TUMOR_NAME,
         xms = 2000,
