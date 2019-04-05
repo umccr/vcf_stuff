@@ -282,8 +282,26 @@ data_filt_sep %>%
 # each column corresponds to a combination of filters?
 
 
-?separate
-?spread
+################### Evaluate new mutect
+dir = "~/rjn/projects/Saveliev_bcbio_comp/"
+
+full_data = tibble()
+  
+for (smpl in c("2016_249_17_MH_P033")) {
+  for (vrs in c("113", "114")) {
+    for (clr in c("ensemble", "mutect2", "vardict", "strelka2")) {
+      fname = str_c(dir, vrs, "/", smpl, "-", clr, "-annotated.PASS.vcf.gz")
+      vcf = read.vcf(fname, split.info = T)
+      data = vcf$vcf %>% 
+        as_tibble() %>% 
+        select(CHROM, POS, REF, ALT) %>% 
+        mutate(caller = clr,
+               version = vrs,
+               sample = smpl)
+      full_data = full_data %>% bind_rows(data) 
+    }
+  }
+}
 
 
 
