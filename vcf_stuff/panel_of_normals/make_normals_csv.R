@@ -1,6 +1,6 @@
 library(tidyverse)
 
-df <- read_csv('/Users/vsaveliev/Downloads/UMCCR Samples - Sheet1.csv')
+df <- read_tsv('/Users/vsaveliev/Downloads/Google LIMS - Sheet1.tsv')
 (normals <- df %>%
   select(sname = 'SampleName', type = 'Type', phenotype = 'Phenotype', bcbio_path = 'Results', notes = 'Notes') %>% 
   filter(!is.na(bcbio_path) & bcbio_path != 'n/a') %>% 
