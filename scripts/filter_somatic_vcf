@@ -43,7 +43,8 @@ def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, v
              )
 
 
-def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None, **kwargs):
+def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None,
+                            **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
@@ -59,7 +60,7 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or
         rec.INFO.get('COSMIC_CNT', 0) >= 10 or
         rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or
-        rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 3 or
+        rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 5 or
         rec.INFO.get('SAGE_HOTSPOT') == 'known'):
         return rec
 
@@ -83,14 +84,6 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         if rec.INFO.get('ENCODE'):
             add_cyvcf2_filter(rec, 'ENCODE')
 
-        if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
-            # common in gnomAD => likely germline
-            add_cyvcf2_filter(rec, 'gnomAD_common')
-
-        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
-            # in panel of normals => likely a germline or an artefact
-            add_cyvcf2_filter(rec, 'PoN')
-
         if not rec.is_snp and hp_coef != -1:
             # filtering indels in homopolymers
             rec = _check_hp(rec, af, _coef=hp_coef)
@@ -110,6 +103,20 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
 
         if vardict2mut:
             rec = vardict2mut.filter(rec, tumor_index)
+
+        # Germline filter
+        if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
+            # common in gnomAD => likely germline
+            if not rec.FILTER:  # not filtered otherwise -> can report as germline
+                rec.INFO['Germline'] = True
+            add_cyvcf2_filter(rec, 'gnomAD_common')
+
+        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
+            # in panel of normals => likely a germline or an artefact
+            add_cyvcf2_filter(rec, 'PoN')
+            if not rec.FILTER:  # not filtered otherwise -> can report as germline
+                if af >= 0.2:  # higher frequency variants go as germline
+                    rec.INFO['Germline'] = True
 
     return rec
 
@@ -175,11 +182,11 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'AF10',                 'Description': 'TUMOR_AF<10%'})
-    vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                                                                   'Type': 'String', 'Number': '1'})
-    vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                                                                  'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
+    vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
     if not '##INFO=<ID=TRICKY,' in vcf.raw_header:  # legacy
-        vcf.add_info_to_header({'ID': 'TRICKY',      'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
-
+        vcf.add_info_to_header({'ID': 'TRICKY',  'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
 def _check_hp(rec, af, _coef=None):
     _coef = _coef or 40
