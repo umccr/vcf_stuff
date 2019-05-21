@@ -298,7 +298,7 @@ rule somatic_vcf_pcgr_anno:
                           'TIER',
                           'CONSEQUENCE',
                           'MUTATION_HOTSPOT',
-                          'INTOGEN_DRIVER_MUT',
+                          'PUTATIVE_DRIVER_MUTATION',
                           'TCGA_PANCANCER_COUNT',
                           'CLINVAR_CLNSIG']:
                     val = row[k]
