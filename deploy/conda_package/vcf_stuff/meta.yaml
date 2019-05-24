@@ -32,7 +32,7 @@ requirements:
     - ngs_utils
     - nose
     - bed_annotation >=1.0.8
-    - hpc_utils >=1.0.16
+    - hpc_utils >=1.1.5
     - gsort  # https://github.com/brentp/gsort
     - pyensembl
 
