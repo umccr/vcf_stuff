@@ -110,18 +110,18 @@ class TestPonAnno(BaseTestCase):
         self._run_cmd(cmdl, input_vardict_vcf, out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 
-@attr(kind='pon')
-class TestPoNPipeline(BaseTestCase):
-    script = 'pon_pipeline'
-    results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
-    gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
-
-    def test_pon_pipeline(self):
-        cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
-               f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name} --pon-dir {pon_data_dir}'
-        self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
-        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
-        self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
+# @attr(kind='pon')
+# class TestPoNPipeline(BaseTestCase):
+#     script = 'pon_pipeline'
+#     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
+#     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
+#
+#     def test_pon_pipeline(self):
+#         cmdl = f'pon_pipeline {input_strelka2_vcf} {input_vardict_vcf}' \
+#                f' -o {TestPoNPipeline.results_dir} -h1,2 -g {genome_name} --pon-dir {pon_data_dir}'
+#         self._run_cmd(cmdl, [input_strelka2_vcf, input_vardict_vcf], TestPoNPipeline.results_dir)
+#         self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-strelka2-n1.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
+#         self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
 
 
 @attr(kind='norm')
@@ -157,8 +157,8 @@ class TestPcgrPrep(BaseTestCase):
         cmdl = f'pcgr_prep {input_vcf} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf,
-            wrapper='bcftools query -f "%TUMOR_AF\\t%NORMAL_AF\\t%TUMOR_DP\\t%NORMAL_DP\\t%TUMOR_MQ\\n" | '
-                    'awk \'{printf("%.2f %.2f %.2f %.2f %.2f\\n", $1, $2, $3, $4, $5) }\'')
+            wrapper='bcftools query -f "%TUMOR_DP\\t%NORMAL_DP\\t%TUMOR_MQ\\n" | '
+                    'awk \'{printf("%.2f %.2f %.2f\\n", $1, $2, $3) }\'')
 
     def test_pcgr_prep_vardict(self):
         self._run_pcgr_prep(input_vardict_vcf)
