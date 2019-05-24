@@ -32,7 +32,7 @@ We can also see that the optimal threshold of hits in PoN would be around 5, mea
 ![](panel_of_normals/000025.png)
 
 ### Combining and matching
-Because variants can be represented differently, especially indels, complex and multiallelic variants, we normalize both normal calls when building the panel, and target tumor calls before searching for hits. [Specifically](https://github.com/umccr/vcf_stuff#vcf-normalisation):
+Because variants can be represented differently, especially indels, complex and multiallelic variants, we normalize both normal calls when building the panel, and target tumor calls before searching for hits. [Specifically](https://github.com/vladsaveliev/vcf_stuff#vcf-normalisation):
 
 * Split multiallelic, e.g. A>T,C -> A>T, A>C
 * Decompose multinucleotide variants (MNV), e.g. AG>CT -> A>C, G>T
@@ -65,7 +65,7 @@ We also calculated the same metric for variants filtered with gnomAD, to compare
 
 In sum, the panel of normals proves to be useful for filtering of in-house samples, and the result does not diminish in combination with population filtering with gnomAD.
 
-The code for the panel generation is written using Snakemake and stored on the GitHub under https://github.com/umccr/vcf_stuff/tree/master/vcf_stuff/panel_of_normals, and we provide scripts to annotate with the panel at https://github.com/umccr/vcf_stuff#panel-of-normals:
+The code for the panel generation is written using Snakemake and stored on the GitHub under https://github.com/vladsaveliev/vcf_stuff/tree/master/vcf_stuff/panel_of_normals, and we provide scripts to annotate with the panel at https://github.com/vladsaveliev/vcf_stuff#panel-of-normals:
 
 ```
 pon_anno test.vcf.gz -g GRCh37 -o test.PoN.vcf.gz --panel-of-normals-dir /path/to/the_panel

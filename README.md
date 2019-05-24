@@ -2,7 +2,7 @@ VCF Stuff
 ---------
 📊Evaluating, filtering, comparing, and visualising genomic variants
 
-[![Build Status](https://travis-ci.org/umccr/vcf_stuff.svg?branch=master)](https://travis-ci.org/umccr/vcf_stuff)
+[![Build Status](https://travis-ci.org/vladsaveliev/vcf_stuff.svg?branch=master)](https://travis-ci.org/vladsaveliev/vcf_stuff)
 
 
 ## Installation
@@ -25,7 +25,7 @@ bash miniconda.sh -b -p ./miniconda && rm miniconda.sh
 Clone source and install on top of conda:
 
 ```
-git clone https://github.com/umccr/vcf_stuff
+git clone https://github.com/vladsaveliev/vcf_stuff
 cd vcf_stuff
 pip install -e .
 ```
@@ -210,8 +210,8 @@ The filtered VCF files will be written to `results_pon/pon_filter/`.
 
 Scripts only know about the panel location on Spartan and Raijin, so to work outside, provide the path to the panel with `--pon-dir`.
 
-The script is also used withing a bigger [`anno_somatic_vcf`](https://github.com/umccr/vcf_stuff/blob/master/scripts/anno_somatic_vcf), which
-annotates against various sources that then can be used by [`filter_somatic_vcf`](https://github.com/umccr/vcf_stuff/blob/master/scripts/filter_somatic_vcf)
+The script is also used withing a bigger [`anno_somatic_vcf`](https://github.com/vladsaveliev/vcf_stuff/blob/master/scripts/anno_somatic_vcf), which
+annotates against various sources that then can be used by [`filter_somatic_vcf`](https://github.com/vladsaveliev/vcf_stuff/blob/master/scripts/filter_somatic_vcf)
 to filter a somatic VCF. Both script are used in [Umccrise](https://github.com/umccr/umccrise).
 
 

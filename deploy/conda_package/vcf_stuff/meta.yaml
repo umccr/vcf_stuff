@@ -41,7 +41,7 @@ test:
     - vcf_stuff.eval_cnv
 
 about:
-  home: https://github.com/umccr/vcf_stuff
+  home: https://github.com/vladsaveliev/vcf_stuff
   license: GNU General Public License v3 (GPLv3)
   summary: '📊Evaluating, filtering, comparing, and visualising variant calls'
   license_family: GPL3
