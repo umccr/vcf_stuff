@@ -194,6 +194,11 @@ categorized = data_af10 %>%
   ) %>% 
   mutate(
     bad_normal = NORMAL_DP < 30 | NORMAL_VD >= 1,
+    # low_nDP = NORMAL_DP < 30,
+    # some_nVD = NORMAL_VD >= 1,
+    # purity = 
+    # low_freq = TUMOR_AF * purity < 0.3,   # normalize to purity!
+    # low_freq = AF < 0.1,
     category = factor(case_when(
       in_pon & in_gnomAD & bad_normal ~ "PoN+gnomAD, normal fail",
       in_pon & in_gnomAD ~ "PoN+gnomAD, normal ok",
@@ -241,7 +246,17 @@ reject_only_stats = categorized %>%
   )
 ```
 
-```{r fig.width=5}
+```{r fig.width=15}
+data_af10 %>% 
+  ggplot() +
+  geom_violin(aes(sample, AF)) +
+  coord_flip() +
+  ylim(0, 1)
+
+?geom_boxplot
+```
+
+```{r fig.width=25}
 all_stats %>% 
   # filter(vartype == "SNP") %>% 
   ggplot(aes(sample, share, group = forcats::fct_rev(category))) + 
