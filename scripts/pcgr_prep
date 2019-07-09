@@ -54,10 +54,12 @@ def main(input_file, output_file=None):
 
             if not any(h2.startswith(f'##FORMAT=<ID=AD,') for h2 in vcf.raw_header.split('\n')):
                 # need to add the AD field into FORMAT:
-                add_cyvcf2_hdr(vcf, new_header=new_header, id='AD', number='R', type='Integer',
+                add_cyvcf2_hdr(vcf, hdr='FORMAT', new_header=new_header, id='AD', number='R', type='Integer',
                                descr=f"Allelic depths for the ref and alt alleles in the order listed")
 
-        if not any(h.startswith(f'##INFO=<ID={p+tag},') for tag in ['AF', 'DP', 'VD', 'MQ'] for p in [tumor_prefix, normal_prefix]):
+        if not any(h.startswith(f'##INFO=<ID={p+tag},')
+                   for tag in ['AF', 'DP', 'VD', 'MQ']
+                   for p in [tumor_prefix, normal_prefix]):
             # to make sure we don't add duplicated TUMOR_AF,... fields
             new_header.append(h)
 
