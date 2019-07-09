@@ -52,15 +52,8 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
     # Tier 4 - other coding variants
     int_tier = int(t.split('_')[1]) if 'TIER' in t else 5  # converts "TIER_2" -> 2
 
-    # Keeping all potential hostpots/actionable variants
+    # Rescuing hostpots/actionable variants
     if (int_tier in [1, 2] or
-        rec.INFO.get('HMF_HOTSPOT', False) or
-        rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or
-        rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or
-        any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or
-        rec.INFO.get('COSMIC_CNT', 0) >= 10 or
-        rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or
-        rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 5 or
         rec.INFO.get('SAGE_HOTSPOT') == 'known'):
         return rec
 
@@ -78,6 +71,35 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
     #     SEGDUP
     else:
         af = rec.INFO.get('TUMOR_AF')
+        vd = rec.INFO.get('TUMOR_VD', math.inf)
+
+        # Removing low AF variants
+        if af is not None and af < 0.075:
+            add_cyvcf2_filter(rec, 'AF10')
+
+        if vd < 4:
+            # too few reads supporting the variant
+            add_cyvcf2_filter(rec, 'lowVD')
+
+        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
+            # in panel of normals => likely a germline or an artefact
+            add_cyvcf2_filter(rec, 'PoN')
+            if not rec.FILTER:  # not filtered otherwise -> can report as germline
+                if af >= 0.2:  # higher frequency variants go as germline
+                    rec.INFO['Germline'] = True
+
+        # Rescuing ponentical hotspots
+        if (rec.INFO.get('HMF_HOTSPOT', False) or
+            rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or
+            rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or
+            any(t in rec.INFO.get('PCGR_CLINVAR_CLNSIG', '') for t in ['pathogenic', 'uncertain']) or
+            rec.INFO.get('COSMIC_CNT', 0) >= 10 or
+            rec.INFO.get('PCGR_TCGA_PANCANCER_COUNT', 0) >= 5 or
+            rec.INFO.get('ICGC_PCAWG_HITS', 0) >= 5
+            ):
+            return rec
+
+        # Increasing AF threshold
         if af is not None and af < 0.1:
             add_cyvcf2_filter(rec, 'AF10')
 
@@ -87,12 +109,6 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         if not rec.is_snp and hp_coef != -1:
             # filtering indels in homopolymers
             rec = _check_hp(rec, af, _coef=hp_coef)
-
-        vd = rec.INFO.get('TUMOR_VD', math.inf)
-
-        if vd < 4:
-            # too few reads supporting the variant
-            add_cyvcf2_filter(rec, 'lowVD')
 
         # remove low AF and low DP variants in low complexity regions
         rec = _vd_lcr_filter(rec, vd)
@@ -110,13 +126,6 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
             if not rec.FILTER:  # not filtered otherwise -> can report as germline
                 rec.INFO['Germline'] = True
             add_cyvcf2_filter(rec, 'gnomAD_common')
-
-        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
-            # in panel of normals => likely a germline or an artefact
-            add_cyvcf2_filter(rec, 'PoN')
-            if not rec.FILTER:  # not filtered otherwise -> can report as germline
-                if af >= 0.2:  # higher frequency variants go as germline
-                    rec.INFO['Germline'] = True
 
     return rec
 
