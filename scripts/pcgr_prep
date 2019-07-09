@@ -173,7 +173,7 @@ def _collect_vals_per_sample(rec, control_index, tumor_index):
 
     if vd is None:
         if ad is not None:
-            vd = ad[:,1:]  # AD=REF,ALT so 1: is the position of ALTs
+            vd = ad[:,1:2]  # AD=REF,ALT so 1: is the position of ALTs
         elif 'TIR' in rec.FORMAT:  # strelka2 somatic indel?
             vd = np.array([rec.format('TIR')[:,0]]).transpose()
         elif rec.REF + 'U' in rec.FORMAT:  # strelka2 somatic snp?
