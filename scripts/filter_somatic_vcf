@@ -120,6 +120,9 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         if vardict2mut:
             rec = vardict2mut.filter(rec, tumor_index)
 
+        # Dragen filter
+        rec = dragen_filter(rec)
+
         # Germline filter
         if rec.INFO.get('gnomAD_AF', 0.) >= 0.01:
             # common in gnomAD => likely germline
@@ -127,6 +130,23 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
                 rec.INFO['Germline'] = True
             add_cyvcf2_filter(rec, 'gnomAD_common')
 
+    return rec
+
+
+def dragen_filter(rec):
+    tlod = rec.INFO.get('TLOD')
+    if tlod is not None:
+        try:
+            tlod = float(tlod)
+        except:
+            pass
+        else:
+            if not rec.is_snp:
+                if tlod < 21:
+                    add_cyvcf2_filter(rec, 'LowTLOD')
+            else:
+                if tlod < 21:
+                    add_cyvcf2_filter(rec, 'LowTLOD')
     return rec
 
 
@@ -165,12 +185,12 @@ def _vd_lcr_filter(rec, vd):
 
 def _mq_filter(rec, vcf, tumor_index, vd):
     mq = rec.INFO.get('TUMOR_MQ')
+    clrs = _callers(rec)
 
-    if 'NM' in vcf.FORMAT:  # vardict only
-        if len(_callers(rec)) < 3:  # we wanna filter only vardict
-            nm = float(rec.format('NM')[tumor_index])
-            if vd < 6 & (mq < 60.0 and nm > 2.0 or mq < 55.0 and nm > 1.0):
-                add_cyvcf2_filter(rec, 'NM_MQ_filter')
+    if clrs and len(clrs) < 3 and 'NM' in vcf.FORMAT:  # vardict only
+        nm = float(rec.format('NM')[tumor_index])
+        if vd < 6 & (mq < 60.0 and nm > 2.0 or mq < 55.0 and nm > 1.0):
+            add_cyvcf2_filter(rec, 'NM_MQ_filter')
 
     return rec
 
@@ -191,6 +211,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'AF10',                 'Description': 'TUMOR_AF<10%'})
+    vcf.add_filter_to_header({'ID': 'LowTLOD',              'Description': 'Dragen call with tumor LOD (TLOD field) below 21 for indels, 21 for SNPs (likely false positive)'})
     vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
@@ -253,33 +274,31 @@ def _check_hp(rec, af, _coef=None):
     # if chg_len > 2 * hp_len:  # caucious with long changes cause it might be real
     #     return rec
 
-    if len(_callers(rec)) == 3:  # we wanna filter only vardict
-        return rec
+    if _callers(rec) == ('vardict',):  # we wanna filter only vardict
+        af_threshold = (hp_repeated - 1) / _coef
+        af_threshold = min(af_threshold, 0.35)
+        # HP/_coef  40   50    60
+        #  2       2.5    2    1.67
+        #  3       5      4    3.33
+        #  4       7.5    6    5
+        #  5      10      8    6.67
+        #  6      12.5   10    8.33
+        #  7      15     12   10
+        #  8      17.5   14.  11.7
+        #  9      20     16   13.3
+        # 10      22.5   18   15
 
-    af_threshold = (hp_repeated - 1) / _coef
-    af_threshold = min(af_threshold, 0.35)
-    # HP/_coef  40   50    60
-    #  2       2.5    2    1.67
-    #  3       5      4    3.33
-    #  4       7.5    6    5
-    #  5      10      8    6.67
-    #  6      12.5   10    8.33
-    #  7      15     12   10
-    #  8      17.5   14.  11.7
-    #  9      20     16   13.3
-    # 10      22.5   18   15
-
-    if hp_repeated >= 3 and af < af_threshold:
-        add_cyvcf2_filter(rec, 'HP')
+        if hp_repeated >= 3 and af < af_threshold:
+            add_cyvcf2_filter(rec, 'HP')
     return rec
 
 
 def _callers(rec):
     if rec.INFO.get('CALLERS') is not None:
         callers = rec.INFO.get('CALLERS').split(',')
-        return callers
+        return tuple(callers)
     else:
-        return 0
+        return tuple()
 
 
 def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
