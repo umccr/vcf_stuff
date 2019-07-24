@@ -1,0 +1,405 @@
+#!/usr/bin/env python
+
+"""
+Prioritizing SV annotations from SnpEff. Forked from https://github.com/AstraZeneca-NGS/simple_sv_annotation by
+    David Jenkins (david.jenkins1@astrazeneca.com/dfj@bu.edu),
+    Miika Ahdesmaki (miika.ahdesmaki @ astrazeneca.com / live.fi)
+
+Input:   vcf file with SVs annotated with snpEff 4.3 or higher
+
+Output:  vcf file with tier info in INFO/SV_TOP_TIER field and simplified annotation in INFO/SIMPLE_ANN field
+
+Usage:   simple_sv_annotation input.vcf > output.vcf
+
+Current scheme with priority 1(high)-2(moderate)-3(low)-4(no interest)
+- exon loss
+   - on prioritisation gene list (1)
+   - other (2)
+- gene_fusion
+   - paired (hits two genes)
+      - on list of known pairs (1)
+      - one gene is a known promiscuous fusion gene (1)
+      - on list of FusionCatcher known pairs (2)
+      - other:
+         - one or two genes on prioritisation gene list (2)
+         - neither gene on prioritisation gene list (3)
+   - unpaired (hits one gene)
+       - on prioritisation gene list (2)
+       - others (3)
+- upstream or downstream
+   - on prioritisation gene list genes (2)  - e.g. one gene is got into control of another gene's promoter and get overexpressed (oncogene) or underexpressed (tsgene)
+- LOF or HIGH impact in a TS gene
+   - on prioritisation gene list (2)
+   - other TS (3)
+- other (4)
+
+Populates:
+ - INFO/SIMPLE_ANN that looks like: SIMPLE_ANN=INV|GENE_FUSION|ALK&EML4|NM_...&NM_...|KNOWN_FUSION|1|MODERATE
+ - INFO/SV_HIGHEST_TIER (1..4)
+
+See the provided README.md file for more information
+"""
+import re
+
+import itertools
+from collections import defaultdict
+import click
+import cyvcf2
+from os.path import isfile, join
+from ngs_utils.utils import flatten
+
+from ngs_utils.reference_data import get_known_fusion_pairs, get_known_fusion_heads, get_known_fusion_tails, \
+    get_fusioncatcher_pairs, get_key_genes_txt, get_key_tsgenes_txt
+from ngs_utils.vcf_utils import add_cyvcf2_hdr
+from bed_annotation import canon_transcript_per_gene
+
+from ngs_utils.utils import set_locale
+set_locale()
+
+@click.command()
+@click.argument('input_file', type=click.Path(), default='-')
+@click.option('-o', 'output_file', type=click.Path(), help='Output file name. Does not support bgzipped output. Use "-" for stdout', )
+@click.option('-c', '--canonical', 'canonical', is_flag=True, help='Subset to canonical transcripts')
+@click.option('-g', '--genome', 'genome', default='GRCh37', help='Genome build (used if subsetting to canonical with --canonical)')
+
+def main(input_file, output_file=None, canonical=False, genome=None):
+    """
+    Prioritizing structural variants in a VCF file annotated with SnpEff.
+    """
+
+    vcf = cyvcf2.VCF(input_file or '-')
+
+    add_cyvcf2_hdr(vcf, 'SIMPLE_ANN', '.', 'String',
+        "Simplified structural variant annotation: 'SVTYPE | EFFECT | GENE(s) | TRANSCRIPT | PRIORITY (1-4)'")
+    add_cyvcf2_hdr(vcf, 'SV_TOP_TIER', '1', 'Integer',
+        "Highest priority tier for the effects of a variant entry")
+
+    w = cyvcf2.Writer(output_file or '-', vcf)
+    w.write_header()
+
+    # TODO: ? Rerun SnpEFF as well to target canonical transcripts, so we don't miss intergenic variants touching non-canonical transripts?
+    all_princ_transcripts = None
+    if canonical:
+        principal_by_gids = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=True)
+        all_princ_transcripts = set(principal_by_gids.values())
+
+    # Read in gene lists
+    for rec in vcf:
+        if canonical:
+            rec = subset_to_canonical(rec, all_princ_transcripts)
+        rec = process_record(rec)
+        w.write_record(rec)
+
+
+def _read_list(fpath):
+    out_set = set()
+    if fpath:
+        with open(fpath, 'r') as f:
+            for l in f:
+                genes = l.strip().split(",")
+                if len(genes) == 1 and len(genes[0].strip()) > 0:
+                    out_set.add(genes[0].strip())
+                if len(genes) == 2 and len(genes[0].strip()) > 0 and len(genes[1].strip()) > 0:
+                    out_set.add((genes[0].strip(), genes[1].strip()))
+    return out_set
+
+
+def _read_hmf_lists():
+    # TODO: check how HMF prioritizes; check if we known order of promiscuous
+
+    known_pairs = set()
+    fus_promisc = set()
+    with open(get_known_fusion_pairs()) as f:
+        for l in f:
+            l = l.strip().replace('"', '')
+            if l:
+                g1, g2 = l.split(',')[0:2]
+                if g1 and g2 and g1 != 'H_gene':
+                    known_pairs.add((g1, g2))
+    with open(get_known_fusion_heads()) as f1, open(get_known_fusion_tails()) as f2:
+        for l in itertools.chain(f1, f2):
+            l = l.strip().replace('"', '')
+            if l:
+                gene = l.split(',')[0]
+                if gene and gene != 'gene':
+                    fus_promisc.add(gene)
+
+    return known_pairs, fus_promisc
+
+
+def subset_to_canonical(rec, all_princ_transcripts):
+    ann = rec.INFO.get('ANN')
+    if ann is None:
+        return rec
+
+    if isinstance(ann, str):
+        anns = ann.split(',')
+    else:
+        anns = ann
+
+    new_anns = []
+    for ann_line in anns:
+        ann_fields = ann_line.split('|')
+        assert len(ann_fields) >= 11, f'rec: {rec}, ann_line: {ann_line}'
+        allele, effect, impact, genename, geneid, feature, featureid, biotype, rank, c_change, p_change = ann_fields[:11]
+
+        if feature == 'chromosome':
+            new_anns.append(ann_line)
+
+        elif feature == 'transcript':
+            feature_ids = set(featureid.split('&'))
+            feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
+            assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
+            if not feature_ids - all_princ_transcripts:
+                new_anns.append(ann_line)
+
+        else:  # 'interaction'?
+            # Splitting 'interaction' feature ids like the following:
+            # "3UVN:C_107-D_1494:ENST00000358625-ENST00000262519"
+            # -> {'3UVN', 'C_107', 'D_1494', 'ENST00000262519', 'ENST00000358625'}
+            feature_ids = set(fid for fid in flatten(fids.split('-') for fids in featureid.split(':')) if fid.startswith('ENST'))
+            feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
+            assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
+            if not feature_ids - all_princ_transcripts:
+                new_anns.append(ann_line)
+
+    if new_anns:
+        if isinstance(ann, str):
+            new_ann = ','.join(new_anns)
+        else:
+            new_ann = new_anns
+        rec.INFO['ANN'] = new_ann
+    else:
+        del rec.INFO['ANN']
+
+    # Also remove older SIMPLE_ANN as we are rerunning for canonical transcripts
+    if rec.INFO.get('SIMPLE_ANN') is not None:
+        del rec.INFO['SIMPLE_ANN']
+    if rec.INFO.get('SV_HIGHEST_TIER') is not None:
+        del rec.INFO['SV_HIGHEST_TIER']
+
+    return rec
+
+
+def process_record(rec):
+
+    svtype = rec.INFO.get('SVTYPE', '')
+    annos = []
+    if 'ANN' in rec.INFO:
+        annos = rec.INFO.get('ANN', [])
+        if isinstance(annos, str):
+            annos = annos.split(',')
+
+    known_pairs, fus_promisc = _read_hmf_lists()
+    tier2_pairs = _read_list(get_fusioncatcher_pairs())
+    prio_genes = _read_list(get_key_genes_txt())
+    tsgenes = _read_list(get_key_tsgenes_txt())
+
+    exon_losses_by_tid = defaultdict(list)
+    sv_top_tier = 4
+    simple_annos = set()
+    for anno in annos:
+        anno_fields = anno.split('|')
+        # T|splice_acceptor_variant&splice_region_variant&intron_variant|HIGH|NCOA1|ENSG00000084676|transcript|ENST00000348332.13|
+        #   protein_coding|4/20|c.257-52_257-2delTGGAAATAAGCTCTTTTCAGATATGTGATTTTTTTAAGTTTCTTTATTATA||||||INFO_REALIGN_3_PRIME,
+        allele, effect, impact, gene, geneid, feature, featureid, biotype, rank, c_change, p_change = anno_fields[:11]
+        effects = set(effect.split('&'))
+        genes = set(gene.split('&'))
+        featureid = featureid.split('.')[0]
+
+        ann_tier = 4
+        ann_detail = ''
+
+        if effects & {"exon_loss_variant"}:
+            # collecting exon losses to process them together further for the variant
+            exon_losses_by_tid[featureid].append(anno_fields)
+
+        elif effects & {"gene_fusion"}:
+            # This could be 'gene_fusion', but not 'bidirectional_gene_fusion' or 'feature_fusion'
+            # ('gene_fusion' could lead to a coding fusion whereas 'bidirectional_gene_fusion' is
+            # likely non-coding (opposing frames, _if_ inference correct))
+
+            # Default tier is 2 (if hitting a prio gene) or 4
+            if genes & prio_genes:
+                ann_tier = 2
+                ann_detail = "key_gene"
+            else:
+                ann_tier = 4
+                ann_detail = "unknown"
+
+            # If exactly 2 genes, checking with the lists of known fusions:
+            if len(genes) == 2:
+                g1, g2 = genes
+                if {(g1, g2), (g2, g1)} & known_pairs:
+                    ann_tier = 1
+                    ann_detail = "known_pair"
+
+                elif {g1, g2} & fus_promisc:
+                    ann_tier = 1
+                    ann_detail = "known_promiscuous"
+
+                elif {(g1, g2), (g2, g1)} & tier2_pairs:
+                    ann_tier = 2
+                    ann_detail = "known_pair"
+
+        # "downstream_gene_variant" and "upstream_gene_variant" can also turn out to be a fusion
+        # when gene A falls into control of a promoter of gene B
+        elif effects & {"downstream_gene_variant", "upstream_gene_variant"}:
+            if len(genes) == 2:
+                g1, g2 = genes
+                if {(g1, g2), (g2, g1)} & known_pairs:
+                    ann_tier = 2
+                    ann_detail = "known_pair"
+
+                elif {g1, g2} & fus_promisc:
+                    ann_tier = 2
+                    ann_detail = "known_promiscuous"
+
+                elif {(g1, g2), (g2, g1)} & tier2_pairs:
+                    ann_tier = 3
+                    ann_detail = "known_pair"
+
+            # One of the genes is of interest
+            elif genes & prio_genes:
+                ann_tier = 3
+                ann_detail = "near_key_gene"
+
+        elif impact == 'HIGH' and genes & tsgenes:
+            if genes & prio_genes:
+                ann_tier = 2
+                ann_detail = 'key_tsgene'
+            else:
+                ann_tier = 3
+                ann_detail = 'tsgene'
+            if is_zero_cn(rec) is False:
+                ann_tier += 1
+            if is_zero_cn(rec) is True:
+                ann_detail += '_cn0'
+                ann_tier -= 1
+
+        else:
+            featureid = ''
+            if genes & prio_genes:
+                ann_tier = 3
+                ann_detail = "key_gene"
+            else:
+                ann_tier = 4
+                ann_detail = 'unprioritized'
+                gene = '&'.join(genes&prio_genes)
+
+            # gene = ''
+            # if genes&prio_genes:
+            #     if len(genes&prio_genes) > 2:
+            #         gene = f'{len(genes&prio_genes)}_key_genes'
+            #     else:
+            #         gene = '&'.join(genes&prio_genes)
+            # if genes-prio_genes:
+            #     if gene:
+            #         gene += '&'
+            #     if len(genes-prio_genes) > 2:
+            #         gene += f'{len(genes-prio_genes)}_other_genes'
+            #     else:
+            #         gene += '&'.join(genes-prio_genes)
+
+        sv_top_tier = min(ann_tier, sv_top_tier)
+        simple_annos.add((svtype, effect, gene, featureid, ann_detail, ann_tier))
+
+    if len(exon_losses_by_tid) > 0:
+        losses = annotate_exon_loss(exon_losses_by_tid, prio_genes)
+        for (gene, transcriptid, deleted_exons, ann_tier) in losses:
+            simple_annos.add((svtype, 'exon_loss', gene, transcriptid, deleted_exons, ann_tier))
+            sv_top_tier = min(ann_tier, sv_top_tier)
+
+    # Annotate from LOF
+    lofs = rec.INFO.get('LOF', [])  # (GRK7|ENSG00000114124|1|1.00),(DRD3|ENSG00000151577|4|1.00),...
+    lof_genes = {l.strip('(').strip(')').split('|')[0] for l in lofs}
+    if lof_genes & tsgenes:
+        lof_genes = lof_genes & tsgenes
+        if lof_genes & prio_genes:
+            ann_tier = 2
+            ann_detail = 'key_tsgene'
+            lof_genes = lof_genes & prio_genes
+        else:
+            ann_tier = 3
+            ann_detail = 'tsgene'
+
+        if is_zero_cn(rec) is False:
+            ann_tier += 1
+        if is_zero_cn(rec) is True:
+            ann_detail += '_cn0'
+            ann_tier -= 1
+
+        simple_annos.add((svtype, 'LOF', '&'.join(lof_genes), '', ann_detail, ann_tier))
+        sv_top_tier = min(ann_tier, sv_top_tier)
+
+    if not simple_annos:
+        simple_annos = [(svtype, '', 'unprioritized', '', '', 4)]
+
+    if not annos:
+        simple_annos = [(svtype, '', 'no_func_effect', '', '', 4)]
+
+    rec.INFO['SIMPLE_ANN'] = ','.join(['|'.join(map(str, a)) for a in sorted(simple_annos)])
+    rec.INFO['SV_TOP_TIER'] = sv_top_tier
+
+    if 'ANN' in rec.INFO:
+        del rec.INFO['ANN']
+    if 'LOF' in rec.INFO:
+        del rec.INFO['LOF']
+
+    return rec
+
+
+def is_zero_cn(rec):
+    cns = rec.INFO.get('PURPLE_CN')
+    if cns is not None:
+        if isinstance(cns, float) or isinstance(cns, int):
+            cns = [cns]
+        return any(float(cn) <= 0.5 for cn in cns)  # real deletion
+    return None
+
+
+def find_deleted_exons(annotations):
+    """
+    Take the annotations for a particular transcript
+    and parse them to find the numbers of the exons that have
+    been deleted
+    """
+    exons = []
+    gene = ''
+    for anno_fields in annotations:
+        allele, effect, impact, g, geneid, feature, featureid, biotype, rank, c_change, p_change = anno_fields[:11]
+        gene = gene or g
+        try:
+            exons.append(int(rank.split('/')[0]))
+        except ValueError:
+            pass
+    return exons, gene
+
+
+def annotate_exon_loss(exon_loss_anno_by_tid, prioritised_genes):
+    """
+    Create the exon loss simple annotation from the exon dict created in simplify_ann
+    For each transcript with exon losses, find the numbers for each exon and create the annotation
+    Example: DEL|exon_loss|BLM|NM_001287247.1|exon2-12del
+    """
+
+    annos = set()
+    for transcript, annotations in exon_loss_anno_by_tid.items():
+        exons, gene = find_deleted_exons(annotations)
+        exons = list(set(exons))
+        if len(exons) == 0:
+            return None
+        if max(exons) - min(exons) + 1 == len(exons):
+            if len(exons) == 1:
+                deleted_exons = f'exon{exons[0]}del'
+            else:
+                deleted_exons = f'exon{min(exons)}-{max(exons)}del'
+        else:
+            deleted_exons = f'exon{min(exons)}-{max(exons)}del'
+        var_priority = 2 if gene in prioritised_genes else 3
+        annos.add((gene, transcript, deleted_exons, var_priority))
+    return annos
+
+
+if __name__ == "__main__":
+    main()
