@@ -1,0 +1,224 @@
+---
+title: "dragen"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+source("evaluation.R")
+```
+
+
+```{r}
+dir = "/Users/vsaveliev/Analysis/Dragen/"
+truth_vcf   = read.vcf(str_c(dir, "truth.ANNO.vcf.gz"), split.info = T)
+dragen_vcf  = read.vcf(str_c(dir, "dragen.ANNO.SAMPLE.PREP.FILT.vcf.gz"), split.info = T)
+inhouse_vcf = read.vcf(str_c(dir, "inhouse.ANNO.FILT.vcf.gz"), split.info = T)
+strelka_vcf = read.vcf(str_c(dir, "strelka2.ANNO.FILT.vcf.gz"), split.info = T)
+
+dragen_eval  = merge_called_and_truth(dragen_vcf, truth_vcf) %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD))
+inhouse_eval = merge_called_and_truth(inhouse_vcf, truth_vcf)
+strelka_eval = merge_called_and_truth(strelka_vcf, truth_vcf)
+
+#truth_vcf$vcf %>% names
+#truth   = truth_vcf   %>% vcf2tbl %>% rename(TRUTH_DP = DP)
+#dragen  = dragen_vcf  %>% vcf2tbl 
+#inhouse = inhouse_vcf %>% vcf2tbl
+```
+
+```{r}
+
+# extract_fmt_field = function(format, sample_data, field) {
+
+# dragen_afs = extract_fmt_field(dragen_vcf$vcf$FORMAT, dragen_vcf$vcf$Carpten_Colo829_B_VCCC_tumor, 'AF')
+# dragen_afs_df = tibble(AF=dragen_afs) 
+
+# ggplot() + 
+#   geom_density(data = dragen_afs_df, aes(AF), color = 'blue')
+# 
+# ggplot() + 
+#   geom_density(data = dragen_vcf$vcf, aes(TUMOR_AF), color = 'red') + 
+#   geom_density(data = dragen_afs_df, aes(AF), color = 'blue')
+
+dragen %>% count(FILT)  # %>% select(AF)
+dragen %>% count(is_passed)  # %>% select(AF)
+
+dragen_eval %>% filter(is_fn) %>% filter(is.na(vartype)) %>% select(CHROM, POS, REF, ALT, FILT, FILT.truth, status, vartype)  # count(status, vartype)
+
+ensemble = inhouse_eval
+strelka2 = strelka_eval
+dragen = dragen_eval
+
+ensemble = ensemble %>% mutate(vartype = get_type(REF, ALT))
+strelka2 = strelka2 %>% mutate(vartype = get_type(REF, ALT))
+dragen = dragen %>% mutate(vartype = get_type(REF, ALT))
+
+show_stats(ensemble, strelka2, dragen, dragen %>% reject_if(TLOD < 21) %>% count_status) %>% filter(metric == 'F2' | metric == 'TP' | metric == 'FP' | metric == 'FN')
+```
+
+```{r}
+truth %>% filter(POS == 1224077) %>% names
+dragen_eval %>% filter(POS == 1224077) %>% select(AF, AF.truth, status, FILT)
+```
+
+```{r}
+truth %>% count(is_passed)
+dragen_eval %>% count(status)
+dragen_eval %>% 
+  filter(is_fn) %>% 
+  ggplot() +
+  geom_violin(aes(x = factor(vartype), y = AF), adjust = 1) +
+  geom_jitter(aes(x = factor(vartype), y = AF))
+
+dragen_eval %>% 
+  filter(is_fn) %>% 
+  filter(AF > 0.66 & AF < 0.68) %>% 
+  select(AF, everything())
+```
+
+```{r}
+data = rbind.fill(
+    dragen_eval %>% mutate(caller = 'dragen'),
+    inhouse_eval %>% mutate(caller = 'ensemble'),
+    strelka_eval %>% mutate(caller = 'strelka2')
+  ) %>% 
+  filter(is_passed | is_true) %>% 
+  filter(!is.na(vartype))
+```
+
+```{r}
+data %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+```{r}
+dragen %>% 
+  filter(TLOD < 50) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(TLOD, stat(count), color = status), binwidth=5)
+```
+
+```{r}
+data %>% 
+  filter(TLOD < 50) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(TLOD, stat(count), color = status), binwidth=5)
+```
+
+```{r}
+tlods = c(10:30)
+bytlods = tlods %>% map_df(function(tlod) {
+  dragen %>% mutate(is_passed = is_called & is_passed & (is.na(TLOD) | TLOD >= tlod)) %>% summarize_stats() %>% mutate(MinTLOD = tlod)
+})
+bytlods %>% 
+  select(MinTLOD, vartype, F2, prec, recall) %>% 
+  gather(key = "metric", value = "value", prec, F2, recall) %>% 
+  ggplot() +
+  geom_line(aes(x = MinTLOD, y = value, color = metric)) + 
+  facet_wrap(~vartype, scales = 'free')
+```
+
+```{r}
+nlods = c(0:20)
+bynlods = nlods %>% map_df(function(nlod) {
+  dragen %>% mutate(is_passed = is_called & is_passed & (is.na(NLOD) | NLOD >= nlod)) %>% summarize_stats() %>% mutate(MinNLOD = nlod)
+})
+bynlods %>% 
+  select(MinNLOD, vartype, F2, prec, recall) %>% 
+  gather(key = "metric", value = "value", prec, F2, recall) %>% 
+  ggplot() +
+  geom_line(aes(x = MinNLOD, y = value, color = metric)) + 
+  facet_wrap(~vartype, scales = 'free')
+```
+
+```{r}
+tlod21 = dragen %>% reject_if(TLOD < 21) 
+nlod7_15 = dragen %>% reject_if(NLOD < 7 & is_snp | NLOD < 15 & !is_snp)
+show_stats(dragen, 
+           tlod21,
+           tlod21 %>% reject_if(NLOD < 6),
+           tlod21 %>% reject_if(NLOD < 7),
+           tlod21 %>% reject_if(NLOD < 8)
+           )
+```
+
+```{r}
+# the best values are <20 and <21
+filt = data %>% reject_if(caller == 'dragen' & TLOD < 21) %>% count_status() %>% filter(!is_tn)
+rbind(data %>% mutate(filtering = 'umccrise'), 
+      filt %>% mutate(filtering = 'umccrise+TLOD>=21')
+      ) %>% 
+  filter(!is_fn) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_grid(filtering~status, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+```{r}
+data %>% 
+  filter(VD < 100) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(VD, stat(count), color = caller), binwidth=1) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 100, 10))
+```
+
+```{r}
+data %>% 
+  filter(DP < 200) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(DP, stat(count), color = caller), binwidth=1) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 200, 20))
+```
+
+```{r fig.width=10}
+data %>% 
+  filter(MQ < 35) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(MQ, stat(count), color = caller), binwidth=1) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y')
+```
+
+Filter by MQ perhaps?
+
+```{r fig.width=10}
+data %>% 
+  filter(MQ > 40) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+```{r}
+show_stats(data %>% filter(caller == 'dragen'), 
+           data %>% filter(caller == 'ensemble'),
+           
+           )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

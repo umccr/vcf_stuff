@@ -40,6 +40,9 @@ count_status <- function(.data) {
 }
 
 fix_somatic_anno_fields <- function(data) {
+  # data = truth_vcf$vcf %>% as.tibble
+  # data = data %>% filter(POS == 1224077)
+  
   renamed <- data %>% 
     # mutate(
     #   HMF_MAPPABILITY = map_dbl(map(str_split(HMF_MAPPABILITY, ","), as.double), min)
@@ -49,7 +52,7 @@ fix_somatic_anno_fields <- function(data) {
       GENE = PCGR_SYMBOL,
       TCGA = PCGR_TCGA_PANCANCER_COUNT,
       ICGC = ICGC_PCAWG_HITS,
-      DRIVER = PCGR_INTOGEN_DRIVER_MUT,
+      DRIVER = PCGR_PUTATIVE_DRIVER_MUTATION,
       CLNSIG = PCGR_CLINVAR_CLNSIG,
       PCGR_HS = PCGR_MUTATION_HOTSPOT,
       HMF_HS = HMF_HOTSPOT,
@@ -78,8 +81,12 @@ fix_somatic_anno_fields <- function(data) {
       is_snp = vartype == 'SNP',
       AF = as.double(AF),
       DP = as.integer(DP),
-      VD = round(AF * DP)
+      VD = round(AF * DP),
+      FILT = ifelse(is.na(FILT), 'PASS', FILT),
+      umccrise_passed = FILT == 'PASS',
+      is_passed = umccrise_passed
     )
+  renamed
 }
 
 # nonna <- function(...) {
@@ -92,11 +99,20 @@ fix_somatic_anno_fields <- function(data) {
 #   }
 # }
 
-set_tumor_field <- function(.data, field) {
+set_tumor_field <- function(.data, field, use_truth = T) {
+  #.data = .data %>% filter(POS == 1224077)
+  # browser()
+  
   if (!field %in% names(.data)) {
-    if (str_c(field, '.called') %in% names(.data)) {
-      .data[[field]] = .data[[str_c(field, '.called')]]
-    }
+    .data[[field]] = ifelse(
+      str_c(field, '.called') %in% names(.data) & !is.na(.data[[str_c(field, '.called')]]), 
+      .data[[str_c(field, '.called')]],
+      ifelse(
+        str_c(field, '.truth') %in% names(.data) & !is.na(.data[[str_c(field, '.truth')]]), 
+        .data[[str_c(field, '.truth')]], 
+        NA
+      )
+    )
   }
   .data
 }
@@ -132,13 +148,19 @@ extract_fmt_field = function(format, sample_data, field) {
 # called$NM = extract_fmt_field(called_vcf$vcf$FORMAT, called_vcf$vcf[[tumor_sample]], "NM", new_field = "NM_VD")
 # add_format_field(called, "NM", tumor_sample, new_field = "NM_VD")
 
-merge_called_and_truth = function(called_vcf, truth_vcf=NULL, tumor_sample=NULL) {
-#  tumor_sample = substitute(tumor_sample)
+vcf2tbl = function(parsed) {
+  parsed$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
+}
 
-  called_data = called_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
+merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
+#  tumor_sample = substitute(tumor_sample)
+  
+#  called_vcf = dragen_vcf
+
+  called_data = called_vcf %>% vcf2tbl
   
   if (!is.null(truth_vcf)) {
-    truth_data = truth_vcf$vcf %>% as_tibble() %>% fix_somatic_anno_fields()
+    truth_data = truth_vcf %>% vcf2tbl
   } else {
     truth_data = called_data %>% head(0)
   }
@@ -158,7 +180,7 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL, tumor_sample=NULL)
     by = c('CHROM', 'POS', 'REF', 'ALT'),
     suffix = c('.truth', '.called')
   ) %>%
-  set_tumor_field("vartype") %>% 
+  set_tumor_field("vartype") %>%
   set_tumor_field("is_snp") %>%        #     = nonna(is_snp.called    , is_snp.truth    ),
   set_tumor_field("AF") %>%        #         = nonna(AF.called        , AF.truth        ),
   set_tumor_field("VD") %>%        #         = nonna(VD.called        , VD.truth        ),
@@ -168,7 +190,6 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL, tumor_sample=NULL)
   set_tumor_field("NORMAL_VD") %>%         #  = nonna(NORMAL_VD, NORMAL_VD.called , NORMAL_VD.truth ),
   set_tumor_field("NORMAL_DP") %>%         #  = nonna(NORMAL_DP, NORMAL_DP.called , NORMAL_DP.truth ),
   set_tumor_field("NORMAL_MQ") %>%         #  = nonna(NORMAL_MQ, NORMAL_MQ.called , NORMAL_MQ.truth ),
-  set_tumor_field("FILT") %>%        #       = nonna(FILT.called      , FILT.truth      ),
   set_tumor_field("GENE") %>%        #       = nonna(GENE.called      , GENE.truth      ),
   set_tumor_field("TCGA") %>%        #       = nonna(TCGA.called      , TCGA.truth      ),
   set_tumor_field("ICGC") %>%        #       = nonna(ICGC.called      , ICGC.truth      ),
@@ -188,8 +209,10 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL, tumor_sample=NULL)
   mutate(
     NORMAL_AF = as.double(NORMAL_AF),
     NORMAL_DP = as.integer(NORMAL_DP),
-    NORMAL_VD = round(NORMAL_AF * NORMAL_DP),
-    FILT = ifelse(is.na(FILT), "PASS", FILT)
+    NORMAL_VD = round(NORMAL_AF * NORMAL_DP)
+  ) %>% 
+  rename(
+    FILT = FILT.called
   ) %>% 
   mutate(
     is_called = !is.na(FILT),
@@ -303,7 +326,7 @@ reject_if = function(.data, cond, rescue = F) {
     # also rescue _all_ when cond=F
     mask = mask | eval(cond_q, .data) %in% c(F)
   }
-  .data %>% mutate(is_passed = is_called & mask)
+  .data %>% mutate(is_passed = is_called & mask) %>% count_status()
 }
 
 rescue_filt = function(.data, filt) {
@@ -342,7 +365,7 @@ test_resc_filt = function() {
 rescue_if = function(.data, cond) {
   cond_q = substitute(cond)
   mask = .data$is_passed | eval(cond_q, .data) %in% c(T)
-  .data %>% mutate(is_passed = is_called & mask)
+  .data %>% mutate(is_passed = is_called & mask) %>% count_status()
 }
 
 test_rescue_if = function() {
