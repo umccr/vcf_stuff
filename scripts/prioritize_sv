@@ -39,6 +39,7 @@ Populates:
 
 See the provided README.md file for more information
 """
+import sys
 import re
 
 import itertools
@@ -77,17 +78,18 @@ def main(input_file, output_file=None, canonical=False, genome=None):
     w = cyvcf2.Writer(output_file or '-', vcf)
     w.write_header()
 
-    # TODO: ? Rerun SnpEFF as well to target canonical transcripts, so we don't miss intergenic variants touching non-canonical transripts?
-    all_princ_transcripts = None
+    # TODO: ? Rerun SnpEFF as well to target canonical transcripts, so we don't miss
+    #  intergenic variants touching non-canonical transripts?
+    princ_trs, all_trs = None, None
     if canonical:
-        principal_by_gids = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=True)
-        all_princ_transcripts = set(principal_by_gids.values())
+        princ_tr_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=True)
+        all_trs_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=False)
+        princ_trs = set(princ_tr_by_gid.values())
+        all_trs = set(flatten(all_trs_by_gid.values()))
 
     # Read in gene lists
     for rec in vcf:
-        if canonical:
-            rec = subset_to_canonical(rec, all_princ_transcripts)
-        rec = process_record(rec)
+        rec = process_record(rec, princ_trs, all_trs)
         w.write_record(rec)
 
 
@@ -127,65 +129,112 @@ def _read_hmf_lists():
     return known_pairs, fus_promisc
 
 
-def subset_to_canonical(rec, all_princ_transcripts):
-    ann = rec.INFO.get('ANN')
-    if ann is None:
-        return rec
+# def subset_to_canonical(rec, princ_trs, all_trs):
+#     ann = rec.INFO.get('ANN')
+#     if ann is None:
+#         return rec
+#
+#     if isinstance(ann, str):
+#         anns = ann.split(',')
+#     else:
+#         anns = ann
+#
+#     princ_anns = []
+#     alt_anns = []
+#     for ann_line in anns:
+#         ann_fields = ann_line.split('|')
+#         assert len(ann_fields) >= 11, f'rec: {rec}, ann_line: {ann_line}'
+#         _, effect, impact, genename, _, feature, featureid, _, rank, _, _ = ann_fields[:11]
+#         # allele, effect, impact, genename, geneid, feature, featureid, biotype, rank, c_change, p_change = ann_fields[:11]
+#
+#         if feature == 'chromosome':
+#             alt_anns.append(ann_line)
+#
+#         elif feature == 'transcript':
+#             feature_ids = set(featureid.split('&'))
+#             feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
+#             assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
+#             if not feature_ids - princ_trs:
+#                 princ_anns.append(ann_line)
+#             elif not feature_ids - all_trs:
+#                 alt_anns.append(ann_line)
+#
+#         elif feature == 'interaction':
+#             pass  # skipping altogether
+#             # if _check_interaction(all_princ_transcripts, ann, featureid):
+#             #     new_anns.append(ann_line)
+#
+#         else: # some other events?
+#             print(f'Unrecognizable event {feature}: {ann}, for variant {rec.CHROM}:{rec.POS}', file=sys.stderr)
+#
+#     new_anns = princ_anns or alt_anns
+#
+#     if new_anns:
+#         if isinstance(ann, str):
+#             new_ann = ','.join(new_anns)
+#         else:
+#             new_ann = new_anns
+#         rec.INFO['ANN'] = new_ann
+#     else:
+#         del rec.INFO['ANN']
+#
+#     # Also remove older SIMPLE_ANN as we are rerunning for canonical transcripts
+#     if rec.INFO.get('SIMPLE_ANN') is not None:
+#         del rec.INFO['SIMPLE_ANN']
+#     if rec.INFO.get('SV_HIGHEST_TIER') is not None:
+#         del rec.INFO['SV_HIGHEST_TIER']
+#
+#     return rec
 
-    if isinstance(ann, str):
-        anns = ann.split(',')
+
+def _check_interaction(all_princ_transcripts, ann, featureid):
+    # Splitting 'interaction' feature ids like the following:
+    # "3UVN:C_107-D_1494:ENST00000358625-ENST00000262519"
+    # -> {'3UVN', 'C_107', 'D_1494', 'ENST00000262519', 'ENST00000358625'}
+    feature_ids = set(fid for fid in flatten(fids.split('-') for fids in featureid.split(':')) if fid.startswith('ENST'))
+    feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
+    assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
+    if not feature_ids - all_princ_transcripts:
+        return True
     else:
-        anns = ann
+        return False
 
-    new_anns = []
-    for ann_line in anns:
-        ann_fields = ann_line.split('|')
-        assert len(ann_fields) >= 11, f'rec: {rec}, ann_line: {ann_line}'
-        allele, effect, impact, genename, geneid, feature, featureid, biotype, rank, c_change, p_change = ann_fields[:11]
-
-        if feature == 'chromosome':
-            new_anns.append(ann_line)
-
-        elif feature == 'transcript':
-            feature_ids = set(featureid.split('&'))
-            feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
-            assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
-            if not feature_ids - all_princ_transcripts:
-                new_anns.append(ann_line)
-
-        else:  # 'interaction'?
-            # Splitting 'interaction' feature ids like the following:
-            # "3UVN:C_107-D_1494:ENST00000358625-ENST00000262519"
-            # -> {'3UVN', 'C_107', 'D_1494', 'ENST00000262519', 'ENST00000358625'}
-            feature_ids = set(fid for fid in flatten(fids.split('-') for fids in featureid.split(':')) if fid.startswith('ENST'))
-            feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
-            assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
-            if not feature_ids - all_princ_transcripts:
-                new_anns.append(ann_line)
-
-    if new_anns:
-        if isinstance(ann, str):
-            new_ann = ','.join(new_anns)
-        else:
-            new_ann = new_anns
-        rec.INFO['ANN'] = new_ann
-    else:
-        del rec.INFO['ANN']
-
-    # Also remove older SIMPLE_ANN as we are rerunning for canonical transcripts
-    if rec.INFO.get('SIMPLE_ANN') is not None:
-        del rec.INFO['SIMPLE_ANN']
-    if rec.INFO.get('SV_HIGHEST_TIER') is not None:
-        del rec.INFO['SV_HIGHEST_TIER']
-
-    return rec
+    # princ_anns = []
+    # alt_anns = []
+    # for ann_line in anns:
+    #     ann_fields = ann_line.split('|')
+    #     assert len(ann_fields) >= 11, f'rec: {rec}, ann_line: {ann_line}'
+    #     _, effect, impact, genename, _, feature, featureid, _, rank, _, _ = ann_fields[:11]
+    #     # allele, effect, impact, genename, geneid, feature, featureid, biotype, rank, c_change, p_change = ann_fields[:11]
+    #
+    #     if feature == 'chromosome':
+    #         alt_anns.append(ann_line)
+    #
+    #     elif feature == 'transcript':
+    #         feature_ids = set(featureid.split('&'))
+    #         feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
+    #         assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
+    #         if not feature_ids - princ_trs:
+    #             princ_anns.append(ann_line)
+    #         elif not feature_ids - all_trs:
+    #             alt_anns.append(ann_line)
+    #
+    #     elif feature == 'interaction':
+    #         pass  # skipping altogether
+    #         # if _check_interaction(all_princ_transcripts, ann, featureid):
+    #         #     new_anns.append(ann_line)
+    #
+    #     else: # some other events?
+    #         print(f'Unrecognizable event {feature}: {ann}, for variant {rec.CHROM}:{rec.POS}', file=sys.stderr)
+    #
+    # new_anns = princ_anns or alt_anns
 
 
-def process_record(rec):
+def process_record(rec, princ_trs=None, all_trs=None):
 
     svtype = rec.INFO.get('SVTYPE', '')
     annos = []
-    if 'ANN' in rec.INFO:
+    if rec.INFO.get('ANN') is not None:
         annos = rec.INFO.get('ANN', [])
         if isinstance(annos, str):
             annos = annos.split(',')
@@ -195,24 +244,35 @@ def process_record(rec):
     prio_genes = _read_list(get_key_genes_txt())
     tsgenes = _read_list(get_key_tsgenes_txt())
 
-    exon_losses_by_tid = defaultdict(list)
-    sv_top_tier = 4
-    simple_annos = set()
+    transcripts_by_event = defaultdict(list)
     for anno in annos:
         anno_fields = anno.split('|')
+        if len(anno_fields) < 11:
+            continue
         # T|splice_acceptor_variant&splice_region_variant&intron_variant|HIGH|NCOA1|ENSG00000084676|transcript|ENST00000348332.13|
         #   protein_coding|4/20|c.257-52_257-2delTGGAAATAAGCTCTTTTCAGATATGTGATTTTTTTAAGTTTCTTTATTATA||||||INFO_REALIGN_3_PRIME,
-        allele, effect, impact, gene, geneid, feature, featureid, biotype, rank, c_change, p_change = anno_fields[:11]
+        _, effect, impact, gene, _, featuretype, featureid, _, rank, _, _ = anno_fields[:11]
         effects = set(effect.split('&'))
         genes = set(gene.split('&'))
         featureid = featureid.split('.')[0]
+
+        if featuretype == 'interaction':
+            continue
+
+        if all_trs is not None and featureid not in all_trs:
+            continue
 
         ann_tier = 4
         ann_detail = ''
 
         if effects & {"exon_loss_variant"}:
-            # collecting exon losses to process them together further for the variant
-            exon_losses_by_tid[featureid].append(anno_fields)
+            effect = "exon_loss"
+            if gene in prio_genes:
+                ann_tier = 2
+                ann_detail = "key_gene"
+            else:
+                ann_tier = 3
+                ann_detail = ""
 
         elif effects & {"gene_fusion"}:
             # This could be 'gene_fusion', but not 'bidirectional_gene_fusion' or 'feature_fusion'
@@ -301,14 +361,28 @@ def process_record(rec):
             #     else:
             #         gene += '&'.join(genes-prio_genes)
 
-        sv_top_tier = min(ann_tier, sv_top_tier)
-        simple_annos.add((svtype, effect, gene, featureid, ann_detail, ann_tier))
+        transcripts_by_event[(svtype, effect, gene, ann_detail, ann_tier)].append(featureid)
 
-    if len(exon_losses_by_tid) > 0:
-        losses = annotate_exon_loss(exon_losses_by_tid, prio_genes)
-        for (gene, transcriptid, deleted_exons, ann_tier) in losses:
-            simple_annos.add((svtype, 'exon_loss', gene, transcriptid, deleted_exons, ann_tier))
-            sv_top_tier = min(ann_tier, sv_top_tier)
+    top_tier = 4
+    simple_annos = set()
+    if transcripts_by_event:
+        top_tier = max([k[-1] for k in list(transcripts_by_event.keys())])
+        # subset to top events
+        transcripts_by_event = {k: v for k, v in transcripts_by_event.items() if k[-1] == top_tier}
+
+        #TODO: move tanscript principal check here. report all transcripts (princ+alt),
+        # but if there are princ exist, and the impact on alt is differrent, report only princ
+        # if len(transcripts_by_event) > 1:  # different events
+        # EDIT: perhaps no need in this since we collecting events and comma-separating them
+
+        simple_annos = set([(svtype, effect, gene, '&'.join(transcripts), detail, tier)
+                           for (svtype, effect, gene, detail, tier), transcripts in transcripts_by_event.items()])
+
+    # if len(exon_losses_by_tid) > 0:
+    #     losses = annotate_exon_loss(exon_losses_by_tid, prio_genes)
+    #     for (gene, transcriptid, deleted_exons, ann_tier) in losses:
+    #         simple_annos.add((svtype, 'exon_loss', gene, transcriptid, deleted_exons, ann_tier))
+    #         sv_top_tier = min(ann_tier, sv_top_tier)
 
     # Annotate from LOF
     lofs = rec.INFO.get('LOF', [])  # (GRK7|ENSG00000114124|1|1.00),(DRD3|ENSG00000151577|4|1.00),...
@@ -330,7 +404,7 @@ def process_record(rec):
             ann_tier -= 1
 
         simple_annos.add((svtype, 'LOF', '&'.join(lof_genes), '', ann_detail, ann_tier))
-        sv_top_tier = min(ann_tier, sv_top_tier)
+        top_tier = min(ann_tier, top_tier)
 
     if not simple_annos:
         simple_annos = [(svtype, '', 'unprioritized', '', '', 4)]
@@ -339,12 +413,7 @@ def process_record(rec):
         simple_annos = [(svtype, '', 'no_func_effect', '', '', 4)]
 
     rec.INFO['SIMPLE_ANN'] = ','.join(['|'.join(map(str, a)) for a in sorted(simple_annos)])
-    rec.INFO['SV_TOP_TIER'] = sv_top_tier
-
-    if 'ANN' in rec.INFO:
-        del rec.INFO['ANN']
-    if 'LOF' in rec.INFO:
-        del rec.INFO['LOF']
+    rec.INFO['SV_TOP_TIER'] = top_tier
 
     return rec
 
@@ -367,7 +436,7 @@ def find_deleted_exons(annotations):
     exons = []
     gene = ''
     for anno_fields in annotations:
-        allele, effect, impact, g, geneid, feature, featureid, biotype, rank, c_change, p_change = anno_fields[:11]
+        _, _, _, g, _, _, _, _, rank, _, _ = anno_fields[:11]
         gene = gene or g
         try:
             exons.append(int(rank.split('/')[0]))
