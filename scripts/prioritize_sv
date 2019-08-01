@@ -60,10 +60,9 @@ set_locale()
 @click.command()
 @click.argument('input_file', type=click.Path(), default='-')
 @click.option('-o', 'output_file', type=click.Path(), help='Output file name. Does not support bgzipped output. Use "-" for stdout', )
-@click.option('-c', '--canonical', 'canonical', is_flag=True, help='Subset to canonical transcripts')
 @click.option('-g', '--genome', 'genome', default='GRCh37', help='Genome build (used if subsetting to canonical with --canonical)')
 
-def main(input_file, output_file=None, canonical=False, genome=None):
+def main(input_file, output_file=None, genome=None):
     """
     Prioritizing structural variants in a VCF file annotated with SnpEff.
     """
@@ -80,12 +79,10 @@ def main(input_file, output_file=None, canonical=False, genome=None):
 
     # TODO: ? Rerun SnpEFF as well to target canonical transcripts, so we don't miss
     #  intergenic variants touching non-canonical transripts?
-    princ_trs, all_trs = None, None
-    if canonical:
-        princ_tr_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=True)
-        all_trs_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=False)
-        princ_trs = set(princ_tr_by_gid.values())
-        all_trs = set(flatten(all_trs_by_gid.values()))
+    princ_tr_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=True)
+    all_trs_by_gid = canon_transcript_per_gene(genome, use_gene_id=True, only_principal=False)
+    princ_trs = set(princ_tr_by_gid.values())
+    all_trs = set(flatten(all_trs_by_gid.values()))
 
     # Read in gene lists
     for rec in vcf:
@@ -230,7 +227,7 @@ def _check_interaction(all_princ_transcripts, ann, featureid):
     # new_anns = princ_anns or alt_anns
 
 
-def process_record(rec, princ_trs=None, all_trs=None):
+def process_record(rec, princ_trs, all_trs):
 
     svtype = rec.INFO.get('SVTYPE', '')
     annos = []
@@ -244,29 +241,44 @@ def process_record(rec, princ_trs=None, all_trs=None):
     prio_genes = _read_list(get_key_genes_txt())
     tsgenes = _read_list(get_key_tsgenes_txt())
 
-    transcripts_by_event = defaultdict(list)
-    for anno in annos:
-        anno_fields = anno.split('|')
+    parsed_annos = []
+    for anno_string in annos:
+        anno_fields = anno_string.split('|')
         if len(anno_fields) < 11:
             continue
         # T|splice_acceptor_variant&splice_region_variant&intron_variant|HIGH|NCOA1|ENSG00000084676|transcript|ENST00000348332.13|
         #   protein_coding|4/20|c.257-52_257-2delTGGAAATAAGCTCTTTTCAGATATGTGATTTTTTTAAGTTTCTTTATTATA||||||INFO_REALIGN_3_PRIME,
         _, effect, impact, gene, _, featuretype, featureid, _, rank, _, _ = anno_fields[:11]
         effects = set(effect.split('&'))
-        genes = set(gene.split('&'))
-        featureid = featureid.split('.')[0]
+        genes = set(gene.split('&'))  # can be 2 for fusions
+        transcriptids = set([f.split('.')[0] for f in featureid.split('&')])
+        assert len(transcriptids) == 1, anno_string
+        transcriptid = list(transcriptids)[0]
+        if not transcriptid.startswith('ENST'):
+            transcriptid = ''
 
         if featuretype == 'interaction':
             continue
 
-        if all_trs is not None and featureid not in all_trs:
+        if effect == 'sequence_feature':
             continue
 
+        if transcriptid and transcriptid not in all_trs:
+            continue
+
+        parsed_annos.append((featuretype, effects, impact, genes, transcriptid, rank, anno_string))
+
+    # transcripts_by_event = defaultdict(list)
+    events = list()
+
+    for anno in parsed_annos:
+        featuretype, effects, impact, genes, transcriptid, rank, anno_string = anno
         ann_tier = 4
         ann_detail = ''
 
         if effects & {"exon_loss_variant"}:
-            effect = "exon_loss"
+            assert len(genes) == 1, anno
+            gene = list(genes)[0]
             if gene in prio_genes:
                 ann_tier = 2
                 ann_detail = "key_gene"
@@ -324,28 +336,34 @@ def process_record(rec, princ_trs=None, all_trs=None):
                 ann_tier = 3
                 ann_detail = "near_key_gene"
 
-        elif impact == 'HIGH' and genes & tsgenes:
-            if genes & prio_genes:
+        elif impact == 'HIGH' and (genes & tsgenes or featuretype == 'chromosome'):
+            if featuretype == 'chromosome':
                 ann_tier = 2
-                ann_detail = 'key_tsgene'
-            else:
-                ann_tier = 3
-                ann_detail = 'tsgene'
-            if is_zero_cn(rec) is False:
+                ann_detail = 'chromosome'
+
+            if genes & tsgenes:
+                if genes & prio_genes:
+                    ann_tier = 2
+                    ann_detail = 'key_tsgene'
+                else:
+                    ann_tier = 3
+                    ann_detail = 'tsgene'
+
+            is_0_cn = is_zero_cn(rec)
+            if is_0_cn is False:
                 ann_tier += 1
-            if is_zero_cn(rec) is True:
+            if is_0_cn is True:
                 ann_detail += '_cn0'
                 ann_tier -= 1
 
         else:
-            featureid = ''
             if genes & prio_genes:
                 ann_tier = 3
                 ann_detail = "key_gene"
             else:
                 ann_tier = 4
                 ann_detail = 'unprioritized'
-                gene = '&'.join(genes&prio_genes)
+                genes = genes&prio_genes
 
             # gene = ''
             # if genes&prio_genes:
@@ -361,22 +379,33 @@ def process_record(rec, princ_trs=None, all_trs=None):
             #     else:
             #         gene += '&'.join(genes-prio_genes)
 
-        transcripts_by_event[(svtype, effect, gene, ann_detail, ann_tier)].append(featureid)
+        if not genes:
+            pass
+
+        events.append([svtype, tuple(effects), tuple(genes), transcriptid, ann_detail, ann_tier, anno_string])
+        # assert len(featureids) == 1
+        # transcripts_by_event[key].append(list(featureids)[0])
+        # assert transcripts_by_event[key]
 
     top_tier = 4
     simple_annos = set()
-    if transcripts_by_event:
-        top_tier = max([k[-1] for k in list(transcripts_by_event.keys())])
+    if events:
+        # top_tier = min([k[-1] for k in list(transcripts_by_event.keys())])
         # subset to top events
-        transcripts_by_event = {k: v for k, v in transcripts_by_event.items() if k[-1] == top_tier}
+        # transcripts_by_event = {k: v for k, v in transcripts_by_event.items() if k[-1] == top_tier}
 
         #TODO: move tanscript principal check here. report all transcripts (princ+alt),
         # but if there are princ exist, and the impact on alt is differrent, report only princ
         # if len(transcripts_by_event) > 1:  # different events
         # EDIT: perhaps no need in this since we collecting events and comma-separating them
 
-        simple_annos = set([(svtype, effect, gene, '&'.join(transcripts), detail, tier)
-                           for (svtype, effect, gene, detail, tier), transcripts in transcripts_by_event.items()])
+        for event in events:
+            svtype, effects, genes, transcriptid, ann_detail, ann_tier, anno_string = event
+            simple_anno = (svtype, '&'.join(effects), '&'.join(genes), transcriptid, ann_detail, ann_tier)
+            simple_annos.add(simple_anno)
+            top_tier = min(ann_tier, top_tier)
+        # simple_annos = set([(svtype, effect, gene, '&'.join(transcripts), detail, tier)
+        #                    for (svtype, effect, gene, detail, tier), transcripts in transcripts_by_event.items()])
 
     # if len(exon_losses_by_tid) > 0:
     #     losses = annotate_exon_loss(exon_losses_by_tid, prio_genes)
