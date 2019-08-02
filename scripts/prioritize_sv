@@ -268,8 +268,7 @@ def process_record(rec, princ_trs, all_trs):
 
         parsed_annos.append((featuretype, effects, impact, genes, transcriptid, rank, anno_string))
 
-    # transcripts_by_event = defaultdict(list)
-    events = list()
+    transcripts_by_event = dict()
 
     for anno in parsed_annos:
         featuretype, effects, impact, genes, transcriptid, rank, anno_string = anno
@@ -382,14 +381,17 @@ def process_record(rec, princ_trs, all_trs):
         if not genes:
             pass
 
-        events.append([svtype, tuple(effects), tuple(genes), transcriptid, ann_detail, ann_tier, anno_string])
+        key = (svtype, tuple(effects), tuple(genes), ann_detail, ann_tier)
         # assert len(featureids) == 1
-        # transcripts_by_event[key].append(list(featureids)[0])
+        if key not in transcripts_by_event:
+            transcripts_by_event[key] = set()
+        if transcriptid:
+            transcripts_by_event[key].add(transcriptid)
         # assert transcripts_by_event[key]
 
     top_tier = 4
     simple_annos = set()
-    if events:
+    if transcripts_by_event:
         # top_tier = min([k[-1] for k in list(transcripts_by_event.keys())])
         # subset to top events
         # transcripts_by_event = {k: v for k, v in transcripts_by_event.items() if k[-1] == top_tier}
@@ -399,9 +401,9 @@ def process_record(rec, princ_trs, all_trs):
         # if len(transcripts_by_event) > 1:  # different events
         # EDIT: perhaps no need in this since we collecting events and comma-separating them
 
-        for event in events:
-            svtype, effects, genes, transcriptid, ann_detail, ann_tier, anno_string = event
-            simple_anno = (svtype, '&'.join(effects), '&'.join(genes), transcriptid, ann_detail, ann_tier)
+        for event, transcripts in transcripts_by_event.items():
+            svtype, effects, genes, ann_detail, ann_tier = event
+            simple_anno = (svtype, '&'.join(effects), '&'.join(genes), '&'.join(transcripts), ann_detail, ann_tier)
             simple_annos.add(simple_anno)
             top_tier = min(ann_tier, top_tier)
         # simple_annos = set([(svtype, effect, gene, '&'.join(transcripts), detail, tier)
