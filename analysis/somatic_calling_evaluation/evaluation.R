@@ -103,16 +103,32 @@ set_tumor_field <- function(.data, field, use_truth = T) {
   #.data = .data %>% filter(POS == 1224077)
   # browser()
   
+  # .data = full_join(
+  #        truth_data,
+  #        called_data,
+  #        by = c('CHROM', 'POS', 'REF', 'ALT'),
+  #        suffix = c('.truth', '.called')
+  #      )
+  # field = "NORMAL_AF"
+
+  # .data[[field]] = .data[[str_c(field, '.called')]]
+  
   if (!field %in% names(.data)) {
-    .data[[field]] = ifelse(
-      str_c(field, '.called') %in% names(.data) & !is.na(.data[[str_c(field, '.called')]]), 
-      .data[[str_c(field, '.called')]],
-      ifelse(
-        str_c(field, '.truth') %in% names(.data) & !is.na(.data[[str_c(field, '.truth')]]), 
-        .data[[str_c(field, '.truth')]], 
-        NA
-      )
-    )
+    if (str_c(field, '.called') %in% names(.data)) {
+      .data[[field]] = .data[[str_c(field, '.called')]]
+    } else if (str_c(field, '.truth') %in% names(.data)) {
+      .data[[field]] = .data[[str_c(field, '.truth')]]
+    }
+    # 
+    # .data[[field]] = ifelse(
+    #   !is.na(.data[[str_c(field, '.called')]]), 
+    #   .data[[str_c(field, '.called')]],
+    #   ifelse(
+    #     !is.na(.data[[str_c(field, '.truth')]]), 
+    #     .data[[str_c(field, '.truth')]], 
+    #     NA
+    #   )
+    # )
   }
   .data
 }
@@ -156,6 +172,8 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
 #  tumor_sample = substitute(tumor_sample)
   
 #  called_vcf = dragen_vcf
+  
+#  called_vcf = dragen100_vcf
 
   called_data = called_vcf %>% vcf2tbl
   
@@ -205,12 +223,6 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
   set_tumor_field("PCGR_TIER") %>%         #  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
   set_tumor_field("TRICKY") %>%        #     = nonna(TRICKY.called    , TRICKY.truth    ),
   set_tumor_field("HS") %>%        #         = nonna(HS.called        , HS.truth        )
-  set_tumor_field("PoN") %>% 
-  mutate(
-    NORMAL_AF = as.double(NORMAL_AF),
-    NORMAL_DP = as.integer(NORMAL_DP),
-    NORMAL_VD = round(NORMAL_AF * NORMAL_DP)
-  ) %>% 
   rename(
     FILT = FILT.called
   ) %>% 
@@ -225,6 +237,15 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
     rescued_filters = list(character())
   ) %>% 
   count_status()
+  
+  if ("NORMAL_AF" %in% names(merged) & "NORMAL_DP" %in% names(merged)) {
+    merged = merged %>% mutate(
+      NORMAL_AF = as.double(NORMAL_AF),
+      NORMAL_DP = as.integer(NORMAL_DP),
+      NORMAL_VD = round(NORMAL_AF * NORMAL_DP)
+    )      
+  }
+  merged
 }
 
 

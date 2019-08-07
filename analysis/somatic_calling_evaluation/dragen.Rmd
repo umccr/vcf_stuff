@@ -11,12 +11,19 @@ source("evaluation.R")
 
 ```{r}
 dir = "/Users/vsaveliev/Analysis/Dragen/"
-truth_vcf   = read.vcf(str_c(dir, "truth.ANNO.vcf.gz"), split.info = T)
-dragen_vcf  = read.vcf(str_c(dir, "dragen.ANNO.SAMPLE.PREP.FILT.vcf.gz"), split.info = T)
-inhouse_vcf = read.vcf(str_c(dir, "inhouse.ANNO.FILT.vcf.gz"), split.info = T)
-strelka_vcf = read.vcf(str_c(dir, "strelka2.ANNO.FILT.vcf.gz"), split.info = T)
+truth_vcf   = read.vcf(str_c(dir, "dragen_all/truth_onesample.hg38.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+dragen100_vcf = read.vcf(str_c(dir, "dragen_all/Colo829_100pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+dragen80_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_80pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+dragen60_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_60pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+dragen40_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_40pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+#inhouse_vcf = read.vcf(str_c(dir, "inhouse.ANNO.FILT.vcf.gz"), split.info = T)
+#strelka_vcf = read.vcf(str_c(dir, "strelka2.ANNO.FILT.vcf.gz"), split.info = T)
 
-dragen_eval  = merge_called_and_truth(dragen_vcf, truth_vcf) %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD))
+dragen100_eval = merge_called_and_truth(dragen100_vcf, truth_vcf) %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 100)
+dragen80_eval  = merge_called_and_truth(dragen80_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 80)
+dragen60_eval  = merge_called_and_truth(dragen60_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 60)
+dragen40_eval  = merge_called_and_truth(dragen40_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 40)
+
 inhouse_eval = merge_called_and_truth(inhouse_vcf, truth_vcf)
 strelka_eval = merge_called_and_truth(strelka_vcf, truth_vcf)
 
@@ -91,7 +98,8 @@ data %>%
   ggplot() + 
   geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
   facet_wrap(~status, nrow = 3, scales = 'free_y') +
-  scale_x_continuous(breaks = seq(0, 1, 0.1))
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  theme_grey(base_size = 16)
 ```
 
 ```{r}
@@ -145,7 +153,7 @@ show_stats(dragen,
            )
 ```
 
-```{r}
+```{r fig.size=3}
 # the best values are <20 and <21
 filt = data %>% reject_if(caller == 'dragen' & TLOD < 21) %>% count_status() %>% filter(!is_tn)
 rbind(data %>% mutate(filtering = 'umccrise'), 
@@ -158,7 +166,7 @@ rbind(data %>% mutate(filtering = 'umccrise'),
   scale_x_continuous(breaks = seq(0, 1, 0.1))
 ```
 
-```{r}
+```{r fig.size=3}
 data %>% 
   filter(VD < 100) %>% 
   ggplot() + 
