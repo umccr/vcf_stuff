@@ -142,10 +142,10 @@ def dragen_filter(rec):
             pass
         else:
             if not rec.is_snp:
-                if tlod < 21:
+                if tlod < 15:
                     add_cyvcf2_filter(rec, 'LowTLOD')
             else:
-                if tlod < 21:
+                if tlod < 15:
                     add_cyvcf2_filter(rec, 'LowTLOD')
     return rec
 
@@ -211,7 +211,7 @@ def _somatic_vcf_filter_hdr(vcf):
     vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
     vcf.add_filter_to_header({'ID': 'AF10',                 'Description': 'TUMOR_AF<10%'})
-    vcf.add_filter_to_header({'ID': 'LowTLOD',              'Description': 'Dragen call with tumor LOD (TLOD field) below 21 for indels, 21 for SNPs (likely false positive)'})
+    vcf.add_filter_to_header({'ID': 'LowTLOD',              'Description': 'Dragen call with tumor LOD (TLOD field) below 15 for indels, 15 for SNPs (likely false positive)'})
     vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
     vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
