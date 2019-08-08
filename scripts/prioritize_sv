@@ -273,7 +273,7 @@ def process_record(rec, princ_trs, all_trs):
     for anno in parsed_annos:
         featuretype, effects, impact, genes, transcriptid, rank, anno_string = anno
         ann_tier = 4
-        ann_detail = ''
+        ann_detail = 'unprioritized'
 
         if effects & {"exon_loss_variant"}:
             assert len(genes) == 1, anno
@@ -283,7 +283,7 @@ def process_record(rec, princ_trs, all_trs):
                 ann_detail = "key_gene"
             else:
                 ann_tier = 3
-                ann_detail = ""
+                ann_detail = "unprioritized"
 
         elif effects & {"gene_fusion"}:
             # This could be 'gene_fusion', but not 'bidirectional_gene_fusion' or 'feature_fusion'
@@ -359,10 +359,10 @@ def process_record(rec, princ_trs, all_trs):
             if genes & prio_genes:
                 ann_tier = 3
                 ann_detail = "key_gene"
+                genes = genes & prio_genes
             else:
                 ann_tier = 4
                 ann_detail = 'unprioritized'
-                genes = genes&prio_genes
 
             # gene = ''
             # if genes&prio_genes:
