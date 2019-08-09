@@ -249,19 +249,22 @@ def process_record(rec, princ_trs, all_trs):
         # T|splice_acceptor_variant&splice_region_variant&intron_variant|HIGH|NCOA1|ENSG00000084676|transcript|ENST00000348332.13|
         #   protein_coding|4/20|c.257-52_257-2delTGGAAATAAGCTCTTTTCAGATATGTGATTTTTTTAAGTTTCTTTATTATA||||||INFO_REALIGN_3_PRIME,
         _, effect, impact, gene, _, featuretype, featureid, _, rank, _, _ = anno_fields[:11]
-        effects = set(effect.split('&'))
-        genes = set(gene.split('&'))  # can be 2 for fusions
-        transcriptids = set([f.split('.')[0] for f in featureid.split('&')])
-        assert len(transcriptids) == 1, anno_string
-        transcriptid = list(transcriptids)[0]
-        if not transcriptid.startswith('ENST'):
-            transcriptid = ''
 
         if featuretype == 'interaction':
             continue
 
         if effect == 'sequence_feature':
             continue
+
+        effects = set(effect.split('&'))
+        genes = set(gene.split('&'))  # can be 2 for fusions
+        transcriptids = set([f.split('.')[0] for f in featureid.split('&')])
+        assert len(transcriptids) == 1, anno_string
+        transcriptid = list(transcriptids)[0]
+        if not transcriptid.startswith('ENST'):
+            if not genes:
+                genes = transcriptids
+            transcriptid = ''
 
         if transcriptid and transcriptid not in all_trs:
             continue
@@ -438,10 +441,10 @@ def process_record(rec, princ_trs, all_trs):
         top_tier = min(ann_tier, top_tier)
 
     if not simple_annos:
-        simple_annos = [(svtype, '', 'unprioritized', '', '', 4)]
+        simple_annos = [(svtype, '', 'no_prio_func_effect', '', 'unprioritized', 4)]
 
     if not annos:
-        simple_annos = [(svtype, '', 'no_func_effect', '', '', 4)]
+        simple_annos = [(svtype, '', 'no_func_effect', '', 'unprioritized', 4)]
 
     rec.INFO['SIMPLE_ANN'] = ','.join(['|'.join(map(str, a)) for a in sorted(simple_annos)])
     rec.INFO['SV_TOP_TIER'] = top_tier
