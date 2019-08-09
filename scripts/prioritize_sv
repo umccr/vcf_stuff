@@ -248,7 +248,7 @@ def process_record(rec, princ_trs, all_trs):
             continue
         # T|splice_acceptor_variant&splice_region_variant&intron_variant|HIGH|NCOA1|ENSG00000084676|transcript|ENST00000348332.13|
         #   protein_coding|4/20|c.257-52_257-2delTGGAAATAAGCTCTTTTCAGATATGTGATTTTTTTAAGTTTCTTTATTATA||||||INFO_REALIGN_3_PRIME,
-        _, effect, impact, gene, _, featuretype, featureid, _, rank, _, _ = anno_fields[:11]
+        svtype, effect, impact, gene, _, featuretype, featureid, _, rank, _, _ = anno_fields[:11]
 
         if featuretype == 'interaction':
             continue
@@ -256,6 +256,7 @@ def process_record(rec, princ_trs, all_trs):
         if effect == 'sequence_feature':
             continue
 
+        svtype = svtype.replace('<', '').replace('>', '')
         effects = set(effect.split('&'))
         genes = set([g for g in gene.split('&') if g])  # can be 2 for fusions
         transcript_ids = set([f.split('.')[0] for f in featureid.split('&') if f])
@@ -266,7 +267,7 @@ def process_record(rec, princ_trs, all_trs):
             if transcr_id.startswith('ENST'):
                 if transcr_id not in all_trs:
                     continue
-            elif 'chromosome' in effect:  # chromosome?
+            elif featuretype == 'chromosome':  # chromosome?
                 if not genes:
                     genes = transcript_ids
                 transcr_id = ''
@@ -391,6 +392,8 @@ def process_record(rec, princ_trs, all_trs):
         if key not in transcripts_by_event:
             transcripts_by_event[key] = set()
         if transcriptid:
+            if rank:
+                transcriptid += '_exon_' + rank
             transcripts_by_event[key].add(transcriptid)
         # assert transcripts_by_event[key]
 
