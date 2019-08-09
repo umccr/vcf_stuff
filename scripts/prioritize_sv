@@ -257,19 +257,21 @@ def process_record(rec, princ_trs, all_trs):
             continue
 
         effects = set(effect.split('&'))
-        genes = set(gene.split('&'))  # can be 2 for fusions
-        transcriptids = set([f.split('.')[0] for f in featureid.split('&')])
-        assert len(transcriptids) == 1, anno_string
-        transcriptid = list(transcriptids)[0]
-        if not transcriptid.startswith('ENST'):
-            if not genes:
-                genes = transcriptids
-            transcriptid = ''
+        genes = set([g for g in gene.split('&') if g])  # can be 2 for fusions
+        transcript_ids = set([f.split('.')[0] for f in featureid.split('&') if f])
+        transcr_id = ''
+        if transcript_ids:
+            assert len(transcript_ids) == 1
+            transcr_id = list(transcript_ids)[0]
+            if transcr_id.startswith('ENST'):
+                if transcr_id not in all_trs:
+                    continue
+            elif 'chromosome' in effect:  # chromosome?
+                if not genes:
+                    genes = transcript_ids
+                transcr_id = ''
 
-        if transcriptid and transcriptid not in all_trs:
-            continue
-
-        parsed_annos.append((featuretype, effects, impact, genes, transcriptid, rank, anno_string))
+        parsed_annos.append((featuretype, effects, impact, genes, transcr_id, rank, anno_string))
 
     transcripts_by_event = dict()
 
@@ -341,7 +343,7 @@ def process_record(rec, princ_trs, all_trs):
         elif impact == 'HIGH' and (genes & tsgenes or featuretype == 'chromosome'):
             if featuretype == 'chromosome':
                 ann_tier = 2
-                ann_detail = 'chromosome'
+                ann_detail = 'chrom_' + '_'.join(genes)
 
             if genes & tsgenes:
                 if genes & prio_genes:
