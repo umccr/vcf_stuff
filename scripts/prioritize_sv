@@ -446,10 +446,10 @@ def process_record(rec, princ_trs, all_trs):
         top_tier = min(ann_tier, top_tier)
 
     if not simple_annos:
-        simple_annos = [(svtype, '', 'no_prio_func_effect', '', 'unprioritized', 4)]
+        simple_annos = [(svtype, 'no_prio_effect', '', '', 'unprioritized', 4)]
 
     if not annos:
-        simple_annos = [(svtype, '', 'no_func_effect', '', 'unprioritized', 4)]
+        simple_annos = [(svtype, 'no_func_effect', '', '', 'unprioritized', 4)]
 
     rec.INFO['SIMPLE_ANN'] = ','.join(['|'.join(map(str, a)) for a in sorted(simple_annos)])
     rec.INFO['SV_TOP_TIER'] = top_tier
