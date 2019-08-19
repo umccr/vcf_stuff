@@ -109,26 +109,30 @@ set_tumor_field <- function(.data, field, use_truth = T) {
   #        by = c('CHROM', 'POS', 'REF', 'ALT'),
   #        suffix = c('.truth', '.called')
   #      )
-  # field = "NORMAL_AF"
-
-  # .data[[field]] = .data[[str_c(field, '.called')]]
+  # .data = tibble(AF.called = c(1.0, NA, 2.0, NA), AF.truth = c(1.1, 3.1, NA, NA))
+   
+  # field = "AF"
   
   if (!field %in% names(.data)) {
-    if (str_c(field, '.called') %in% names(.data)) {
+    if (!str_c(field, '.called') %in% names(.data) && !str_c(field, '.truth') %in% names(.data)) {
+      .data = .data %>% mutate(!!field := NA)
+    } else if (str_c(field, '.called') %in% names(.data) && !str_c(field, '.truth') %in% names(.data)) {
       .data[[field]] = .data[[str_c(field, '.called')]]
-    } else if (str_c(field, '.truth') %in% names(.data)) {
+    } else if (!str_c(field, '.truth') %in% names(.data) && str_c(field, '.truth') %in% names(.data)) {
       .data[[field]] = .data[[str_c(field, '.truth')]]
+    } else {  # defined in both
+      .data = .data %>% mutate(
+        !!field := ifelse(
+          !is.na(.data[[str_c(field, '.called')]]),
+          .data[[str_c(field, '.called')]],
+          ifelse(
+            !is.na(.data[[str_c(field, '.truth')]]),
+            .data[[str_c(field, '.truth')]],
+            NA
+          )
+        )
+      )
     }
-    # 
-    # .data[[field]] = ifelse(
-    #   !is.na(.data[[str_c(field, '.called')]]), 
-    #   .data[[str_c(field, '.called')]],
-    #   ifelse(
-    #     !is.na(.data[[str_c(field, '.truth')]]), 
-    #     .data[[str_c(field, '.truth')]], 
-    #     NA
-    #   )
-    # )
   }
   .data
 }
@@ -171,9 +175,9 @@ vcf2tbl = function(parsed) {
 merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
 #  tumor_sample = substitute(tumor_sample)
   
-#  called_vcf = dragen_vcf
+# called_vcf = vcf
   
-#  called_vcf = dragen100_vcf
+  # called_vcf = dragen100_vcf
 
   called_data = called_vcf %>% vcf2tbl
   
