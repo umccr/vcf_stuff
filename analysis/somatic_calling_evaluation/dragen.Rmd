@@ -8,93 +8,68 @@ knitr::opts_chunk$set(echo = TRUE)
 source("evaluation.R")
 ```
 
+Loading data
 
 ```{r}
 dir = "/Users/vsaveliev/Analysis/Dragen/"
-truth_vcf   = read.vcf(str_c(dir, "dragen_all/truth_onesample.hg38.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-dragen100_vcf = read.vcf(str_c(dir, "dragen_all/Colo829_100pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-dragen80_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_80pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-dragen60_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_60pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-dragen40_vcf  = read.vcf(str_c(dir, "dragen_all/Colo829_40pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-#inhouse_vcf = read.vcf(str_c(dir, "inhouse.ANNO.FILT.vcf.gz"), split.info = T)
-#strelka_vcf = read.vcf(str_c(dir, "strelka2.ANNO.FILT.vcf.gz"), split.info = T)
 
+truth_vcf   = read.vcf(str_c(dir, "hg38/truth_onesample.hg38.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+
+dragen100_vcf = read.vcf(str_c(dir, "hg38/dragen/Colo829_100pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+dragen80_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_80pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
+dragen60_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_60pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
+dragen40_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_40pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
+
+strelka100_vcf = read.vcf(str_c(dir, "hg38/strelka/Colo829_100pc.ANNO.FILT.vcf.gz"), split.info = T)
+strelka80_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_80pc.ANNO.FILT.vcf.gz"),  split.info = T)
+strelka60_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_60pc.ANNO.FILT.vcf.gz"),  split.info = T)
+strelka40_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_40pc.ANNO.FILT.vcf.gz"),  split.info = T)
+ 
 dragen100_eval = merge_called_and_truth(dragen100_vcf, truth_vcf) %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 100)
 dragen80_eval  = merge_called_and_truth(dragen80_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 80)
 dragen60_eval  = merge_called_and_truth(dragen60_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 60)
 dragen40_eval  = merge_called_and_truth(dragen40_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 40)
 
-inhouse_eval = merge_called_and_truth(inhouse_vcf, truth_vcf)
-strelka_eval = merge_called_and_truth(strelka_vcf, truth_vcf)
+bwa = tibble()
+for (p in c(40, 60, 80, 100)) {
+  for (c in c("strelka2", "ensemble")) {
+    vcf = read.vcf(str_c(dir, "hg38/bcbio_bwa/Colo829_", as.character(p), "pc_", c, "_bwa.vcf.gz"), split.info = T)
+    loaded = merge_called_and_truth(vcf, truth_vcf) %>% mutate(caller = str_c("bwa_", c), purity = p)
+    bwa = bind_rows(bwa, loaded)
+  }
+}
 
-#truth_vcf$vcf %>% names
-#truth   = truth_vcf   %>% vcf2tbl %>% rename(TRUTH_DP = DP)
-#dragen  = dragen_vcf  %>% vcf2tbl 
-#inhouse = inhouse_vcf %>% vcf2tbl
+strelka = bind_rows(
+  merge_called_and_truth(strelka100_vcf, truth_vcf) %>% mutate(purity = 100),
+  merge_called_and_truth(strelka80_vcf, truth_vcf)  %>% mutate(purity = 80),
+  merge_called_and_truth(strelka60_vcf, truth_vcf)  %>% mutate(purity = 60),
+  merge_called_and_truth(strelka40_vcf, truth_vcf)  %>% mutate(purity = 40)
+) %>% 
+  mutate(caller = "dragen_strelka")
+
+dragen = bind_rows(
+  dragen100_eval %>% mutate(purity = 100),
+  dragen80_eval  %>% mutate(purity = 80),
+  dragen60_eval  %>% mutate(purity = 60),
+  dragen40_eval  %>% mutate(purity = 40)
+) %>% 
+  mutate(caller = "dragen_dragen") %>% 
+  rescue_filt("LowTLOD")
+
+# bwa %>% filter(caller == "bwa_ensemble") %>% filter(is_fn) %>% count(is.na(AF))
+data = bind_rows(
+  strelka,
+  dragen, 
+  bwa
+)
 ```
 
 ```{r}
-
-# extract_fmt_field = function(format, sample_data, field) {
-
-# dragen_afs = extract_fmt_field(dragen_vcf$vcf$FORMAT, dragen_vcf$vcf$Carpten_Colo829_B_VCCC_tumor, 'AF')
-# dragen_afs_df = tibble(AF=dragen_afs) 
-
-# ggplot() + 
-#   geom_density(data = dragen_afs_df, aes(AF), color = 'blue')
-# 
-# ggplot() + 
-#   geom_density(data = dragen_vcf$vcf, aes(TUMOR_AF), color = 'red') + 
-#   geom_density(data = dragen_afs_df, aes(AF), color = 'blue')
-
-dragen %>% count(FILT)  # %>% select(AF)
-dragen %>% count(is_passed)  # %>% select(AF)
-
-dragen_eval %>% filter(is_fn) %>% filter(is.na(vartype)) %>% select(CHROM, POS, REF, ALT, FILT, FILT.truth, status, vartype)  # count(status, vartype)
-
-ensemble = inhouse_eval
-strelka2 = strelka_eval
-dragen = dragen_eval
-
-ensemble = ensemble %>% mutate(vartype = get_type(REF, ALT))
-strelka2 = strelka2 %>% mutate(vartype = get_type(REF, ALT))
-dragen = dragen %>% mutate(vartype = get_type(REF, ALT))
-
-show_stats(ensemble, strelka2, dragen, dragen %>% reject_if(TLOD < 21) %>% count_status) %>% filter(metric == 'F2' | metric == 'TP' | metric == 'FP' | metric == 'FN')
-```
-
-```{r}
-truth %>% filter(POS == 1224077) %>% names
-dragen_eval %>% filter(POS == 1224077) %>% select(AF, AF.truth, status, FILT)
-```
-
-```{r}
-truth %>% count(is_passed)
-dragen_eval %>% count(status)
-dragen_eval %>% 
-  filter(is_fn) %>% 
-  ggplot() +
-  geom_violin(aes(x = factor(vartype), y = AF), adjust = 1) +
-  geom_jitter(aes(x = factor(vartype), y = AF))
-
-dragen_eval %>% 
-  filter(is_fn) %>% 
-  filter(AF > 0.66 & AF < 0.68) %>% 
-  select(AF, everything())
-```
-
-```{r}
-data = rbind.fill(
-    dragen_eval %>% mutate(caller = 'dragen'),
-    inhouse_eval %>% mutate(caller = 'ensemble'),
-    strelka_eval %>% mutate(caller = 'strelka2')
-  ) %>% 
-  filter(is_passed | is_true) %>% 
-  filter(!is.na(vartype))
-```
-
-```{r}
+# mutate(caller = str_c(caller, '_60pc')) %>% 
 data %>% 
+  filter(purity == 60) %>% 
+  filter(is_passed | is_true) %>% 
+  filter(!is.na(vartype)) %>% 
   ggplot() + 
   geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
   facet_wrap(~status, nrow = 3, scales = 'free_y') +
@@ -103,31 +78,137 @@ data %>%
 ```
 
 ```{r}
-dragen %>% 
-  filter(TLOD < 50) %>% 
-  ggplot() + 
-  geom_freqpoly(aes(TLOD, stat(count), color = status), binwidth=5)
-```
-
-```{r}
+# mutate(caller = str_c(caller, '_60pc')) %>% 
 data %>% 
-  filter(TLOD < 50) %>% 
+  filter(purity == 60) %>% 
+  filter(is_passed | is_true) %>% 
+  filter(!is.na(vartype)) %>% 
   ggplot() + 
-  geom_freqpoly(aes(TLOD, stat(count), color = status), binwidth=5)
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_wrap(~status, nrow = 3, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  theme_grey(base_size = 16)
 ```
 
-```{r}
+```{r fig.width=7}
+bind_rows(
+  dragen,
+  dragen %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_tlod21'),
+  dragen %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_tlod15')
+) %>% 
+filter(is_passed | is_true) %>% 
+filter(!is.na(vartype)) %>% 
+# filter(purity == 60) %>% 
+ggplot() + 
+geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+facet_wrap(status~purity, ncol=4, scales = 'free_y') +
+scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+TP charts look suspiciously even for different TLOD thresholds. Checking if it's not a bug by trying few more extreme thresholds. All good:
+
+```{r fix.width=15}
+bind_rows(
+  dragen,
+  dragen %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_tlod21'),
+  dragen %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_tlod15'),
+  dragen %>% reject_if(TLOD < 30) %>% mutate(caller = 'dragen_tlod30'),
+  dragen %>% reject_if(TLOD < 100) %>% mutate(caller = 'dragen_tlod100'),
+  dragen %>% reject_if(TLOD < 200) %>% mutate(caller = 'dragen_tlod200')
+  ) %>% 
+  filter(is_tp) %>% 
+  filter(purity == 60) %>%
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+Adding Strelka2. Big piles of FP on low frequency. Perhaps it has to do with Strelka2 not optimized to Dragen alignments. Should try with BWA.
+
+Also wondering about this peak for 100% purity at 100% AF. Is it a problem with T/N calling?
+
+Adding now BWA/ensemble and BWA/strelka.
+
+```{r fig.width=7}
+with_tlods = bind_rows(
+  dragen %>% mutate(caller = "dragen_dragen"),
+  dragen %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_dragen_tlod21'),
+  dragen %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_dragen_tlod15'),
+  strelka %>% mutate(caller = "dragen_strelka2"),
+  data %>% filter(caller == "bwa_strelka2"),
+  data %>% filter(caller == "bwa_ensemble")
+) 
+
+with_tlods %>% filter(caller == "bwa_ensemble") %>% filter(is_fn) %>% count(AF)
+
+with_tlods %>% 
+  mutate(
+    caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen", "dragen_dragen_tlod15", "dragen_dragen_tlod21", "dragen_strelka2", "bwa_strelka2"))
+  ) %>% 
+  filter(is_passed | is_true) %>% 
+  # filter(purity == 60) %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_wrap(status ~ purity, ncol=4, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+Clearly dragen/dragen and bwa/ensemble are the best combinations. All other mixtures underperform. On on hand, this is expected; on the other, PURPLE and GRIDSS might underperform too running from Dragen alignments.
+
+Now comparing bwa/ensemble vs. dragen/dragen specifically.
+
+```{r fig.width=7}
+dragen_bwa = bind_rows(
+  dragen %>% mutate(caller = "dragen_dragen"),
+  dragen %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_dragen_tlod21'),
+  dragen %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_dragen_tlod15'),
+  data %>% filter(caller == "bwa_ensemble")
+)
+dragen_bwa %>% 
+  filter(is_passed | is_true) %>% 
+  # filter(purity == 60) %>% 
+  # filter(caller == "bwa_ensemble") %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+  facet_wrap(status~purity, ncol=4, scales = 'free_y') +
+  scale_x_continuous(breaks = seq(0, 1, 0.1))
+```
+
+Exploring different TLOD thresholds. The threshold around 14 is optimal for purities 60-100, and no filtering is optimal for 40, however 14 looks good anyway.
+
+```{r, fig.width=15}
 tlods = c(10:30)
+purities = dragen %>% distinct(purity)
 bytlods = tlods %>% map_df(function(tlod) {
-  dragen %>% mutate(is_passed = is_called & is_passed & (is.na(TLOD) | TLOD >= tlod)) %>% summarize_stats() %>% mutate(MinTLOD = tlod)
+    # tlod = 5
+    dragen %>% 
+      mutate(is_passed = is_called & is_passed & (is.na(TLOD) | TLOD >= tlod)) %>% 
+      count_status() %>% 
+      group_by(purity, vartype) %>%
+      summarise(
+        called = sum(is_called),
+        passed = sum(is_passed),
+        true = sum(is_true),
+        TP = sum(is_tp),
+        FP = sum(is_fp),
+        FN = sum(is_fn),
+        recall = TP / true,
+        prec = TP / passed,
+        F2 = f_measure(2, prec, recall)
+      ) %>% 
+      mutate(MinTLOD = tlod)
 })
 bytlods %>% 
-  select(MinTLOD, vartype, F2, prec, recall) %>% 
+  filter(!is.na(vartype)) %>% 
+  select(MinTLOD, purity, vartype, F2, prec, recall) %>% 
   gather(key = "metric", value = "value", prec, F2, recall) %>% 
   ggplot() +
   geom_line(aes(x = MinTLOD, y = value, color = metric)) + 
-  facet_wrap(~vartype, scales = 'free')
+  # facet_wrap(~vartype, scales = 'free')
+  facet_wrap(vartype~purity, ncol=4, scales = 'free_y')
 ```
+
+Also exploring NLODs:
 
 ```{r}
 nlods = c(0:20)
