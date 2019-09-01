@@ -50,6 +50,8 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
         hpc.genomes_dir = genomes_dir
     get_ref(genome, conf, truth, ref_fasta)
 
+    print(conf)
+
     run_snakemake(join(package_path(), "vcf.smk"), conf, jobs, output_dir, unlock=unlock)
 
     if output_dir:
