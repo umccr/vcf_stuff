@@ -24,10 +24,16 @@ library(tidyr)
 ## Parsing
 
 get_type <- function(ref, alt) {
-  var_types = c("SNP", "Indel", "MNP")
-  vt = ifelse(str_length(ref) == str_length(alt), ifelse(str_length(ref) == 1, "SNP", "MNP"), "Indel")
-  factor(vt, var_types, ordered = T)
+  # var_types = c("SNP", "Indel", "MNP")
+  # vt = ifelse(str_length(ref) == str_length(alt), ifelse(str_length(ref) == 1, "SNP", "MNP"), "Indel")
+  var_types = c("SNP", "Indel")
+  vt = ifelse(str_length(ref) == str_length(alt) & str_length(ref) == 1, "SNP", "Indel")
+  factor(vt, levels = var_types, ordered = T)
 }
+# tibble(ref = c('C', 'A'), alt = c('A', 'AC')) %>% 
+#   mutate(vartype = get_type(ref, alt)) %>% 
+#   group_by(vartype) %>% 
+#   summarize(count = n())
 
 count_status <- function(.data) {
   .data %>% mutate(
@@ -227,6 +233,9 @@ merge_called_and_truth = function(called_vcf, truth_vcf=NULL) {
   set_tumor_field("PCGR_TIER") %>%         #  = nonna(PCGR_TIER.called , PCGR_TIER.truth ),
   set_tumor_field("TRICKY") %>%        #     = nonna(TRICKY.called    , TRICKY.truth    ),
   set_tumor_field("HS") %>%        #         = nonna(HS.called        , HS.truth        )
+  mutate(
+    vartype = get_type(REF, ALT)
+  ) %>% 
   rename(
     FILT = FILT.called
   ) %>% 
