@@ -13,10 +13,10 @@ build:
 requirements:
   build:
     - python >=3.7
-    - ngs_utils >=2.3.16
+    - ngs_utils >=2.5.6
   run:
     - python >=3.7
-    - ngs_utils >=2.3.16
+    - ngs_utils >=2.5.6
     - bcftools
     - tabix
     - bedops
@@ -31,7 +31,7 @@ requirements:
     - pandas
     - ngs_utils
     - nose
-    - bed_annotation >=1.0.8
+    - bed_annotation >=1.1.4
     - hpc_utils >=1.1.5
     - gsort  # https://github.com/brentp/gsort
     - pyensembl
