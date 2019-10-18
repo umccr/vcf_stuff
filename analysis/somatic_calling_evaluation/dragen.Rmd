@@ -48,17 +48,17 @@ bwa = tibble()
 dragen = tibble()
 dragen_strelka = tibble()
 for (p in c(20, 40, 60, 80, 100)) {
-  # for (c in c("strelka2", "ensemble")) {
+  # for (c in c("ensemble")) {
   #   vcf = read.vcf(str_c(dir, "hg38/bcbio_bwa/Colo829_", as.character(p), "pc_", c, "_bwa.vcf.gz"), split.info = T)
   #   loaded = merge_called_and_truth(vcf, truth_vcf) %>% mutate(caller = str_c("bwa_", c), purity = p)
   #   bwa = bind_rows(bwa, loaded)
   # }
   
   vcf = read.vcf(str_c(dir, "hg38/dragen/Colo829_", as.character(p), "pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-  loaded = 
+  loaded =
     merge_called_and_truth(vcf, truth_vcf) %>%
-    mutate(TLOD = as.double(TLOD), 
-           NLOD = as.double(NLOD), 
+    mutate(TLOD = as.double(TLOD),
+           NLOD = as.double(NLOD),
            purity = p,
            caller = "dragen_dragen")
   dragen = bind_rows(dragen, loaded)
@@ -202,7 +202,7 @@ tp = toplot %>% filter(is_tp)
 
 ```{r fig.width = 8}
 unfiltered_ensemble = bind_rows(
-  # with_tlods_unfiltered %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble'), 
+  with_tlods_unfiltered %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble'),
   # with_tlods_unfiltered %>% filter(caller == "bwa_strelka2") %>% mutate(caller = 'bcbio: bwa+strelka2'),
   with_tlods_unfiltered %>% filter(caller == "dragen_dragen") %>% mutate(caller = 'dragen'),
   with_tlods %>% filter(caller == "dragen_dragen") %>% mutate(caller = "dragen, filtered with umccrise"),
@@ -210,8 +210,6 @@ unfiltered_ensemble = bind_rows(
   with_tlods %>% filter(caller == "dragen_dragen_tlod15") %>% mutate(caller = "dragen, filtered with umccrise + tlod>=15")
   # with_tlods %>% filter(caller == "dragen_dragen_tlod21") %>% mutate(caller = "dragen, filtered with umccrise + tlod>=21")
 )
-
-
 
 toplot = unfiltered_ensemble %>% 
   mutate(caller = factor(caller, levels = c("bcbio: bwa+ensemble", 
@@ -221,7 +219,7 @@ toplot = unfiltered_ensemble %>%
                                             "dragen, filtered with umccrise + tlod>=15",
                                             "bcbio: bwa+strelka2"
                                             ))) %>% 
-  filter(is_passed | is_true)  
+  filter(is_passed | is_true)
   # filter(AF <= 0.9, AF >= 0.1)
   # filter(caller == "dragen+strelka2" | caller == "bcbio: bwa+strelka2")
 
