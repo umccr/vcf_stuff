@@ -8,7 +8,7 @@ VCF Stuff
 ## Installation
 
 ```
-conda install -c vladsaveliev -conda-forge -c bioconda vcf_utils
+conda install -c vladsaveliev -c conda-forge -c bioconda vcf_utils
 ```
 
 If conda is not installed on your computer, preliminary run before the above:
