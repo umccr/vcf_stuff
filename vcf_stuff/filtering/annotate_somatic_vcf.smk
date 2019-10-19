@@ -31,7 +31,7 @@ if PCGR_ENV_PATH:
     conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
 
 if config.get('genomes_dir'):
-    hpc.genomes_dir = config.get('genomes_dir')
+    hpc.set_genomes_dir(config.get('genomes_dir'))
 
 
 rule all:

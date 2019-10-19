@@ -47,7 +47,7 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
         conf['sample_regions'] = abspath(regions)
 
     if genomes_dir:
-        hpc.genomes_dir = genomes_dir
+        hpc.set_genomes_dir(genomes_dir)
     get_ref(genome, conf, truth, ref_fasta)
 
     print(conf)

@@ -15,7 +15,7 @@ from hpc_utils import hpc
 
 
 if 'genomes_dir' in config:
-    hpc.genomes_dir = config.get('genomes_dir')
+    hpc.set_genomes_dir(config.get('genomes_dir'))
 
 
 bams_tsv = config.get('bams_tsv')
