@@ -19,72 +19,128 @@ Dragen was run using the following arguments:
 Variants produced by both pipelines were additionally filtered using the [umccrise approach](https://github.com/umccr/umccrise/blob/master/workflow.md#somatic) (excluding SAGE part).
 
 
-
 TODO: try comparing before filtering
 TODO: try truth before filtering
 
 
 ```{r}
+load_colo = F
+load_seqcii = T
+
+load_dragen = T
+load_bcbio = T
+load_dragen_strelka = F
+load_bcbio_strelka = F
 dir = "/Users/vsaveliev/Analysis/Dragen/"
+```
 
-truth_vcf = read.vcf(str_c(dir, "hg38/truth_onesample.hg38.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+Load COLO829
 
-# dragen100_vcf = read.vcf(str_c(dir, "hg38/dragen/Colo829_100pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-# dragen80_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_80pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
-# dragen60_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_60pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
-# dragen40_vcf  = read.vcf(str_c(dir, "hg38/dragen/Colo829_40pc.PREP.NOALT.ANNO.FILT.vcf.gz"),  split.info = T)
-# 
-# strelka100_vcf = read.vcf(str_c(dir, "hg38/strelka/Colo829_100pc.ANNO.FILT.vcf.gz"), split.info = T)
-# strelka80_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_80pc.ANNO.FILT.vcf.gz"),  split.info = T)
-# strelka60_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_60pc.ANNO.FILT.vcf.gz"),  split.info = T)
-# strelka40_vcf  = read.vcf(str_c(dir, "hg38/strelka/Colo829_40pc.ANNO.FILT.vcf.gz"),  split.info = T)
-#  
-# dragen100_eval = merge_called_and_truth(dragen100_vcf, truth_vcf) %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 100)
-# dragen80_eval  = merge_called_and_truth(dragen80_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 80)
-# dragen60_eval  = merge_called_and_truth(dragen60_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 60)
-# dragen40_eval  = merge_called_and_truth(dragen40_vcf, truth_vcf)  %>% mutate(TLOD = as.double(TLOD), NLOD = as.double(NLOD), purity = 40)
-
-bwa = tibble()
-dragen = tibble()
-dragen_strelka = tibble()
-for (p in c(20, 40, 60, 80, 100)) {
-  # for (c in c("ensemble")) {
-  #   vcf = read.vcf(str_c(dir, "hg38/bcbio_bwa/Colo829_", as.character(p), "pc_", c, "_bwa.vcf.gz"), split.info = T)
-  #   loaded = merge_called_and_truth(vcf, truth_vcf) %>% mutate(caller = str_c("bwa_", c), purity = p)
-  #   bwa = bind_rows(bwa, loaded)
-  # }
+```{r}
+if (load_colo) {
+  truth_vcf  = read.vcf(str_c(dir, "colo/truth_onesample.hg38.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
   
-  vcf = read.vcf(str_c(dir, "hg38/dragen/Colo829_", as.character(p), "pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
-  loaded =
-    merge_called_and_truth(vcf, truth_vcf) %>%
-    mutate(TLOD = as.double(TLOD),
-           NLOD = as.double(NLOD),
-           purity = p,
-           caller = "dragen_dragen")
-  dragen = bind_rows(dragen, loaded)
+  bcbio = tibble()
+  dragen = tibble()
+  dragen_strelka = tibble()
+  for (p in c(20, 40, 60, 80, 100)) {
+    # bcbio 
+    bcbio_callers = c()
+    if (load_bcbio)
+      bcbio_callers = c(bcbio_callers, "ensemble")
+    if (load_bcbio_strelka) 
+      bcbio_callers = c(bcbio_callers, "strelka2")
+    for (c in bcbio_callers) {
+      vcf = read.vcf(str_c(dir, "colo/bcbio_bwa/Colo829_", as.character(p), "pc_", c, "_bwa.vcf.gz"), split.info = T)
+      loaded = merge_called_and_truth(vcf, truth_vcf) %>% mutate(caller = str_c("bwa_", c), purity = p)
+      bcbio = bind_rows(bcbio, loaded)
+    }
+    
+    # dragen  
+    if (load_dragen) {
+      vcf = read.vcf(str_c(dir, "colo/dragen/Colo829_", as.character(p), "pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+      loaded =
+        merge_called_and_truth(vcf, truth_vcf) %>%
+        mutate(TLOD = as.double(TLOD),
+               NLOD = as.double(NLOD),
+               purity = p,
+               caller = "dragen_dragen")
+      dragen = bind_rows(dragen, loaded)
+    }
+    
+    # strelka dragen
+    if (load_dragen_strelka) {
+      vcf = read.vcf(str_c(dir, "colo/strelka/Colo829_", as.character(p), "pc.ANNO.FILT.vcf.gz"), split.info = T)
+      loaded = merge_called_and_truth(vcf, truth_vcf) %>% 
+        mutate(purity = p,
+               caller = "dragen_strelka")
+      dragen_strelka = bind_rows(dragen_strelka, loaded)
+    }
+  }
   
-  # vcf = read.vcf(str_c(dir, "hg38/strelka/Colo829_", as.character(p), "pc.ANNO.FILT.vcf.gz"), split.info = T)
-  # loaded = merge_called_and_truth(vcf, truth_vcf) %>% 
-  #   mutate(purity = p,
-  #          caller = "dragen_strelka")
-  # dragen_strelka = bind_rows(dragen_strelka, loaded)
+  colo829 = bind_rows(
+      dragen_strelka,
+      dragen,
+      bcbio
+    ) %>% mutate(is_true = is_true & FILT.truth == 'PASS') %>% count_status()    
 }
+```
 
-# dragen = bind_rows(
-#   dragen100_eval %>% mutate(purity = 100),
-#   dragen80_eval  %>% mutate(purity = 80),
-#   dragen60_eval  %>% mutate(purity = 60),
-#   dragen40_eval  %>% mutate(purity = 40)
-# ) %>% 
-#   mutate(caller = "dragen_dragen") %>% 
-#   rescue_filt("LowTLOD")
-# 
-# # bwa %>% filter(caller == "bwa_ensemble") %>% filter(is_fn) %>% count(is.na(AF))
-data = bind_rows(
-    dragen_strelka,
-    dragen,
-    bwa
-  ) %>% mutate(is_true = is_true & FILT.truth == 'PASS') %>% count_status()    
+Reading SEQCII
+
+```{r}
+if (load_seqcii) {
+  truth_vcf = read.vcf(str_c(dir, "seqcii/truth_SNV_plus_INDEL.ANNO.vcf.gz"), split.info = T) 
+  # resque HighConf in FILTER
+  truth_vcf$vcf = truth_vcf$vcf %>% mutate(OriginalFilter = FILTER) %>% filter(str_detect(FILTER, "AllPASS;HighConf")) %>% mutate(FILTER = 'PASS')
+  truth_vcf$vcf = truth_vcf$vcf %>% mutate(TUMOR_AF = TVAF)
+  truth_vcf$vcf = truth_vcf$vcf %>% mutate(NORMAL_AF = NVAF)
+  
+  bcbio = tibble()
+  dragen = tibble()
+  dragen_strelka = tibble()
+  
+  for (p in c(20, 50, 75, 100)) {
+    # bcbio
+    bcbio_callers = c()
+    if (load_bcbio)
+      bcbio_callers = c(bcbio_callers, "ensemble")
+    if (load_bcbio_strelka) 
+      bcbio_callers = c(bcbio_callers, "strelka2")
+    for (c in bcbio_callers) {
+      vcf = read.vcf(str_c(dir, "seqcii/bcbio/SEQCII_", as.character(p), "pc.vcf.gz"), split.info = T)
+      loaded = merge_called_and_truth(vcf, truth_vcf) %>% mutate(caller = str_c("bwa_", c), purity = p)
+      bcbio = bind_rows(bcbio, loaded)
+    } 
+    
+    # dragen  
+    if (load_dragen) {
+      vcf = read.vcf(str_c(dir, "seqcII/dragen/SEQCII_", as.character(p), "pc.PREP.NOALT.ANNO.FILT.vcf.gz"), split.info = T)
+      loaded =
+        merge_called_and_truth(vcf, truth_vcf) %>%
+        mutate(TLOD = as.double(TLOD),
+               NLOD = as.double(NLOD),
+               purity = p,
+               caller = "dragen_dragen")
+      dragen = bind_rows(dragen, loaded)
+    }
+    
+    # strelka dragen
+    if (load_dragen_strelka) {
+      vcf = read.vcf(str_c(dir, "seqcII/dragen_strelka/SEQCII_", as.character(p), "pc.ANNO.FILT.vcf.gz"), split.info = T)
+      loaded = merge_called_and_truth(vcf, truth_vcf) %>% 
+        mutate(purity = p,
+               caller = "dragen_strelka")
+      dragen_strelka = bind_rows(dragen_strelka, loaded)
+    }
+  }
+  
+  seqcii = bind_rows(
+      dragen_strelka,
+      dragen,
+      bcbio
+    ) %>% mutate(is_true = is_true & FILT.truth == 'PASS') %>% count_status()    
+}
 ```
 
 Comparing filtered/unfiltered
@@ -112,6 +168,14 @@ Comparing filtered/unfiltered
 #                 data_unfiltered %>% mutate(filtering = "unfiltered_calls"))
 ```
 
+```{r}
+if (load_seqcii) {
+  data = seqcii
+} else if (load_colo) {
+  data = colo829
+}
+```
+
 ```{r fig.width = 15}
 # all = all %>% filter(purity == 60) %>% filter(is_passed | is_true) %>% filter(!is.na(vartype))
 # d1 = all %>% filter(filtering == 'default') 
@@ -125,57 +189,85 @@ Comparing filtered/unfiltered
 ## unfiltered with tlods
 data_unfiltered = data %>% 
   mutate(
+    umccrise_passed = is_called,
+    is_passed = umccrise_passed
+  ) %>%
+  count_status()
+
+data_af10 = data %>% 
+  mutate(
     umccrise_passed = is_called & AF >= 0.1,
     is_passed = umccrise_passed
   ) %>%
   count_status()
 
-dragen_unfiltered = data_unfiltered %>% filter(caller == "dragen_dragen")
-
-with_tlods_unfiltered = bind_rows(
-  dragen_unfiltered,
-  dragen_unfiltered %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_dragen_tlod21'),
-  dragen_unfiltered %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_dragen_tlod15'),
-  data_unfiltered %>% filter(caller == "bwa_ensemble" | caller == "bwa_strelka2")
-)
-
-##################
-## filtered with tlods
-dragen = data %>% filter(caller == "dragen_dragen")
-dragen = dragen %>% rescue_filt("LowTLOD")
-with_tlods = bind_rows(
-  dragen,
-  dragen %>% reject_if(TLOD < 21) %>% mutate(caller = 'dragen_dragen_tlod21'),
-  dragen %>% reject_if(TLOD < 15) %>% mutate(caller = 'dragen_dragen_tlod15'),
-  data %>% filter(caller == "bwa_ensemble" | caller == "bwa_strelka2")
-)
-
 #################
 ## compare filtered vs unfiltered
 filtered_vs_unfiltered = bind_rows(
-  with_tlods %>% mutate(filtering = "umccrise"), 
-  with_tlods_unfiltered %>% mutate(filtering = "AF>10%")
+  data %>% mutate(filtering = "umccrise"), 
+  data_unfiltered %>% mutate(filtering = "no"), 
+  data_af10 %>% mutate(filtering = "AF>10%")
 )
 
-filtered_vs_unfiltered %>% 
-  filter(purity == 60) %>% 
-  mutate(caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen", "dragen_dragen_tlod15", "dragen_dragen_tlod21"))) %>% 
-  filter(is_passed | is_true) %>% 
-  ggplot() + 
-  geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
-  facet_wrap(status ~ filtering, ncol = 2, scales = 'free_y') +
-  scale_x_continuous(breaks = seq(0, 1, 0.1)) 
-
-with_tlods %>% filter(caller == "bwa_ensemble") %>% count(is_passed)
-with_tlods_unfiltered %>% filter(caller == "bwa_ensemble") %>% count(is_passed)
+# filtered_vs_unfiltered %>% 
+#   filter(purity == 60) %>% 
+#   mutate(caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen"))) %>% 
+#   filter(is_passed | is_true) %>% 
+#   ggplot() + 
+#   geom_freqpoly(aes(AF, stat(count), color = caller), binwidth=0.01) +
+#   facet_wrap(~ status, ncol = 2, scales = 'free_y') +
+#   scale_x_continuous(breaks = seq(0, 1, 0.1)) 
 ```
 
-```{r fig.width = 15}
-toplot = filtered_vs_unfiltered %>% 
-  mutate(caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen", "dragen_dragen_tlod15", "dragen_dragen_tlod21"))) %>% 
-  # filter(caller == "bwa_ensemble") %>% 
+Summarize filtering reasons for false negatives
+
+```{r fig.width = 8}
+bcbio %>% filter(caller == "bwa_ensemble", purity == 20) %>% select(FILT) %>% mutate(filters = str_split(FILT, ';')) %>% mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>% count(filt, sort = T)
+
+bcbio %>% filter(caller == "bwa_ensemble", purity == 20) %>% filter(is_fn) %>% select(FILT) %>% mutate(filters = str_split(FILT, ';')) %>% mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>% count(filt, sort = T)
+```
+
+
+```{r fig.width = 8}
+toplot_09 = filtered_vs_unfiltered %>% 
+  filter(caller == "bwa_ensemble" | caller == "dragen_dragen") %>%
+  mutate(caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen"))) %>% 
   filter(is_passed | is_true) %>% 
-  filter(AF <= 0.9, AF >= 0.1)
+  filter(AF >= 0.1 & AF <= 0.9)
+
+fn = toplot_09 %>% filter(is_fn)
+fp = toplot_09 %>% filter(is_fp)
+tp = toplot_09 %>% filter(is_tp)
+(fn %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01, alpha = 0.9) +
+  facet_grid(~ purity) +
+  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) +
+  ylab('False negatives')
+) / 
+(fp %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01, alpha = 0.9) +
+  facet_grid(~ purity) +
+  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) +
+  ylab('False positives')
+) / 
+(tp %>% 
+  ggplot() + 
+  geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01, alpha = 0.9) +
+  facet_grid(~ purity) +
+  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) +
+  ylab('True positives')
+)
+```
+
+Inlcudeing all AF range: from 0% to 100%
+
+```{r fig.width = 8}
+toplot = filtered_vs_unfiltered %>% 
+  filter(caller != "dragen_dragen_tlod15") %>%
+  mutate(caller = factor(caller, levels = c("bwa_ensemble", "dragen_dragen"))) %>% 
+  filter(is_passed | is_true)
 
 fn = toplot %>% filter(is_fn)
 fp = toplot %>% filter(is_fp)
@@ -184,40 +276,47 @@ tp = toplot %>% filter(is_tp)
   ggplot() + 
   geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01) +
   facet_grid(~ purity) +
-  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) 
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  ylab('False negatives')
 ) / 
 (fp %>% 
   ggplot() + 
   geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01) +
   facet_grid(~ purity) +
-  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) 
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  ylab('False positives')
 ) / 
 (tp %>% 
   ggplot() + 
   geom_freqpoly(aes(AF, stat(count), linetype = filtering, color = caller), binwidth = 0.01) +
   facet_grid(~ purity) +
-  scale_x_continuous(breaks = seq(0.1, 0.9, 0.1)) 
+  scale_x_continuous(breaks = seq(0, 1, 0.1)) +
+  ylab('True positives')
 )
 ```
 
+Separately for SNPs and Indels:
+
 ```{r fig.width = 8}
-unfiltered_ensemble = bind_rows(
-  with_tlods_unfiltered %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble'),
+toplot = bind_rows(
+  data_unfiltered %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble'),
+  data %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble, filters: PoN, gnomAD & AF>10%'),
   # with_tlods_unfiltered %>% filter(caller == "bwa_strelka2") %>% mutate(caller = 'bcbio: bwa+strelka2'),
-  with_tlods_unfiltered %>% filter(caller == "dragen_dragen") %>% mutate(caller = 'dragen'),
-  with_tlods %>% filter(caller == "dragen_dragen") %>% mutate(caller = "dragen, filtered with umccrise"),
+  data_unfiltered %>% filter(caller == "dragen_dragen") %>% mutate(caller = 'dragen'),
+  data %>% filter(caller == "dragen_dragen") %>% mutate(caller = "dragen, filters: PoN, gnomAD & AF>10%")
   # data_unfiltered %>% filter(caller == "dragen_strelka") %>% mutate(caller = "dragen+strelka2"),
-  with_tlods %>% filter(caller == "dragen_dragen_tlod15") %>% mutate(caller = "dragen, filtered with umccrise + tlod>=15")
+  # with_tlods %>% filter(caller == "dragen_dragen_tlod15") %>% mutate(caller = "dragen, filtered with umccrise + tlod>=15")
   # with_tlods %>% filter(caller == "dragen_dragen_tlod21") %>% mutate(caller = "dragen, filtered with umccrise + tlod>=21")
 )
 
-toplot = unfiltered_ensemble %>% 
+toplot = toplot %>% 
   mutate(caller = factor(caller, levels = c("bcbio: bwa+ensemble", 
+                                            "bcbio: bwa+ensemble, filters: PoN, gnomAD & AF>10%",
                                             "dragen", 
-                                            "dragen, filtered with umccrise", 
-                                            "dragen+strelka2", 
-                                            "dragen, filtered with umccrise + tlod>=15",
-                                            "bcbio: bwa+strelka2"
+                                            "dragen, filters: PoN, gnomAD & AF>10%"
+                                            # "dragen+strelka2", 
+                                            # "dragen, filtered with umccrise + tlod>=15",
+                                            # "bcbio: bwa+strelka2"
                                             ))) %>% 
   filter(is_passed | is_true)
   # filter(AF <= 0.9, AF >= 0.1)
@@ -256,6 +355,7 @@ toplot = unfiltered_ensemble %>%
 ) 
 ```
 
+
 ```{r}
 be = with_tlods_unfiltered %>% filter(caller == "bwa_ensemble") %>% mutate(caller = 'bcbio: bwa+ensemble')          %>% filter(purity == 80)
 bs =  with_tlods_unfiltered %>% filter(caller == "bwa_strelka2") %>% mutate(caller = 'bcbio: bwa+strelka2')           %>% filter(purity == 80)
@@ -267,23 +367,23 @@ show_stats(bs, ds, d, du, du15, be)
 ```
 
 ```{r}
-with_tlods %>% distinct(vartype)
-
-filtered = with_tlods %>% filter(caller == "dragen_dragen")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
-unfiltered = with_tlods_unfiltered %>% filter(caller == "dragen_dragen")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
-p20_tlod15 = filtered %>% filter(purity == 20)
-p40_tlod15 = filtered %>% filter(purity == 40)
-p60_tlod15 = filtered %>% filter(purity == 60)
-p80_tlod15 = filtered %>% filter(purity == 80)
-p100_tlod15 = filtered %>% filter(purity == 100)
-p20 = unfiltered %>% filter(purity == 20)
-p40 = unfiltered %>% filter(purity == 40)
-p60 = unfiltered %>% filter(purity == 60)
-p80 = unfiltered %>% filter(purity == 80)
-p100 = unfiltered %>% filter(purity == 100)
-show_stats(p20_tlod15, p40_tlod15, p60_tlod15, p80_tlod15, p100_tlod15, p20, p40, p60, p80, p100) 
-
-
+dragen_filt = data %>% filter(caller == "dragen_dragen")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
+dragen = data_unfiltered %>% filter(caller == "dragen_dragen")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
+bcbio_filt = data %>% filter(caller == "bwa_ensemble")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
+bcbio = data_unfiltered %>% filter(caller == "bwa_ensemble")  # %>%  mutate(vartype = ifelse(vartype == 1, "SNP", "Indel"))
+# p20 = unfiltered %>% filter(purity == 20)
+# p60 = unfiltered %>% filter(purity == 50)
+# p75 = unfiltered %>% filter(purity == 75)
+# p100 = unfiltered %>% filter(purity == 100)
+# p20_filt = filtered %>% filter(purity == 20)
+# p60_filt = filtered %>% filter(purity == 50)
+# p75_filt = filtered %>% filter(purity == 75)
+# p100_filt = filtered %>% filter(purity == 100)
+dragen_filt_p50 = dragen_filt %>% filter(purity == 50)
+dragen_p50 = dragen %>% filter(purity == 50)
+bcbio_filt_p50 = bcbio_filt %>% filter(purity == 50)
+bcbio_p50 = bcbio %>% filter(purity == 50)
+show_stats(bcbio_p50, dragen_p50, bcbio_filt_p50, dragen_filt_p50) 
 ```
 
 ```{r fig.width = 12}
