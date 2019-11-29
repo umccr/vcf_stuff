@@ -1,9 +1,14 @@
 #!/usr/bin/env python
+
 import sys
+from random import random
+import string
+import os
 from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
-
+import subprocess
 from hpc_utils import hpc
+from ngs_utils.call_process import run_simple
 from ngs_utils.file_utils import which, safe_mkdir, splitext_plus
 from ngs_utils.logger import critical
 from ngs_utils.snakemake_utils import run_snakemake
@@ -21,11 +26,26 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
                                                              'to be run without actually executing them.')
 @click.option('--unlock', 'unlock', is_flag=True)
-@click.option('--report', 'report', help='Propagated to snakemake. Create an HTML report with results and statistics. '
-                                         'Needs to end in ".html".')
-@click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
-                                                 'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
-def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, dryrun=None, unlock=None, report=None, dag=None):
+@click.option('--report', 'report',
+              help='Propagated to snakemake. Create an HTML report with results and statistics. '
+                   'Needs to end in ".html".')
+@click.option('--dag', 'dag', is_flag=True,
+              help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
+                   'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
+@click.option('--tibanna', 'tibanna', is_flag=True,
+              help='Uses tibanna to run snakemake rules on AWS. '
+                   'Need to first assume role, and deploy tibanna (needs an s3 bucket for provisioning):\n'
+                   '$ aws-google-auth ...'
+                   '$ tibanna deploy_unicorn -g my_unicorn -b my_bucket --no-setenv'
+                   '$ export TIBANNA_DEFAULT_STEP_FUNCTION_NAME=tibanna_unicorn_my_unicorn'
+              )
+@click.option('--tibanna-id', 'tibanna_id',
+              help='Will use this ID to access tibanna resources. Will try to deploy if doesn\'t exist.')
+@click.option('--output-s3', 'output_s3',
+              help='Requied to be used along with --tibanna. Output will be stored in the specified s3 location')
+
+def main(vcf, genome, output_file, work_dir=None, genomes_dir=None,
+         dryrun=None, unlock=None, report=None, dag=None, tibanna=False, tibanna_id=None, output_s3=None):
 
     if not vcf.endswith('.vcf.gz'):
         raise click.BadParameter('VCF must be bgzip compresed')
@@ -55,8 +75,15 @@ def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, dryrun=None,
     pcgr_env_path = hpc.secondary_conda_env('pcgr')
     conf['pcgr_env_path'] = pcgr_env_path
 
+    tibanna_cfg = None
+    if tibanna:
+        tibanna_cfg = {
+            'id': tibanna_id,
+            'output_s3': output_s3,
+        }
+
     run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, output_dir=work_dir,
-                  unlock=unlock, dryrun=dryrun, report=report, dag=dag)
+                  unlock=unlock, dryrun=dryrun, report=report, dag=dag, tibanna_cfg=tibanna_cfg)
 
 
 if __name__ == '__main__':
