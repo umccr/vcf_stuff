@@ -1,5 +1,6 @@
 from os.path import isfile, join, basename, splitext
 from hpc_utils import hpc
+from ngs_utils import logger as log
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.vcf_utils import get_sample_ids, get_sample_names
 from vcf_stuff import iter_vcf
@@ -24,9 +25,14 @@ else:
     TUMOR_NAME = splitext(basename(TUMOR_BAM))
     NORMAL_NAME = splitext(basename(NORMAL_BAM))
 
-if config.get('genomes_dir'):
-    hpc.set_genomes_dir(config.get('genomes_dir'))
-
+hpc.set_genomes_dir(config.get('genomes_dir'))
+HOTSPOTS_VCF = config.get('hotspots_vcf', hpc.get_ref_file(GENOME, key='hotspots'))
+if config.get('call_inframe') is True:
+    CODING_REGIONS = config.get('coding_regions', hpc.get_ref_file(GENOME, key='coding_regions'))
+    log.warn(f'Calling inframe indels in {CODING_REGIONS}')
+else:
+    CODING_REGIONS = '<(echo "")'
+    log.warn(f'Not calling inframe indels')
 
 rule all:
     input:
@@ -38,9 +44,8 @@ rule run_sage:
     input:
         tumor_bam    = TUMOR_BAM,
         normal_bam   = NORMAL_BAM,
-        coding_bed   = hpc.get_ref_file(GENOME, key='coding_regions'),
         ref_fa       = hpc.get_ref_file(GENOME, key='fa'),
-        hotspots_vcf = hpc.get_ref_file(GENOME, key='hotspots'),
+        hotspots_vcf = HOTSPOTS_VCF,
     output:
         sage_vcf = f'work/call/{SAMPLE}-sage.vcf.gz',
         sage_tbi = f'work/call/{SAMPLE}-sage.vcf.gz.tbi',
@@ -50,6 +55,7 @@ rule run_sage:
         tumor_sname  = TUMOR_NAME,
         xms = 2000,
         xmx = 19000,
+        coding_bed = CODING_REGIONS,
     resources:
         mem_mb = 20000
     group: "sage"
@@ -58,7 +64,7 @@ rule run_sage:
         '-tumor {params.tumor_sname} -tumor_bam {input.tumor_bam} '
         '-reference {params.normal_sname} -reference_bam {input.normal_bam} '
         '-known_hotspots <(bcftools query -f "%CHROM\\t%POS\\t%REF\\t%ALT\\n" {input.hotspots_vcf}) '
-        '-coding_regions {input.coding_bed} '
+        '-coding_regions {params.coding_bed} '
         '-ref_genome {input.ref_fa} '
         '-out {output.sage_vcf} '
         '&& tabix -f -p vcf {output.sage_vcf}'

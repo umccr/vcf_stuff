@@ -4,7 +4,7 @@ from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
 
 from ngs_utils import logger
-from ngs_utils.file_utils import which, safe_mkdir, splitext_plus, verify_file
+from ngs_utils.file_utils import which, safe_mkdir, splitext_plus, verify_file, verify_dir
 from ngs_utils.logger import critical
 from ngs_utils.snakemake_utils import run_snakemake
 from vcf_stuff.filtering import package_path
@@ -19,6 +19,12 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--genomes-dir', 'genomes_dir')
+@click.option('--hotspots', '--hotspots-vcf', 'hotspots_vcf', type=click.Path(), help='Hotspots to call on '
+              'Default is found in genomes_dir using hpc_utils')
+@click.option('--coding', '--coding-regions', 'coding_regions', type=click.Path(), help='Coding regions to call '
+              ' inframe deletions. Default is found in genomes_dir using hpc_utils')
+@click.option('--call-inframe/--no-call-inframe', 'call_inframe', default=True,
+              help='Use coding regions to call inframe deletions')
 
 @click.option('--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
                                                              'to be run without actually executing them.')
@@ -28,7 +34,8 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                                                  'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
 def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
-         work_dir=None, genomes_dir=None, dryrun=None, unlock=None, report=None, dag=None):
+         work_dir=None, genomes_dir=None, hotspots_vcf=None, coding_regions=None, call_inframe=True,
+         dryrun=None, unlock=None, report=None, dag=None):
 
     if not output_file:
         raise click.BadParameter('Provide path to output VCF file with -o')
@@ -46,9 +53,14 @@ def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
         'output_vcf': abspath(output_file),
         'sample': basename(splitext_plus(output_file)[0]),
         'genome': genome,
+        'call_inframe': call_inframe,
     }
     if genomes_dir:
-        conf['genomes_dir'] = genomes_dir
+        conf['genomes_dir'] = verify_dir(genomes_dir, is_critical=True)
+    if hotspots_vcf:
+        conf['hotspots_vcf'] = verify_file(hotspots_vcf, is_critical=True)
+    if coding_regions:
+        conf['coding_regions'] = verify_file(coding_regions, is_critical=True)
 
     if not work_dir:
         work_dir = output_file + '_work'
