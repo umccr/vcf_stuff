@@ -16,7 +16,9 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-n', '--normal-bam', 'normal_bam', type=click.Path())
 @click.option('-v', '--existing-vcf', 'existing_vcf', type=click.Path())
 @click.option('-g', 'genome', default='GRCh37')
-@click.option('-o', 'output_file', type=click.Path())
+@click.option('-s', '--output-sage-vcf', 'output_sage_vcf', type=click.Path())
+@click.option('-o', '--output-existing-saged-vcf', 'output_existing_saged_vcf', type=click.Path(), help='Existing VCF annotated with SAGE calls '
+              '(in INFO/SAGE_HOTSPOT field) and with added novel SAGE calls')
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--genomes-dir', 'genomes_dir')
 @click.option('--hotspots', '--hotspots-vcf', 'hotspots_vcf', type=click.Path(), help='Hotspots to call on '
@@ -33,16 +35,26 @@ from ngs_utils.utils import set_locale; set_locale()
                                          'Needs to end in ".html".')
 @click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                                                  'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
-def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
+def main(tumor_bam, normal_bam, existing_vcf, genome, output_sage_vcf, output_existing_saged_vcf=None,
          work_dir=None, genomes_dir=None, hotspots_vcf=None, coding_regions=None, call_inframe=True,
          dryrun=None, unlock=None, report=None, dag=None):
 
-    if not output_file:
-        raise click.BadParameter('Provide path to output VCF file with -o')
-    if not (output_file.endswith('.vcf') or output_file.endswith('.vcf.gz')):
+    if not output_sage_vcf:
+        raise click.BadParameter('Provide path to output VCF file with -s/--output-sage-vcf')
+    if not (output_sage_vcf.endswith('.vcf') or output_sage_vcf.endswith('.vcf.gz')):
         raise click.BadParameter('Path to output VCF must end with .vcf.gz')
-    if output_file.endswith('.vcf'):
-        output_file = output_file + '.gz'
+    if output_sage_vcf.endswith('.vcf'):
+        output_sage_vcf = output_sage_vcf + '.gz'
+
+    if output_existing_saged_vcf:
+        if not existing_vcf:
+            raise click.BadParameter('-/v--existing-vcf must be specified with -o/--output-existing-saged-vcf')
+        if not (output_existing_saged_vcf.endswith('.vcf') or output_existing_saged_vcf.endswith('.vcf.gz')):
+            raise click.BadParameter('Path to output VCF must end with .vcf.gz')
+        if output_existing_saged_vcf.endswith('.vcf'):
+            output_existing_saged_vcf = output_existing_saged_vcf + '.gz'
+
+
     if not genome:
         raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
 
@@ -50,8 +62,9 @@ def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
         'tumor_bam': verify_file(tumor_bam, is_critical=True),
         'normal_bam': verify_file(normal_bam, is_critical=True),
         'existing_vcf': abspath(existing_vcf),
-        'output_vcf': abspath(output_file),
-        'sample': basename(splitext_plus(output_file)[0]),
+        'output_sage_vcf': abspath(output_sage_vcf),
+        'output_existing_saged_vcf': abspath(output_existing_saged_vcf),
+        'sample': basename(splitext_plus(tumor_bam)[0]),
         'genome': genome,
         'call_inframe': call_inframe,
     }
@@ -63,12 +76,14 @@ def main(tumor_bam, normal_bam, existing_vcf, genome, output_file,
         conf['coding_regions'] = verify_file(coding_regions, is_critical=True)
 
     if not work_dir:
-        work_dir = output_file + '_work'
+        work_dir = output_sage_vcf + '_work'
     safe_mkdir(work_dir)
 
     run_snakemake(join(package_path(), "sage.smk"), conf, output_dir=work_dir,
                   unlock=unlock, dryrun=dryrun, report=report, dag=dag)
-    logger.info(f'Ouptut VCF: {output_file}')
+    logger.info(f'Ouptut SAGE VCF: {output_sage_vcf}')
+    if output_existing_saged_vcf:
+        logger.info(f'Ouptut SAGE-annotated existing VCF: {output_existing_saged_vcf}')
 
 
 
