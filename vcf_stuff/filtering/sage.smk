@@ -208,7 +208,7 @@ if EXISTING_VCF:
             vcf = OUTPUT_EXISTING_SAGED_VCF,
             tbi = OUTPUT_EXISTING_SAGED_VCF + '.tbi'
         shell:
-            'cp {input,vcf} {output.vcf} ; '
+            'cp {input.vcf} {output.vcf} ; '
             'cp {input.tbi} {output.tbi}'
 
 
