@@ -16,7 +16,7 @@ GENOME = config['genome']
 TUMOR_BAM = config['tumor_bam']
 NORMAL_BAM = config['normal_bam']
 EXISTING_VCF = config.get('existing_vcf', None)
-OUTPUT_EXISTING_SAGED_VCF = config['output_existing_vcf_saged']
+OUTPUT_EXISTING_SAGED_VCF = config['output_existing_saged_vcf']
 OUTPUT_SAGE_VCF = config['output_sage_vcf']
 assert EXISTING_VCF.endswith('.vcf.gz'), EXISTING_VCF
 assert OUTPUT_EXISTING_SAGED_VCF.endswith('.vcf.gz'), OUTPUT_EXISTING_SAGED_VCF
