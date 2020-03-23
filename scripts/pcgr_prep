@@ -9,7 +9,7 @@ import re
 import numpy as np
 
 from ngs_utils.logger import warn, critical
-from ngs_utils.vcf_utils import get_sample_ids, add_cyvcf2_hdr
+from ngs_utils.vcf_utils import get_sample_ids, add_cyvcf2_hdr, get_sample_names
 
 from ngs_utils.utils import set_locale
 set_locale()
@@ -17,13 +17,30 @@ set_locale()
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
-def main(input_file, output_file=None):
+@click.option('-tn', 'provided_tumor_name', help='Tumor sample name')
+@click.option('-nn', 'provided_normal_name', help='Normal sample name')
+def main(input_file, output_file=None, provided_tumor_name=None, provided_normal_name=None):
     """ Prepares a VCF file for exposing in PCGR:
         adds TUMOR_AF, NORMAL_AF, TUMOR_DP, NORMAL_DP fields.
     """
     vcf = VCF(input_file, gts012=True)
 
-    tumor_index, control_index = get_sample_ids(input_file)
+    t_name, n_name = get_sample_names(
+        input_file,
+        provided_tumor_name=provided_tumor_name,
+        provided_normal_name=provided_normal_name
+    )
+    t_index, n_index = get_sample_ids(
+        input_file,
+        provided_t_name=provided_tumor_name,
+        provided_n_name=provided_normal_name
+    )
+
+    if not provided_normal_name or not provided_tumor_name:
+        warn(f'Assuming tumor name: {t_name}' +
+             (f', normal name: {n_name}' if n_name else '') +
+             '. If it\'s incorrect, please provide sample name(s) explicitly '
+             'with -tn (and -nn options).')
 
     tumor_prefix = 'TUMOR_'
     normal_prefix = 'NORMAL_'
@@ -48,7 +65,7 @@ def main(input_file, output_file=None):
 
                 add_cyvcf2_hdr(vcf, new_header=new_header, id=tumor_tag, number=number, type=type,
                                descr=f"{tag} in tumor sample")
-                if control_index is not None:
+                if n_index is not None:
                     add_cyvcf2_hdr(vcf, new_header=new_header, id=normal_tag, number=number, type=type,
                                    descr=f"{tag} in control sample")
 
@@ -72,18 +89,18 @@ def main(input_file, output_file=None):
 
     # Go through each record and add new INFO fields
     for rec in vcf:
-        res = _collect_vals_per_sample(rec, control_index, tumor_index)
+        res = _collect_vals_per_sample(rec, n_index, t_index)
         if res is not None:
             af, dp, vd, ad, mq = res
             for t, v in zip(['AF', 'DP', 'VD', 'MQ'], [af, dp, vd, mq]):
                 if v is not None:
-                    if v[tumor_index] is not None:
-                        rec.INFO[tumor_prefix + t] = _parse_val(v[tumor_index])
-                    if control_index is not None:
-                        if len(v) <= control_index:
-                            sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {control_index} of control sample. Record {v}\n')
-                        elif v[control_index] is not None:
-                            rec.INFO[normal_prefix + t] = _parse_val(v[control_index])
+                    if v[t_index] is not None:
+                        rec.INFO[tumor_prefix + t] = _parse_val(v[t_index])
+                    if n_index is not None:
+                        if len(v) <= n_index:
+                            sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} is less than index {n_index} of control sample. Record {v}\n')
+                        elif v[n_index] is not None:
+                            rec.INFO[normal_prefix + t] = _parse_val(v[n_index])
 
             # Writing AD into FORMAT for Purple
             if 'AD' not in rec.FORMAT:
