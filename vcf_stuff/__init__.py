@@ -5,8 +5,13 @@ from ngs_utils.call_process import run_simple
 from ngs_utils.file_utils import get_ungz_gz
 
 
-def count_vars(vcf_path, filter=None):
-    cmd = f'bcftools view -H {f"-f {filter} " if filter else " "}{vcf_path} | wc -l'
+def count_vars(vcf_path, filter_col=None, bcftools_filter_expr=None):
+    cmd = f'cat {vcf_path} | '
+    if bcftools_filter_expr:
+        cmd += f'bcftools filter {bcftools_filter_expr} |'
+    if filter_col:
+        cmd += f'bcftools view -f {filter_col} | '
+    cmd += 'bcftools view -H | wc -l'
     return int(subprocess.check_output(cmd, shell=True).strip())
 
 
