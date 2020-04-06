@@ -405,7 +405,7 @@ def process_record(rec, princ_trs, all_trs):
         # transcripts_by_event = {k: v for k, v in transcripts_by_event.items() if k[-1] == top_tier}
 
         #TODO: move tanscript principal check here. report all transcripts (princ+alt),
-        # but if there are princ exist, and the impact on alt is differrent, report only princ
+        # but if there are princ exist, and the impact on alt is different, report only princ
         # if len(transcripts_by_event) > 1:  # different events
         # EDIT: perhaps no need in this since we collecting events and comma-separating them
 
