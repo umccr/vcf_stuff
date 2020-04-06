@@ -17,9 +17,9 @@ set_locale()
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
-@click.option('-tn', 'provided_tumor_name', help='Tumor sample name')
-@click.option('-nn', 'provided_normal_name', help='Normal sample name')
-def main(input_file, output_file=None, provided_tumor_name=None, provided_normal_name=None):
+@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
+@click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
+def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=None):
     """ Prepares a VCF file for exposing in PCGR:
         adds TUMOR_AF, NORMAL_AF, TUMOR_DP, NORMAL_DP fields.
     """
@@ -27,16 +27,16 @@ def main(input_file, output_file=None, provided_tumor_name=None, provided_normal
 
     t_name, n_name = get_sample_names(
         input_file,
-        provided_tumor_name=provided_tumor_name,
-        provided_normal_name=provided_normal_name
+        provided_tumor_name=tumor_vcf_sample,
+        provided_normal_name=normal_vcf_sample
     )
     t_index, n_index = get_sample_ids(
         input_file,
-        provided_t_name=provided_tumor_name,
-        provided_n_name=provided_normal_name
+        provided_t_name=tumor_vcf_sample,
+        provided_n_name=normal_vcf_sample
     )
 
-    if not provided_normal_name or not provided_tumor_name:
+    if not tumor_vcf_sample or not normal_vcf_sample:
         warn(f'Assuming tumor name: {t_name}' +
              (f', normal name: {n_name}' if n_name else '') +
              '. If it\'s incorrect, please provide sample name(s) explicitly '

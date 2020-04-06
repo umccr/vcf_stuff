@@ -22,6 +22,8 @@ SAMPLE = config['sample']
 GENOME = config['genome']
 INPUT_VCF = config['input_vcf']
 OUTPUT_VCF = config['output_vcf']
+T_NAME = config.get('tumor_vcf_sample')
+N_NAME = config.get('normal_vcf_sample')
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
 assert INPUT_VCF.endswith('.vcf.gz'), INPUT_VCF
 
@@ -240,8 +242,14 @@ rule somatic_vcf_prep:
     output:
         vcf = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/prep/{SAMPLE}-somatic.vcf.gz.tbi'
-    shell:
-        'pcgr_prep {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
+    params:
+        t_name = T_NAME,
+        n_name = N_NAME,
+    run:
+        t_name_arg = f"-tn {params.t_name}" if params.t_name else ""
+        n_name_arg = f"-nn {params.n_name}" if params.n_name else ""
+        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {input.vcf}' 
+              f' | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 rule somatic_vcf_pon_anno:
     input:

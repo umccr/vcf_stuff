@@ -126,64 +126,6 @@ def _read_hmf_lists():
     return known_pairs, fus_promisc
 
 
-# def subset_to_canonical(rec, princ_trs, all_trs):
-#     ann = rec.INFO.get('ANN')
-#     if ann is None:
-#         return rec
-#
-#     if isinstance(ann, str):
-#         anns = ann.split(',')
-#     else:
-#         anns = ann
-#
-#     princ_anns = []
-#     alt_anns = []
-#     for ann_line in anns:
-#         ann_fields = ann_line.split('|')
-#         assert len(ann_fields) >= 11, f'rec: {rec}, ann_line: {ann_line}'
-#         _, effect, impact, genename, _, feature, featureid, _, rank, _, _ = ann_fields[:11]
-#         # allele, effect, impact, genename, geneid, feature, featureid, biotype, rank, c_change, p_change = ann_fields[:11]
-#
-#         if feature == 'chromosome':
-#             alt_anns.append(ann_line)
-#
-#         elif feature == 'transcript':
-#             feature_ids = set(featureid.split('&'))
-#             feature_ids = set([fid.split('.')[0] for fid in feature_ids])  # get rid of version suffix
-#             assert all(re.fullmatch(r'ENST[\d.]+', fid) for fid in feature_ids), ann
-#             if not feature_ids - princ_trs:
-#                 princ_anns.append(ann_line)
-#             elif not feature_ids - all_trs:
-#                 alt_anns.append(ann_line)
-#
-#         elif feature == 'interaction':
-#             pass  # skipping altogether
-#             # if _check_interaction(all_princ_transcripts, ann, featureid):
-#             #     new_anns.append(ann_line)
-#
-#         else: # some other events?
-#             print(f'Unrecognizable event {feature}: {ann}, for variant {rec.CHROM}:{rec.POS}', file=sys.stderr)
-#
-#     new_anns = princ_anns or alt_anns
-#
-#     if new_anns:
-#         if isinstance(ann, str):
-#             new_ann = ','.join(new_anns)
-#         else:
-#             new_ann = new_anns
-#         rec.INFO['ANN'] = new_ann
-#     else:
-#         del rec.INFO['ANN']
-#
-#     # Also remove older SIMPLE_ANN as we are rerunning for canonical transcripts
-#     if rec.INFO.get('SIMPLE_ANN') is not None:
-#         del rec.INFO['SIMPLE_ANN']
-#     if rec.INFO.get('SV_HIGHEST_TIER') is not None:
-#         del rec.INFO['SV_HIGHEST_TIER']
-#
-#     return rec
-
-
 def _check_interaction(all_princ_transcripts, ann, featureid):
     # Splitting 'interaction' feature ids like the following:
     # "3UVN:C_107-D_1494:ENST00000358625-ENST00000262519"

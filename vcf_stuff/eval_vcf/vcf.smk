@@ -18,6 +18,9 @@ from vcf_stuff.eval_vcf import vcf_stats_to_df
 
 FAST = config.get('fast', False)
 
+T_NAME = config.get('tumor_vcf_sample')
+N_NAME = config.get('normal_vcf_sample')
+
 
 rule all:
     input:
@@ -141,8 +144,14 @@ if config.get('anno_dp_af'):
             rules.narrow_samples_to_regions_and_pass.output[0]
         output:
             'narrow/{sample}.regions.pass.anno.vcf.gz'
-        shell:
-            'pcgr_prep {input} | bgzip -c > {output}'
+        params:
+            t_name = T_NAME,
+            n_name = N_NAME,
+        run:
+            t_name_arg = f"-tn {params.t_name}" if params.t_name else ""
+            n_name_arg = f"-nn {params.n_name}" if params.n_name else ""
+            shell(f'pcgr_prep {t_name_arg} {n_name_arg} {input}'
+                  f' | bgzip -c > {output} && tabix -f -p vcf {output}')
     prev_rule = rules.anno_dp_af
 
 elif config.get('remove_anno'):

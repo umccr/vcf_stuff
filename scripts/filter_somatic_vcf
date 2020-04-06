@@ -20,11 +20,15 @@ from vcf_stuff.filtering import add_cyvcf2_filter
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-g', 'genome', default='GRCh37')
+@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
+@click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
 @click.option('--sb/--no-sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
 @click.option('--hp', 'hp_coef', type=click.INT, help="Set to -1 to disable filtering")
 @click.option('--vardict2mut', 'vardict2mut', is_flag=True, default=False)
-def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, vardict2mut=False):
-    tumor_index, control_index = get_sample_ids(input_file)
+def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf_sample=None,
+         strand_bias=None, hp_coef=None, vardict2mut=False):
+    tumor_index, control_index = get_sample_ids(input_file,
+        provided_t_name=tumor_vcf_sample, provided_n_name=normal_vcf_sample)
 
     if vardict2mut:
         from vcf_stuff.filtering.ngs_reporting.vardict2mut import VarDict2Mut
@@ -32,15 +36,16 @@ def main(input_file, output_file, genome=None, strand_bias=None, hp_coef=None, v
         filt_cnf = load_filt_cfg(None, target_type='wgs')
         vardict2mut = VarDict2Mut(genome, filt_cnf, None, None)
 
-    iter_vcf(input_file, output_file,
-             proc_rec=_somatic_vcf_filter_rec,
-             proc_hdr=_somatic_vcf_filter_hdr,
-             tumor_index=tumor_index,
-             control_index=control_index,
-             strand_bias=strand_bias,
-             hp_coef=hp_coef,
-             vardict2mut=vardict2mut,
-             )
+    iter_vcf(
+        input_file, output_file,
+        proc_rec=_somatic_vcf_filter_rec,
+        proc_hdr=_somatic_vcf_filter_hdr,
+        tumor_index=tumor_index,
+        control_index=control_index,
+        strand_bias=strand_bias,
+        hp_coef=hp_coef,
+        vardict2mut=vardict2mut,
+    )
 
 
 def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None,

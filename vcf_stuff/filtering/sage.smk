@@ -22,10 +22,14 @@ assert EXISTING_VCF.endswith('.vcf.gz'), EXISTING_VCF
 assert OUTPUT_EXISTING_SAGED_VCF.endswith('.vcf.gz'), OUTPUT_EXISTING_SAGED_VCF
 assert OUTPUT_SAGE_VCF.endswith('.vcf.gz'), OUTPUT_SAGE_VCF
 if EXISTING_VCF:
-    TUMOR_NAME, NORMAL_NAME = get_sample_names(EXISTING_VCF)
+    T_NAME, N_NAME = get_sample_names(
+        EXISTING_VCF,
+        provided_tumor_name=config.get('tumor_vcf_sample'),
+        provided_normal_name=config.get('normal_vcf_sample')
+    )
 else:
-    TUMOR_NAME = splitext(basename(TUMOR_BAM))
-    NORMAL_NAME = splitext(basename(NORMAL_BAM))
+    T_NAME = config.get('tumor_vcf_sample') or splitext(basename(TUMOR_BAM))
+    N_NAME = config.get('normal_vcf_sample') or splitext(basename(NORMAL_BAM))
 
 hpc.set_genomes_dir(config.get('genomes_dir'))
 HOTSPOTS_VCF = config.get('hotspots_vcf', hpc.get_ref_file(GENOME, key='hotspots'))
@@ -55,8 +59,8 @@ rule run_sage:
         sage_tbi = f'work/call/{SAMPLE}-sage.vcf.gz.tbi',
     params:
         jar = join(package_path(), 'sage-1.0.jar'),
-        normal_sname = NORMAL_NAME,
-        tumor_sname  = TUMOR_NAME,
+        tumor_sname  = T_NAME,
+        normal_sname = N_NAME,
         xms = 2000,
         xmx = 19000,
         coding_bed = CODING_REGIONS,
@@ -100,12 +104,11 @@ if EXISTING_VCF:
             sage_tbi = f'work/sage_reorder_samples/{SAMPLE}-sage.vcf.gz.tbi',
         group: "sage"
         run:
-            tumor_index, normal_index = get_sample_ids(input.vcf)
+            tumor_index, normal_index = get_sample_ids(input.vcf, provided_t_name=T_NAME, provided_n_name=N_NAME)
             assert sorted([tumor_index, normal_index]) == [0, 1]
             sample_in_order = [None, None]
-            tumor_name, normal_name = get_sample_names(input.vcf)
-            sample_in_order[tumor_index] = tumor_name
-            sample_in_order[normal_index] = normal_name
+            sample_in_order[tumor_index] = T_NAME
+            sample_in_order[normal_index] = N_NAME
             shell(f'bcftools view -s {",".join(sample_in_order)} {input.sage_vcf} -Oz -o {output.sage_vcf} '
                   f'&& tabix -p vcf {output.sage_vcf}')
 
@@ -181,7 +184,7 @@ if EXISTING_VCF:
             def proc_hdr(vcf):
                 vcf.add_filter_to_header({'ID': 'SAGE_lowconf', 'Description': 'SAGE assigned low confidence to this call'})
 
-            def proc_rec(rec, vcf, tumor_index, normal_index):
+            def proc_rec(rec, vcf):
                 key = (rec.CHROM, rec.POS, rec.REF, rec.ALT[0])
                 sage_call = sage_calls.get(key)
                 if sage_call is not None:
@@ -196,9 +199,7 @@ if EXISTING_VCF:
                     rec.set_format('DP', sage_call.format('DP'))
                     rec.set_format('AD', sage_call.format('AD'))
                 return rec
-
-            tumor_index, normal_index = get_sample_ids(input.vcf)
-            iter_vcf(input.vcf, output.vcf, proc_rec, proc_hdr=proc_hdr, tumor_index=tumor_index, normal_index=normal_index)
+            iter_vcf(input.vcf, output.vcf, proc_rec, proc_hdr=proc_hdr)
 
     rule copy_result:
         input:

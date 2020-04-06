@@ -22,6 +22,8 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--genomes-dir', 'genomes_dir')
+@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
+@click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
 
 @click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
                                                              'to be run without actually executing them.')
@@ -44,7 +46,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--output-s3', 'output_s3',
               help='Requied to be used along with --tibanna. Output will be stored in the specified s3 location')
 
-def main(vcf, genome, output_file, work_dir=None, genomes_dir=None,
+def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, tumor_vcf_sample=None, normal_vcf_sample=None,
          dryrun=None, unlock=None, report=None, dag=None, tibanna=False, tibanna_id=None, output_s3=None):
 
     if not vcf.endswith('.vcf.gz'):
@@ -66,6 +68,10 @@ def main(vcf, genome, output_file, work_dir=None, genomes_dir=None,
     }
     if genomes_dir:
         conf['genomes_dir'] = genomes_dir
+    if tumor_vcf_sample:
+        conf['tumor_vcf_sample'] = tumor_vcf_sample
+    if normal_vcf_sample:
+        conf['normal_vcf_sample'] = normal_vcf_sample
 
     if not work_dir:
         work_dir = output_file + '_work'
