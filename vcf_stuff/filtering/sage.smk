@@ -2,8 +2,7 @@ from os.path import isfile, join, basename, splitext
 from hpc_utils import hpc
 from ngs_utils import logger as log
 from ngs_utils.file_utils import get_ungz_gz
-from ngs_utils.vcf_utils import get_sample_ids, get_sample_names
-from vcf_stuff import iter_vcf
+from ngs_utils.vcf_utils import get_sample_ids, get_sample_names, iter_vcf
 import cyvcf2
 from vcf_stuff.filtering import add_cyvcf2_filter, package_path
 

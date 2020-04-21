@@ -1,6 +1,6 @@
 localrules: all, link_bams, link_bam
 
-from vcf_stuff import iter_vcf
+from ngs_utils.vcf_utils import iter_vcf
 import sys
 import os
 import glob

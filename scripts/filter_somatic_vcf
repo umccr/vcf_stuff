@@ -12,7 +12,7 @@ from ngs_utils.utils import set_locale
 set_locale()
 from ngs_utils.vcf_utils import get_sample_ids
 from ngs_utils.utils import OrderedDefaultDict, flatten
-from vcf_stuff import iter_vcf
+from ngs_utils.vcf_utils import iter_vcf
 from vcf_stuff.filtering import add_cyvcf2_filter
 
 

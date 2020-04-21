@@ -8,7 +8,7 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import warn
 from hpc_utils import hpc
-from vcf_stuff import iter_vcf, count_vars, vcf_contains_field
+from ngs_utils.vcf_utils import iter_vcf, count_vars, vcf_contains_field
 from ngs_utils.reference_data import get_key_genes_set
 
 
