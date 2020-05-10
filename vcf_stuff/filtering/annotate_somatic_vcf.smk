@@ -1,3 +1,4 @@
+from cyvcf2.cyvcf2 import VCF
 from os.path import isfile, join, basename, dirname
 import cyvcf2
 import toml
@@ -273,6 +274,7 @@ rule somatic_vcf_pcgr_round1:
         pcgr_data = hpc.get_ref_file(key='pcgr_data'),
     output:
         tiers = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr.snvs_indels.tiers.tsv',
+        vcf = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr_ready.vep.vcf.gz',
     params:
         output_dir = f'somatic_anno/pcgr_run',
         genome = GENOME,
@@ -288,19 +290,25 @@ rule somatic_vcf_pcgr_round1:
 rule somatic_vcf_pcgr_anno:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
-        tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
+        pcgr_tiers = rules.somatic_vcf_pcgr_round1.output.tiers,
+        pcgr_vcf = rules.somatic_vcf_pcgr_round1.output.vcf,
     output:
         vcf = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/pcgr_ann/{SAMPLE}-somatic.vcf.gz.tbi',
+    params:
+        genome_build = GENOME
     run:
+        # Reading information from PCGR tiers file
         pcgr_fields_by_snp = dict()
         cosmic_by_snp = dict()
         icgc_by_snp = dict()
-        print('Reading PCGR annotation from', input.tiers)
-        with open(input.tiers) as f:
+        with open(input.pcgr_tiers) as f:
             reader = csv.DictReader(f, delimiter='\t', fieldnames=f.readline().strip().split('\t'))
             for row in reader:
                 change = row['GENOMIC_CHANGE']
+                # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+                if params.genome_build == 'hg38':
+                    change = 'chr' + change.replace('MT', 'M')
                 pcgr_fields_by_snp[change] = dict()
                 for k in ['SYMBOL',
                           'TIER',
@@ -325,6 +333,21 @@ rule somatic_vcf_pcgr_anno:
                 icgc = row['ICGC_PCAWG_OCCURRENCE']
                 icgc_by_snp[change] = sum([int(ct.split('|')[1]) for ct in icgc.split(', ')]) if icgc != 'NA' else 0
 
+        # Reading CSQ from PCGR VCF file as the tiers file has it incomplete
+        csq_by_snp = dict()
+        vcf = VCF(input.pcgr_vcf)
+        for rec in vcf:
+            change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
+            # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+            if params.genome_build == 'hg38':
+                change = 'chr' + change.replace('MT', 'M')
+            try:
+                csq = rec.INFO['CSQ']
+            except:
+                pass
+            else:
+                csq_by_snp[change] = csq
+
         def func_hdr(vcf):
             vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description':
                 'VEP gene symbol, reported by PCGR in .snvs_indels.tiers.tsv file',
@@ -336,11 +359,13 @@ rule somatic_vcf_pcgr_anno:
                                                                       '4: other coding variants',                                                                                                  'Type': 'String',  'Number': '1'})
             vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE',          'Description': 'VEP consequence, reported by PCGR in .snvs_indels.tiers.tsv file',                                          'Type': 'String',  'Number': '1'})
             vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT',     'Description': 'Mutation hotspot, reported by PCGR in .snvs_indels.tiers.tsv file',                                         'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION',   'Description': 'Putative driver mutation, reported by PCGR in .snvs_indels.tiers.tsv file',                              'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION',   'Description': 'Putative driver mutation, reported by PCGR in .snvs_indels.tiers.tsv file',                           'Type': 'String',  'Number': '1'})
             vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': 'Occurences in TCGR, reported by PCGR in .snvs_indels.tiers.tsv file',                                       'Type': 'Integer', 'Number': '1'})
             vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG',       'Description': 'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',                            'Type': 'String',  'Number': '1'})
             vcf.add_info_to_header({'ID': 'COSMIC_CNT',                'Description': 'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',                                           'Type': 'Integer', 'Number': '1'})
             vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS',           'Description': 'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'CSQ', 'Description': 'Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|ALLELE_NUM|DISTANCE|STRAND|FLAGS|PICK|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|RefSeq|DOMAINS|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|CLIN_SIG|SOMATIC|PHENO|CHECK_REF',
+                                    'Type': 'String', 'Number': '.'})
         def func(rec, vcf):
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
             pcgr_d = pcgr_fields_by_snp.get(change, {})
@@ -349,6 +374,7 @@ rule somatic_vcf_pcgr_anno:
                     rec.INFO[f'PCGR_{k}'] = v
             rec.INFO['COSMIC_CNT'] = cosmic_by_snp.get(change, 0)
             rec.INFO['ICGC_PCAWG_HITS'] = icgc_by_snp.get(change, 0)
+            rec.INFO['CSQ'] = csq_by_snp.get(change)
             return rec
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
