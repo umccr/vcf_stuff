@@ -35,6 +35,11 @@ requirements:
     - hpc_utils >=1.1.5
     - gsort  # https://github.com/brentp/gsort
     - pyensembl
+    - pip:
+      - "git+https://github.com/vladsaveliev/versionpy#egg=versionpy"
+      - "git+https://github.com/vladsaveliev/NGS_Utils#egg=ngs_utils"
+      - "git+https://github.com/umccr/hpc_utils#egg=hpc_utils"
+      - "git+https://github.com/vladsaveliev/snakemake#egg=snakemake"
 
 test:
   imports:
