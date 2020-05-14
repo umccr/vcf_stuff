@@ -2,7 +2,7 @@ sudo: required
 
 language: python
 python:
-  - "3.6"  # used below as $TRAVIS_PYTHON_VERSION in conda install command
+  - "3.7"  # required, otherwise conda will try to clash with py2 packages
 
 before_install:
   - export PACKAGE_NAME=vcf_stuff
