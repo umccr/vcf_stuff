@@ -151,10 +151,10 @@ class TestPcgrPrep(BaseTestCase):
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
 
-    def _run_pcgr_prep(self, input_vcf=None):
+    def _run_pcgr_prep(self, input_vcf=None, extra_opts=''):
         ungz, _ = get_ungz_gz(input_vcf)
         out_vcf = join(TestPcgrPrep.results_dir, basename(add_suffix(ungz, 'pcgr')))
-        cmdl = f'pcgr_prep {input_vcf} > {out_vcf}'
+        cmdl = f'pcgr_prep {input_vcf}{extra_opts} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf,
             wrapper='bcftools query -f "%TUMOR_DP\\t%NORMAL_DP\\t%TUMOR_MQ\\n" | '
@@ -170,4 +170,4 @@ class TestPcgrPrep(BaseTestCase):
         self._run_pcgr_prep(input_mutect2_vcf)
 
     def test_pcgr_prep_sage(self):
-        self._run_pcgr_prep(input_sage_vcf)
+        self._run_pcgr_prep(input_sage_vcf, extra_opts=' -tn PRJ180253_E190-T01-D')
