@@ -290,7 +290,7 @@ full_data = tibble()
 for (smpl in c("2016_249_17_MH_P033")) {
   for (vrs in c("113", "114")) {
     for (clr in c("ensemble", "mutect2", "vardict", "strelka2")) {
-      fname = str_c(dir, vrs, "/", smpl, "-", clr, "-annotated.PASS.vcf.gz")
+      fname = str_c(dir, vrs, "/", smpl, "-", clr, "-annotated-PASS.vcf.gz")
       vcf = read.vcf(fname, split.info = T)
       data = vcf$vcf %>% 
         as_tibble() %>% 
