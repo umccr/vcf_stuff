@@ -22,11 +22,11 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the existing_vcf')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the existing_vcf')
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
-@click.option('--genomes-dir', 'genomes_dir')
+@click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
 @click.option('--hotspots', '--hotspots-vcf', 'hotspots_vcf', type=click.Path(), help='Hotspots to call on '
-              'Default is found in genomes_dir using hpc_utils')
+              'Default is found in genomes_dir using reference_data')
 @click.option('--coding', '--coding-regions', 'coding_regions', type=click.Path(), help='Coding regions to call '
-              ' inframe deletions. Default is found in genomes_dir using hpc_utils')
+              ' inframe deletions. Default is found in genomes_dir using reference_data')
 @click.option('--call-inframe/--no-call-inframe', 'call_inframe', default=True,
               help='Use coding regions to call inframe deletions')
 
@@ -38,7 +38,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                                                  'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
 def main(tumor_bam, normal_bam, existing_vcf, genome, output_sage_vcf, output_existing_saged_vcf=None,
-         tumor_vcf_sample=None, normal_vcf_sample=None, work_dir=None, genomes_dir=None, hotspots_vcf=None, coding_regions=None,
+         tumor_vcf_sample=None, normal_vcf_sample=None, work_dir=None, input_genomes_url=None, hotspots_vcf=None, coding_regions=None,
          call_inframe=True, dryrun=None, unlock=None, report=None, dag=None):
 
     if not output_sage_vcf:
@@ -70,8 +70,8 @@ def main(tumor_bam, normal_bam, existing_vcf, genome, output_sage_vcf, output_ex
         'genome': genome,
         'call_inframe': call_inframe,
     }
-    if genomes_dir:
-        conf['genomes_dir'] = verify_dir(genomes_dir, is_critical=True)
+    if input_genomes_url:
+        conf['input_genomes_url'] = input_genomes_url
     if hotspots_vcf:
         conf['hotspots_vcf'] = verify_file(hotspots_vcf, is_critical=True)
     if coding_regions:

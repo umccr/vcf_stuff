@@ -1,10 +1,10 @@
 import os
 from ngs_utils.file_utils import splitext_plus
-from hpc_utils import hpc
 from vcf_stuff.vcf_normalisation import make_normalise_cmd
+from reference_data import api as refdata
 
 
-ref = hpc.get_ref_file('GRCh37', key='fa')
+ref = refdata.get_ref_file('GRCh37', key='fa')
 
 
 vcf_file = 'test.vcf.gz'

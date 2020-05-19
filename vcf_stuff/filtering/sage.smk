@@ -1,8 +1,8 @@
 from os.path import isfile, join, basename, splitext
-from hpc_utils import hpc
 from ngs_utils import logger as log
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.vcf_utils import get_sample_ids, get_sample_names, iter_vcf
+from reference_data import api as refdata
 import cyvcf2
 from vcf_stuff.filtering import add_cyvcf2_filter, package_path
 
@@ -30,10 +30,10 @@ else:
     T_NAME = config.get('tumor_vcf_sample') or splitext(basename(TUMOR_BAM))
     N_NAME = config.get('normal_vcf_sample') or splitext(basename(NORMAL_BAM))
 
-hpc.set_genomes_dir(config.get('genomes_dir'))
-HOTSPOTS_VCF = config.get('hotspots_vcf', hpc.get_ref_file(GENOME, key='hotspots'))
+refdata.find_genomes_dir(config.get('input_genomes_url'))
+HOTSPOTS_VCF = config.get('hotspots_vcf', refdata.get_ref_file(GENOME, key='hotspots'))
 if config.get('call_inframe') is True:
-    CODING_REGIONS = config.get('coding_regions', hpc.get_ref_file(GENOME, key='coding_regions'))
+    CODING_REGIONS = config.get('coding_regions', refdata.get_ref_file(GENOME, key='coding_regions'))
     log.warn(f'Calling inframe indels in {CODING_REGIONS}')
 else:
     CODING_REGIONS = '<(echo "")'
@@ -51,7 +51,7 @@ rule run_sage:
     input:
         tumor_bam    = TUMOR_BAM,
         normal_bam   = NORMAL_BAM,
-        ref_fa       = hpc.get_ref_file(GENOME, key='fa'),
+        ref_fa       = refdata.get_ref_file(GENOME, key='fa'),
         hotspots_vcf = HOTSPOTS_VCF,
     output:
         sage_vcf = f'work/call/{SAMPLE}-sage.vcf.gz',

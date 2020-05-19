@@ -6,7 +6,7 @@ import os
 import yaml
 import tempfile
 from ngs_utils.file_utils import splitext_plus, verify_file, verify_dir
-from hpc_utils import hpc
+from reference_data import api as refdata
 from vcf_stuff.panel_of_normals import package_path
 from ngs_utils.utils import set_locale
 from ngs_utils.logger import critical
@@ -18,13 +18,18 @@ set_locale()
 @click.option('-o', 'output_dir', type=click.Path())
 @click.option('-j', 'jobs', type=click.INT, default=1)
 @click.option('-h', 'hits_thresholds')
+@click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
 @click.option('--ref-fa', 'ref_fa')
 @click.option('--panel-of-normals-dir', '--pon-dir', 'pon_dir', default=None)
-def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, ref_fa=None, pon_dir=None):
+def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, input_genomes_url=None, ref_fa=None, pon_dir=None):
     """
     Filter all VCF files `vcfs`: remove records with `PoN_CNT` > `hits_thresholds`
     """
-    ref_fa = ref_fa or hpc.get_ref_file(genome, 'fa') or critical('Not recognized host, please specify --ref-fa or --genomes-dir')
+    if (not ref_fa or not pon_dir) and input_genomes_url:
+        refdata.find_genomes_dir(input_genomes_url)
+
+    if not ref_fa:
+        ref_fa = refdata.get_ref_file(genome, 'fa')
 
     if pon_dir:
         verify_file(join(pon_dir, 'panel_of_normals.snps.vcf.gz'), is_critical=True, description='Panel of normals SNPs file in user provided folder')
@@ -33,7 +38,7 @@ def main(vcfs, genome, output_dir=None, jobs=1, hits_thresholds=None, ref_fa=Non
         verify_file(join(pon_dir, 'panel_of_normals.indels.vcf.gz.tbi'), is_critical=True, description='Please index panel of normal files with tabix')
         pon_dir = verify_dir(pon_dir, is_critical=True)
     else:
-        pon_dir = hpc.get_ref_file(genome, key='panel_of_normals_dir')
+        pon_dir = refdata.get_ref_file(genome, key='panel_of_normals_dir')
 
     config = {
         'samples': {splitext_plus(basename(v))[0]: abspath(v) for v in vcfs

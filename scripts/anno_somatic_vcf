@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 
-import sys
-from random import random
-import string
-import os
+from ngs_utils import conda_utils
 from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
-import subprocess
-from hpc_utils import hpc
-from ngs_utils.call_process import run_simple
 from ngs_utils.file_utils import which, safe_mkdir, splitext_plus
-from ngs_utils.logger import critical
 from ngs_utils.snakemake_utils import run_snakemake
 from vcf_stuff.filtering import package_path
 from ngs_utils.utils import set_locale; set_locale()
@@ -21,7 +14,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
-@click.option('--genomes-dir', 'genomes_dir')
+@click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
 @click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
 
@@ -46,7 +39,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--output-s3', 'output_s3',
               help='Requied to be used along with --tibanna. Output will be stored in the specified s3 location')
 
-def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, tumor_vcf_sample=None, normal_vcf_sample=None,
+def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_vcf_sample=None, normal_vcf_sample=None,
          dryrun=None, unlock=None, report=None, dag=None, tibanna=False, tibanna_id=None, output_s3=None):
 
     if not vcf.endswith('.vcf.gz'):
@@ -66,8 +59,8 @@ def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, tumor_vcf_sa
         'sample': basename(splitext_plus(output_file)[0]),
         'genome': genome,
     }
-    if genomes_dir:
-        conf['genomes_dir'] = genomes_dir
+    if input_genomes_url:
+        conf['input_genomes_url'] = input_genomes_url
     if tumor_vcf_sample:
         conf['tumor_vcf_sample'] = tumor_vcf_sample
     if normal_vcf_sample:
@@ -78,7 +71,7 @@ def main(vcf, genome, output_file, work_dir=None, genomes_dir=None, tumor_vcf_sa
     safe_mkdir(work_dir)
 
     # Checking that pcgr.py is available, or if running in umccrise envirnoment so _pcgr env is there
-    pcgr_env_path = hpc.secondary_conda_env('pcgr')
+    pcgr_env_path = conda_utils.secondary_conda_env('pcgr')
     conf['pcgr_env_path'] = pcgr_env_path
 
     tibanna_cfg = None

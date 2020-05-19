@@ -77,7 +77,7 @@ eval_vcf benchmark.vcf sample.vcf -g GRCh37.fa -r callable_regions.bed
 
 If provided, evaluation area will be restricted to those regions.
 
-On Spartan and Raijin, instead of feeding the truth VCF directly, one can use presets (see https://github.com/umccr/hpc_utils). Same applies to the reference fasta - one can provide the genome build name instead of the full path to .fa file.
+On Spartan and Raijin, instead of feeding the truth VCF directly, one can use presets (see https://github.com/umccr/reference_data). Same applies to the reference fasta - one can provide the genome build name instead of the full path to .fa file.
 
 ```
 eval_vcf mb data/test-ensemble.vcf.gz data/test-vardict.vcf.gz -g GRCh37 -o results_eval_vcf

@@ -1,21 +1,13 @@
 localrules: all, link_bams, link_bam
 
-from ngs_utils.vcf_utils import iter_vcf
-import sys
-import os
-import glob
-import re
 from os.path import join, dirname, isfile
-from cyvcf2 import VCF, Writer
 from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix, verify_file, safe_mkdir
-from ngs_utils.bcbio import BcbioProject, NoConfigDirException, NoDateStampsException, MultipleDateStampsException
-from ngs_utils.logger import warn
-from vcf_stuff.panel_of_normals import package_path
-from hpc_utils import hpc
+from ngs_utils.vcf_utils import iter_vcf
+from reference_data import api as refdata
 
 
-if 'genomes_dir' in config:
-    hpc.set_genomes_dir(config.get('genomes_dir'))
+if 'input_genomes_url' in config:
+    refdata.find_genomes_dir(config.get('input_genomes_url'))
 
 
 bams_tsv = config.get('bams_tsv')
@@ -67,7 +59,7 @@ if bam_by_sample is not None:
     rule recall_with_mutect:
         input:
             bam = rules.link_bam.output[0],
-            ref_fa = hpc.get_ref_file('GRCh37', key='fa'),
+            ref_fa = refdata.get_ref_file('GRCh37', key='fa'),
         output:
             vcf = protected('work/recall/{chrom}/{sample}.vcf.gz')
         params:
@@ -211,8 +203,8 @@ gunzip -c {input.vcf} \
 rule to_hg38_unsorted:
     input:
         vcf = rules.to_hg19.output.vcf,
-        chain = hpc.get_ref_file(key='hg19ToHg38'),
-        hg38_fa = hpc.get_ref_file('hg38', key='fa')
+        chain = refdata.get_ref_file(key='hg19ToHg38'),
+        hg38_fa = refdata.get_ref_file('hg38', key='fa')
     output:
         vcf = temp(add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38') + '.unsorted'),
         # vcf = 'work/{chrom}/hg38/pon.{type}.vcf.gz.unsorted',
@@ -224,7 +216,7 @@ rule to_hg38_unsorted:
 rule to_hg38:
     input:
         vcf = rules.to_hg38_unsorted.output.vcf,
-        hg38_noalt_bed = join(hpc.extras, 'hg38_noalt.bed'),
+        hg38_noalt_bed = refdata.get_ref_file(genome='hg38', key='noalt_bed'),
     output:
         vcf = add_suffix(PON_FILE, '{type}').replace('GRCh37', 'hg38'),
         # vcf = 'work/{chrom}/hg38/pon.{type}.vcf.gz',

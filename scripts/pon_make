@@ -19,7 +19,7 @@ from ngs_utils.file_utils import get_ungz_gz, splitext_plus, add_suffix, verify_
 from ngs_utils.bcbio import BcbioProject, NoConfigDirException, NoDateStampsException, MultipleDateStampsException
 from ngs_utils.logger import warn
 from vcf_stuff.panel_of_normals import package_path
-from hpc_utils import hpc
+from reference_data import api as refdata
 
 
 @click.command()
@@ -27,7 +27,7 @@ from hpc_utils import hpc
 @click.argument('normals_tsv', type=click.Path(exists=True))
 @click.argument('target_rule', nargs=-1)
 @click.option('-o', 'output_dir', type=click.Path(), help='Output directory [def: umccrised]')
-@click.option('--genomes', '--genomes-dir', 'genomes_dir', help='Path to the reference data')
+@click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
 @click.option('--use-ensemble-vcfs', 'use_ensembl_vcfs', is_flag=True, help='Use existing ensemble germline VCFs')
 @click.option('--use-gatk-vcfs', 'use_gatk_vcfs', is_flag=True, help='Use existing GATK germline VCFs')
 
@@ -47,7 +47,7 @@ from hpc_utils import hpc
 @click.option('--dag', 'dag', is_flag=True, help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                                                  'Usage: umccrise –-dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
 
-def main(normals_tsv, target_rule=list(), output_dir=None, genomes_dir=None, use_ensembl_vcfs=False, use_gatk_vcfs=False,
+def main(normals_tsv, target_rule=list(), output_dir=None, input_genomes_url=None, use_ensembl_vcfs=False, use_gatk_vcfs=False,
          jobs=None, cluster=False,
          forcerun=None, unlock=False, restart_times=None, dryrun=False, report=None, dag=False):
 
@@ -74,8 +74,8 @@ def main(normals_tsv, target_rule=list(), output_dir=None, genomes_dir=None, use
         find_bams(normals_tsv, bams_tsv)
         conf['bams_tsv'] = bams_tsv
 
-    if genomes_dir:
-        conf['genomes_dir'] = verify_dir(genomes_dir, is_critical=True)
+    if input_genomes_url:
+        conf['input_genomes_url'] = input_genomes_url
 
     ###########################
     #### Running snakemake ####

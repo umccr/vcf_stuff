@@ -33,8 +33,8 @@ conda_cmd = ''
 if PCGR_ENV_PATH:
     conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
 
-if config.get('genomes_dir'):
-    refdata.find_genomes_dir(config.get('genomes_dir'))
+if config.get('input_genomes_url'):
+    refdata.find_genomes_dir(config.get('input_genomes_url'))
 
 
 rule all:

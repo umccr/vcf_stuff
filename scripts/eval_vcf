@@ -5,7 +5,7 @@ import click
 from ngs_utils.file_utils import splitext_plus, verify_file
 from ngs_utils.logger import err, critical
 from ngs_utils.snakemake_utils import run_snakemake
-from hpc_utils import hpc
+from reference_data import api as refdata
 from vcf_stuff.eval_vcf import package_path
 from ngs_utils.utils import set_locale; set_locale()
 
@@ -24,11 +24,11 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--anno-gnomad', 'anno_gnomad', is_flag=True)
 @click.option('--unlock', 'unlock', is_flag=True)
 @click.option('--fast', 'fast', is_flag=True)
-@click.option('--genomes-dir', 'genomes_dir')
+@click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
 @click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the existing_vcf')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the existing_vcf')
 def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, jobs=1, anno_tricky=False, anno_dp_af=False,
-         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None, fast=False, genomes_dir=None,
+         remove_anno=False, anno_pon=False, anno_gnomad=False, unlock=None, fast=False, input_genomes_url=None,
          tumor_vcf_sample=None, normal_vcf_sample=None):
     if not vcfs:
         raise click.BadParameter('Provide at least one VCF file')
@@ -52,8 +52,8 @@ def main(truth, vcfs, genome, ref_fasta=None, output_dir=None, regions=None, job
         conf['tumor_vcf_sample'] = tumor_vcf_sample
         conf['normal_vcf_sample'] = normal_vcf_sample
 
-    if genomes_dir:
-        hpc.set_genomes_dir(genomes_dir)
+    if input_genomes_url:
+        refdata.find_genomes_dir(input_genomes_url)
     get_ref(genome, conf, truth, ref_fasta)
 
     print(conf)
@@ -75,8 +75,8 @@ def get_ref(genome, conf, truth, ref_fasta):
         conf['reference_fasta'] = verify_file(ref_fasta, is_critical=True)
         genome = splitext_plus(basename(genome))[0]
     else:
-        conf['reference_fasta'] = hpc.get_ref_file(genome, 'fa')
-        genome_d = hpc.get_genomes_dict(genome)
+        conf['reference_fasta'] = refdata.get_ref_file(genome, 'fa')
+        genome_d = refdata.get_genomes_dict(genome)
 
     # Truth set
     if isfile(truth):
@@ -86,8 +86,8 @@ def get_ref(genome, conf, truth, ref_fasta):
         if not truth_set_d:
             critical(f'First argument must be either a VCF file, or a value from:'
                      f' {", ".join(genome_d.get("truth_sets").keys())}.'
-                     f' Truth set "{truth}" was not found in the file system or in hpc.py'
-                     f' for genome "{genome}" at file system "{hpc.name}"')
+                     f' Truth set "{truth}" was not found in the file system'
+                     f' for genome "{genome}" at file system "{refdata.name}"')
 
         conf['truth_variants'] = abspath(truth_set_d['vcf'])
         if 'bed' in truth_set_d:
