@@ -15,7 +15,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-t', '--tumor-bam', 'tumor_bam', type=click.Path())
 @click.option('-n', '--normal-bam', 'normal_bam', type=click.Path())
 @click.option('-v', '--existing-vcf', 'existing_vcf', type=click.Path())
-@click.option('-g', 'genome', default='GRCh37')
+@click.option('-g', 'genome', default='hg38')
 @click.option('-s', '--output-sage-vcf', 'output_sage_vcf', type=click.Path())
 @click.option('-o', '--output-existing-saged-vcf', 'output_existing_saged_vcf', type=click.Path(), help='Existing VCF annotated with SAGE calls '
               '(in INFO/SAGE_HOTSPOT field) and with added novel SAGE calls')
