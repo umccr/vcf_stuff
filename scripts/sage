@@ -85,7 +85,7 @@ def main(tumor_bam, normal_bam, existing_vcf, genome, output_sage_vcf, output_ex
         work_dir = output_sage_vcf + '_work'
     safe_mkdir(work_dir)
 
-    run_snakemake(join(package_path(), "sage.smk"), conf, output_dir=work_dir,
+    run_snakemake(join(package_path(), "sage.smk"), conf, cores=1, output_dir=work_dir,
                   unlock=unlock, dryrun=dryrun, report=report, dag=dag)
     logger.info(f'Ouptut SAGE VCF: {output_sage_vcf}')
     if output_existing_saged_vcf:

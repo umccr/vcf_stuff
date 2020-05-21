@@ -81,7 +81,7 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
             'output_s3': output_s3,
         }
 
-    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, output_dir=work_dir,
+    run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, cores=1, output_dir=work_dir,
                   unlock=unlock, dryrun=dryrun, report=report, dag=dag, tibanna_cfg=tibanna_cfg)
 
 
