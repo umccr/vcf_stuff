@@ -41,7 +41,7 @@ conda install -y jupyter matplotlib matplotlib-venn
 nosetests -s tests/test.py
 ```
 
-## Variant calling evaluataion
+## Variant calling evaluation
 
 Evaluate accuracy of somatic variant calling against a truth set VCF:
 
