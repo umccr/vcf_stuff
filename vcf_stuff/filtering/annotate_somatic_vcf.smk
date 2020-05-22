@@ -73,12 +73,13 @@ rule prep_hmf_hotspots:
 rule prep_anno_toml:
     input:
         ga4gh_dir       = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
-        encode          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE', 'blacklist.v2.bed.gz'),
         lcr             = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
         segdup          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
         gnomad_vcf      = refdata.get_ref_file(GENOME, key='gnomad'),
         hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
         hmf_giab        = refdata.get_ref_file(GENOME, key='hmf_giab_conf'),
+        encode          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE',
+                              {'hg38': 'encode4_unified_blacklist.bed.gz', 'GRCh37': 'blacklist.v2.bed.gz'}[GENOME])
     output:
         f'somatic_anno/tricky_vcfanno.toml'
     run:
