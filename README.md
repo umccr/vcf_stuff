@@ -43,14 +43,18 @@ nosetests -s tests/test.py
 
 ## Variant calling evaluation
 
-Evaluate accuracy of somatic variant calling against a truth set VCF:
+`eval_vcf` is a tool that can compare somatic VCFs to a gold standard and report metrics like sensitivity and specificity. The following commands compares `test-ensemble.vcf.gz` and `test-vardict.vcf.gz` to a gold standard `data/test-benchmark.vcf.gz`:
 
 ```
 cd tests
-eval_vcf data/test-benchmark.vcf.gz data/test-ensemble.vcf.gz data/test-vardict.vcf.gz -g data/test-GRCh37.fa -o results_eval_vcf
+eval_vcf data/test-benchmark.vcf.gz \
+         data/test-ensemble.vcf.gz \
+         data/test-vardict.vcf.gz \
+         -g GRCh37 \
+         -o results
 ```
 
-The tool normalizes all input VCFs (see `norm_vcf` below), and compares `test-ensemble.vcf.gz` and `test-vardict.vcf.gz` against the reference VCF `test-benchmark.vcf.gz`. Outputs statistics to stdout:
+The tool will normalize all input VCFs (see `norm_vcf` below), overlap calls in `test-ensemble.vcf.gz` and `test-vardict.vcf.gz` with the reference VCF `test-benchmark.vcf.gz`, evaluate statistics and print them to stdout:
 
 ```
        Sample  SNP                         INDEL                      
@@ -60,7 +64,9 @@ test-ensemble   1  0  0 100.00% 100.00%     0  0  0   0.00%   0.00%
         Truth   1  0  1 100.00% 100.00%     0  0  0 100.00% 100.00%
 ```
 
-Also saves intermediate data from `bcftools isec` into `results_eval_vcf/eval/{sample}_bcftools_isec/` for futher analysis, e.g. plotting in Jupyter.
+And also save them into `results/report.tsv` in a parsable TSV format. 
+ 
+Internally, the tools uses `bcftools isec` to overlap VCFs. Intermediate results are saved into `results/eval/{sample}_bcftools_isec/` for futher analysis if needed:
 
 ```
 eval/test-ensemble_bcftools_isec/0000.vcf	# FP (records private to test-ensemble.vcf.gz)
@@ -72,21 +78,24 @@ eval/test-ensemble_bcftools_isec/0003.vcf	# TP (records from test-benchmark.vcf.
 Optionally, a BED file can be specified with `-r`:
 
 ```
-eval_vcf benchmark.vcf sample.vcf -g GRCh37.fa -r callable_regions.bed
+eval_vcf benchmark.vcf sample.vcf -g GRCh37 -r callable_regions.bed
 ```
 
-If provided, evaluation area will be restricted to those regions.
+If provided, evaluation area will be restricted to those regions. I.e. both benchmark and target VCFs will be subset to those regions, after normalization, but before overlapping.
 
-On Spartan and Raijin, instead of feeding the truth VCF directly, one can use presets (see https://github.com/umccr/reference_data). Same applies to the reference fasta - one can provide the genome build name instead of the full path to .fa file.
+The tools finds the needed reference fasta file location on Spartan and Raijin, or if [umccrise](https://github.com/umccr/umccrise) is loaded in PATH. Otherwise, you can specify the reference fasta explicitly with `--ref-fasta`, e.g.
 
 ```
-eval_vcf mb data/test-ensemble.vcf.gz data/test-vardict.vcf.gz -g GRCh37 -o results_eval_vcf
+eval_vcf benchmark.vcf sample.vcf --ref-fasta /genomes/seq/hg38.fa -o results
 ```
 
-This will pick up the reference VCF from the [ICGC medulloblastoma study](https://www.nature.com/articles/ncomms10001) (somatic T/N).
-Available truth sets preset options: `mb`, `colo` ([COLO829 metastatic melanoma cell line](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349)), `giab` (GiaB NA12878 germline variants), `dream` (DREAM synthetic challenge 3). For the latter 2, also truth regions BED files used, which are merged automatically with `-r` regions if those are provided.
+On Spartan and Raijin, instead of feeding the truth VCF directly, one can use presets, e.g. `mb` stands for the [ICGC medulloblastoma study](https://www.nature.com/articles/ncomms10001) T/N somatic variant calling benchmark:
 
-`regions` and `truth_regions` are the optional fields for the validation target BED files. The BED files, if any provided, will be merged together and used to subset the variants in both truth and query variant sets.
+```
+eval_vcf mb data/test-ensemble.vcf.gz data/test-vardict.vcf.gz -g GRCh37 -o results
+```
+
+See for available options at [https://github.com/umccr/reference_data/blob/master/reference_data/paths.yml#L132-L138](https://github.com/umccr/reference_data/blob/master/reference_data/paths.yml#L132-L138)), e.g. `mb`, `colo` ([COLO829 metastatic melanoma cell line](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4837349)), `giab` (GiaB NA12878 germline variants), `dream` (DREAM synthetic challenge 3). For `giab` and `dream`, additionally truth regions BED files are applied, which are merged automatically with `-r` regions if those are also provided.
 
 
 ## CNV evaluation
