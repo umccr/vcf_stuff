@@ -172,8 +172,10 @@ rule narrow_samples_to_tumor_sample:
         add_suffix(prev_rule.output[0], 'tumor')
     run:
         sn = get_tumor_sample_name(input[0])
-        assert sn
-        shell('bcftools view -s {sn} {input} -Oz -o {output} && tabix -p vcf -f {output}')
+        sn_opt = ''
+        if sn:
+            sn_opt = f'-s {sn} '
+        shell('bcftools view {sn_opt} {input} -Oz -o {output} && tabix -p vcf -f {output}')
 
 #### TRUTH: extract target, PASSed and tumor sample from the truth VCF:
 rule narrow_truth_to_target:
@@ -392,13 +394,8 @@ rule eval:
             inds_called = tp_inds + fp_inds
             inds_prec = tp_inds / inds_called if inds_called else 0
 
-            snps_f1 = f_measure(1, snps_prec, snps_recall)
             snps_f2 = f_measure(2, snps_prec, snps_recall)
-            snps_f3 = f_measure(3, snps_prec, snps_recall)
-
-            inds_f1 = f_measure(1, inds_prec, inds_recall)
             inds_f2 = f_measure(2, inds_prec, inds_recall)
-            inds_f3 = f_measure(3, inds_prec, inds_recall)
 
             writer.writerow([
                 snps_truth, tp_snps, fp_snps, fn_snps, snps_recall, snps_prec, snps_f1, snps_f2, snps_f3,
