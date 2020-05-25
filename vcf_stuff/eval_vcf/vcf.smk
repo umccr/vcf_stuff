@@ -347,6 +347,10 @@ rule bcftools_isec:
         fn = 'eval/{sample}_bcftools_isec/0001.vcf',
         tp = 'eval/{sample}_bcftools_isec/0002.vcf'
     run:
+        # http://samtools.github.io/bcftools/bcftools.html#common_options when performing line intersections,
+        # the desire may be to consider as identical all sites with matching positions (bcftools isec -c all),
+        # or only sites with matching variant type (bcftools isec -c snps  -c indels), or only sites with
+        # all alleles identical (bcftools isec -c none). `-c none` is default.
         shell('bcftools isec {input.sample_vcf} {input.truth_vcf} -p {params.output_dir}')
 
 def count_variants(vcf):
