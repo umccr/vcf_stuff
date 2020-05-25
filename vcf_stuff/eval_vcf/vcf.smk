@@ -398,8 +398,8 @@ rule eval:
             inds_f2 = f_measure(2, inds_prec, inds_recall)
 
             writer.writerow([
-                snps_truth, tp_snps, fp_snps, fn_snps, snps_recall, snps_prec, snps_f1, snps_f2, snps_f3,
-                inds_truth, tp_inds, fp_inds, fn_inds, inds_recall, inds_prec, inds_f1, inds_f2, inds_f3,
+                snps_truth, tp_snps, fp_snps, fn_snps, snps_recall, snps_prec, snps_f2,
+                inds_truth, tp_inds, fp_inds, fn_inds, inds_recall, inds_prec, inds_f2,
             ])
 
 # Combine all stats to get single report:
