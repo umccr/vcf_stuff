@@ -1,0 +1,27 @@
+---
+title: "cnvkit_purple"
+output: html_document
+---
+
+```{r}
+library(rock)
+cnvkit = file.path('/Users/vsaveliev/Analysis/crowd_cnv/APGI_1965-cnvkit-call.cns')
+purple = file.path('/Users/vsaveliev/Analysis/crowd_cnv/APGI_1965__APGI_1965_tumor.purple.cnv.somatic.tsv')
+
+prep_purple_seg = function (purple) {
+  cnv <- readr::read_tsv(purple, col_types = readr::cols_only(`chromosome` = "c", 
+    start = "i", end = "i", copyNumber = "d")) %>% dplyr::rename(chrom = .data$`chromosome`, 
+    tot_cn = .data$copyNumber) %>% dplyr::filter(.data$chrom != 
+    "MT")
+  structure(list(cnv = cnv), class = "cnv")
+}
+
+cn_cnvkit = prep_cnvkit_seg(cnvkit)
+cn_cnvkit$cnv = cn_cnvkit$cnv %>% mutate(chrom = chrom %>% str_replace("chr", ""))
+cn_purple <- prep_purple_seg(purple)
+cn_purple$cnv = cn_purple$cnv %>% mutate(chrom = chrom %>% str_replace("chr", ""))
+
+cnv_list <- list(cnvkit = cn_cnvkit, purple = cn_purple)
+plot_piano(cnv_list = cnv_list)
+```
+
