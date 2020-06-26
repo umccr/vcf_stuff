@@ -205,7 +205,7 @@ rule table:
         df = pd.DataFrame(cn_by_gene_by_sname, columns=['truth'] + params.samples)
         # print(df.to_string(index=True, na_rep='.'))
         with open(output[0], 'w') as out_f:
-            df.to_csv(out_f, sep='\t', index=True)
+            df.sort_index().to_csv(out_f, sep='\t', index=True)
 
 
 # def _stats_to_df(stat_by_sname, include_cn=True):

@@ -118,7 +118,7 @@ Usage:
 ```
 eval_cnv -g GRCh37 -o results_eval_cnv \
     data/cnv/hcc2218/HCC2218_truthset_cnv_bcbio.tsv \
-    data/cnv/hcc2218/HCC2218_cnvkit-call.cns purple.cnv.tsv \
+    data/cnv/hcc2218/HCC2218_cnvkit-call.cns \
     data/cnv/hcc2218/HCC2218_purple.cnv.tsv \
     data/cnv/hcc2218/HCC2218_facets_cncf.tsv
 ```

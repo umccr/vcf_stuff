@@ -26,10 +26,10 @@ chrom  seg  num.mark  nhet  cnlr.median          mafR                  segclust 
 1    44195682    MantaDEL:369:0:1:0:0:0  T   <DEL>  .   PASS   BPI_AF=0.787,0.402;BPI_END=44201846;BPI_START=44195682;END=44201846;SOMATIC;SOMATICSCORE=205;SVLEN=-6164;SVTYPE=DEL     PR:SR   41,0:45,0       14,25:31,50
 1    211021468   MantaDEL:1421:0:1:0:1:0 A   <DEL>  .   PASS   BPI_AF=0.694,0.073;BPI_END=211033724;BPI_START=211021468;END=211033724;SOMATIC;SOMATICSCORE=77;SVLEN=-12256;SVTYPE=DEL  PR:SR   46,0:155,0      35,6:193,14
 
-==> HCC2218_purple.cnv.tsv <==
-#chromosome  start      end        copyNumber          bafCount  observedBAF         actualBAF           segmentStartSupport  segmentEndSupport  method
-1            1          36946000   0.8035740452186546  2         1.0                 1.0                 TELOMERE             NONE               BAF_WEIGHTED
-1            36946001   121485000  1.5790169587407195  3         0.5291133717401169  0.5291133717401169  NONE                 CENTROMERE         BAF_WEIGHTED
+==> HCC2218.purple.cnv.somatic.tsv <==
+chromosome  start     end       copyNumber  bafCount  observedBAF  baf       segmentStartSupport  segmentEndSupport  method        depthWindowCount  gcContent  minStart  maxStart  minorAllelePloidy  majorAllelePloidy
+chr1        1         42932000  2.0388      694       0.9950       0.9984    TELOMERE             NONE               BAF_WEIGHTED  11382             0.4751     1         1         0.0032             2.0355
+chr1        42932001  43145000  2.0538      5         0.6000       0.5131    NONE                 NONE               BAF_WEIGHTED  194               0.4685     42153001  42932001  1.0000             1.0538
 
 ==> HCC2218_truthset_cnv_bcbio.tsv <==
 chrom  start      end        tot_cn
@@ -65,7 +65,7 @@ class CnvCall:
 header_by_caller = {
     'cnvkit': 'chromosome	start	end	gene	log2	baf	cn	cn1	cn2	depth	probes	weight'.split(),
     'facets': 'chrom	seg	num.mark	nhet	cnlr.median	mafR	segclust	cnlr.median.clust	mafR.clust	start	end	cf.em	tcn.em	lcn.em'.split(),
-    'purple': '#chromosome	start	end	copyNumber	bafCount	observedBAF	actualBAF	segmentStartSupport	segmentEndSupport	method'.split(),
+    'purple': 'chromosome  start     end       copyNumber  bafCount  observedBAF  baf       segmentStartSupport  segmentEndSupport  method        depthWindowCount  gcContent  minStart  maxStart  minorAllelePloidy  majorAllelePloidy'.split(),
     'hcc2218_truth': 'chrom	start	end	tot_cn'.split(),
     'colo829_hartwig_truth': 'Truth_type	Truth_orientation	Truth_sv_len	Truth_chr1	Truth_bp1	Truth_chr2	Truth_bp2	Manta_filter	Manta_chr1	Manta_bp1	Manta_chr2	Manta_bp2	BPI_adj_Manta_chr1	BPI_adj_Manta_bp1	BPI_adj_Manta_chr2	BPI_adj_Manta_bp2	Manual_check_1	Manual_check_2	Gridss_filter1	Gridss_diff_BPI1	Gridss_filter2	Gridss_diff_BPI2	Gridss_chr1	Gridss_bp1	Gridss_chr2	Gridss_bp2	Purple_type1	Purple_type2	Purple_chr1	Purple_bp1	Purple_chr2	Purple_bp2	Conserting_chr1	Conserting_bp1	Conserting_chr2	Conserting_bp2'.split(),
     'colo829_craig_truth': 'Gene	Chrom	Start	End	Type'.split(),
@@ -86,7 +86,7 @@ parse_row_by_caller = {
         cn   =r.get('tcn.em'),
     ),
     'purple': lambda r: CnvCall(
-        chrom=r.get('#chromosome'),
+        chrom=r.get('chromosome'),
         start=r.get('start'),
         end  =r.get('end'),
         cn   =round(float(r.get('copyNumber'))),
@@ -163,7 +163,7 @@ def cnv_to_bed(cnv_path, out_bed_path):
                 writer.writerow(bed_row)
                 if i == 0:
                     print(bed_row)
-                    print()
+                    print('')
 
 
 if __name__ == '__main__':
