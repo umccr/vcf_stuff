@@ -154,7 +154,7 @@ if config.get('anno_dp_af'):
                   f' | bgzip -c > {output} && tabix -f -p vcf {output}')
     prev_rule = rules.anno_dp_af
 
-elif config.get('remove_anno'):
+elif config.get('remove_anno', False):
     rule remove_anno:
         input:
             rules.narrow_samples_to_regions_and_pass.output[0]
@@ -187,8 +187,6 @@ rule narrow_truth_to_target:
         regions = merge_regions()
         regions = ('-T ' + regions) if regions else ''
         rm_cmd = ''
-        if not FAST:
-            rm_cmd = ' -Ou | bcftools annotate -x INFO,FORMAT'
         shell('bcftools view {input} {regions}' + rm_cmd + ' -Oz -o {output} && tabix -p vcf -f {output}')
 
 ############################
