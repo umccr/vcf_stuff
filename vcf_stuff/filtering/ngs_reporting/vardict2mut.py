@@ -501,7 +501,7 @@ class VarDict2Mut:
                 reasons.append(reason)
         return reasons
 
-    def filter(self, rec, tumor_index):
+    def filter(self, rec, tumor_indices):
         id_field = rec.ID or ""
         chrom = rec.CHROM
         pos = rec.POS

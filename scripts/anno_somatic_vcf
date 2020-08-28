@@ -4,6 +4,7 @@ from ngs_utils import conda_utils
 from os.path import dirname, abspath, join, basename, isfile, isdir
 import click
 from ngs_utils.file_utils import which, safe_mkdir, splitext_plus
+from ngs_utils.vcf_utils import get_sample_names
 from ngs_utils.snakemake_utils import run_snakemake
 from vcf_stuff.filtering import package_path
 from ngs_utils.utils import set_locale; set_locale()
@@ -15,7 +16,8 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-o', 'output_file', type=click.Path())
 @click.option('-w', '--work-dir', 'work_dir', type=click.Path())
 @click.option('--genomes', '--genomes-dir', 'input_genomes_url', help='Path to the reference data. Can be s3 or gds')
-@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
+@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF '
+              '(can use multiple values, in this case the maximum AF and the maximum DP will be used)')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
 
 @click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
@@ -53,6 +55,8 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
     if not genome:
         raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
 
+    check_vcf_samples(vcf, tumor_vcf_sample, normal_vcf_sample)
+
     conf = {
         'input_vcf': abspath(vcf),
         'output_vcf': abspath(output_file),
@@ -83,6 +87,17 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
 
     run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, cores=1, output_dir=work_dir,
                   unlock=unlock, dryrun=dryrun, report=report, dag=dag, tibanna_cfg=tibanna_cfg)
+
+
+def check_vcf_samples(input_file, tumor_vcf_sample=None, normal_vcf_sample=None):
+    """ Check if we can automatically determine the order of tumor and normal in VCF.
+        get_sample_names will throw a critical error if it can't guess
+    """
+    get_sample_names(
+        input_file,
+        provided_tumor_name=tumor_vcf_sample,
+        provided_normal_name=normal_vcf_sample
+    )
 
 
 if __name__ == '__main__':

@@ -72,14 +72,14 @@ rule prep_hmf_hotspots:
 
 rule prep_anno_toml:
     input:
-        ga4gh_dir       = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
-        lcr             = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
-        segdup          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
-        gnomad_vcf      = refdata.get_ref_file(GENOME, key='gnomad'),
-        hmf_hotspots    = rules.prep_hmf_hotspots.output.vcf,
-        hmf_giab        = refdata.get_ref_file(GENOME, key='hmf_giab_conf'),
-        encode          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE',
-                              {'hg38': 'encode4_unified_blacklist.bed.gz', 'GRCh37': 'blacklist.v2.bed.gz'}[GENOME])
+        ga4gh_dir    = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
+        lcr          = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'repeats', 'LCR.bed.gz'),
+        segdup       = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'segdup.bed.gz'),
+        gnomad_vcf   = refdata.get_ref_file(GENOME, key='gnomad'),
+        hmf_hotspots = rules.prep_hmf_hotspots.output.vcf,
+        hmf_giab     = refdata.get_ref_file(GENOME, key='hmf_giab_conf'),
+        encode       = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE',
+                           {'hg38': 'encode4_unified_blacklist.bed.gz', 'GRCh37': 'blacklist.v2.bed.gz'}[GENOME])
     output:
         f'somatic_anno/tricky_vcfanno.toml'
     run:
@@ -144,7 +144,8 @@ rule somatic_vcf_regions_anno:
         vcf = f'somatic_anno/vcfanno/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/vcfanno/{SAMPLE}-somatic.vcf.gz.tbi',
     shell:
-        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
+        'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && '
+        'tabix -f -p vcf {output.vcf}'
 
 
 # Possibly subset VCF to avoid PCGR choking with R stuff.
@@ -374,7 +375,7 @@ rule somatic_vcf_pcgr_anno:
                     rec.INFO[f'PCGR_{k}'] = v
             rec.INFO['COSMIC_CNT'] = cosmic_by_snp.get(change, 0)
             rec.INFO['ICGC_PCAWG_HITS'] = icgc_by_snp.get(change, 0)
-            rec.INFO['CSQ'] = csq_by_snp.get(change)
+            rec.INFO['CSQ'] = csq_by_snp.get(change, '.')
             return rec
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
