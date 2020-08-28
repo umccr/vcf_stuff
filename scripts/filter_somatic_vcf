@@ -16,6 +16,10 @@ from ngs_utils.vcf_utils import iter_vcf
 from vcf_stuff.filtering import add_cyvcf2_filter
 
 
+PON_HITS = 5
+MIN_AF = 0.1
+
+
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
@@ -25,10 +29,14 @@ from vcf_stuff.filtering import add_cyvcf2_filter
 @click.option('--sb/--no-sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
 @click.option('--hp', 'hp_coef', type=click.INT, help="Set to -1 to disable filtering")
 @click.option('--vardict2mut', 'vardict2mut', is_flag=True, default=False)
+@click.option('--min-af', 'min_af', type=click.FLOAT, default=MIN_AF)
 def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf_sample=None,
-         strand_bias=None, hp_coef=None, vardict2mut=False):
+         strand_bias=None, hp_coef=None, vardict2mut=False, min_af=None):
+
     tumor_index, control_index = get_sample_ids(input_file,
         provided_t_name=tumor_vcf_sample, provided_n_name=normal_vcf_sample)
+    # t_index will be an array if there are multiple tumors (i.e. tumor_vcf_sample is comma-separated)
+    tumor_indices = [tumor_index] if isinstance(tumor_index, int) else tumor_index
 
     if vardict2mut:
         from vcf_stuff.filtering.ngs_reporting.vardict2mut import VarDict2Mut
@@ -36,20 +44,45 @@ def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf
         filt_cnf = load_filt_cfg(None, target_type='wgs')
         vardict2mut = VarDict2Mut(genome, filt_cnf, None, None)
 
+    def _somatic_vcf_filter_hdr(vcf):
+        vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
+        vcf.add_filter_to_header({'ID': 'PoN',                  'Description': f'Variant is not a hotspot and found in panel of normals at least {PON_HITS} times'})
+        vcf.add_filter_to_header({'ID': 'SAGE_PoN',             'Description': f'Variant is not a hotspot and found in Hartwig panel of normals at least {PON_HITS} times'})
+        vcf.add_filter_to_header({'ID': 'ENCODE',               'Description': 'Hits ENCODE blacklist regions https://github.com/Boyle-Lab/Blacklist'})
+        vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
+        vcf.add_filter_to_header({'ID': 'HP',                   'Description': 'Low AF indel in a homopolymer region (AF lt (INFO/MSI - 1)/0.4%'})
+        vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP below 3 (i.e. fewer than 3 reads support the variant)'})
+        vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps GC=0-15% or GC=70-100%, or an LCR longer than 50bp, or ENCODE low mappability'})
+        vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
+        vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
+        vcf.add_filter_to_header({'ID': 'StrandBias',           'Description': 'Strand bias as reported by VarDict'})
+        vcf.add_filter_to_header({'ID': 'StrandBias1:1',        'Description': 'Strand bias as reported by VarDict'})
+        vcf.add_filter_to_header({'ID': 'StrandBias2:0',        'Description': 'Strand bias as reported by VarDict'})
+        vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
+        vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
+        vcf.add_filter_to_header({'ID': 'MinAF',                'Description': f'TUMOR_AF<{min_af * 100}%'})
+        vcf.add_filter_to_header({'ID': 'LowTLOD',              'Description': 'Dragen call with tumor LOD (TLOD field) below 15 for indels, 15 for SNPs (likely false positive)'})
+        vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
+        vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
+        vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
+        if not '##INFO=<ID=TRICKY,' in vcf.raw_header:  # legacy
+            vcf.add_info_to_header({'ID': 'TRICKY',  'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
+
     iter_vcf(
         input_file, output_file,
         proc_rec=_somatic_vcf_filter_rec,
         proc_hdr=_somatic_vcf_filter_hdr,
-        tumor_index=tumor_index,
+        tumor_indices=tumor_indices,
         control_index=control_index,
         strand_bias=strand_bias,
         hp_coef=hp_coef,
         vardict2mut=vardict2mut,
+        min_af=min_af,
     )
 
 
-def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coef=None, vardict2mut=None,
-                            **kwargs):
+def _somatic_vcf_filter_rec(rec, vcf, tumor_indices=None, strand_bias=True, hp_coef=None,
+                            vardict2mut=None, min_af=0.1, **kwargs):
     t = rec.INFO.get('PCGR_TIER', '')
     # Tier 1 - variants of strong clinical significance
     # Tier 2 - variants of potential clinical significance
@@ -59,11 +92,13 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
 
     # Rescuing hostpots/actionable variants
     if (int_tier in [1, 2] or
-        rec.INFO.get('SAGE_HOTSPOT') == 'known'):
+            rec.INFO.get('SAGE_HOTSPOT') == 'known' or
+            rec.INFO.get('TIER') == 'HOTSPOT'
+        ):
         return rec
 
     # Else, applying LCR, PoN, depth and AF filters:
-    #   Remove AF<10%
+    #   Remove AF<10% (or min_af)
     #   Remove gnomad_AF>=0.01
     #   Remove PoN_CNT>=5
     #   Remove indels in "bad_promoter" tricky regions
@@ -78,22 +113,31 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
         af = rec.INFO.get('TUMOR_AF')
         vd = rec.INFO.get('TUMOR_VD', math.inf)
 
-        # Removing low AF variants
-        if af is not None and af < 0.075:
-            add_cyvcf2_filter(rec, 'AF10')
+        # Removing very low AF variants
+        # if af is not None and af < 0.03:
+        #     add_cyvcf2_filter(rec, f'AF03')
 
         if vd < 4:
             # too few reads supporting the variant
             add_cyvcf2_filter(rec, 'lowVD')
 
-        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= 5:
+        if rec.INFO.get('PoN_CNT') is not None and rec.INFO.get('PoN_CNT') >= PON_HITS:
             # in panel of normals => likely a germline or an artefact
             add_cyvcf2_filter(rec, 'PoN')
             if not rec.FILTER:  # not filtered otherwise -> can report as germline
                 if af >= 0.2:  # higher frequency variants go as germline
                     rec.INFO['Germline'] = True
 
-        # Rescuing ponentical hotspots
+        if rec.INFO.get('PON_COUNT', '.') != '.':
+            # sage PoN
+            if rec.INFO.get('PON_COUNT') >= PON_HITS and rec.INFO.get('PON_MAX') >= 5 or \
+                    rec.INFO.get('TIER') != 'PANEL' and rec.INFO.get('PON_COUNT') >= PON_HITS:
+                add_cyvcf2_filter(rec, 'SAGE_PoN')
+                if not rec.FILTER:  # not filtered otherwise -> can report as germline
+                    if af >= 0.2:  # higher frequency variants go as germline
+                        rec.INFO['Germline'] = True
+
+        # Rescuing potentical hotspots
         if (rec.INFO.get('HMF_HOTSPOT', False) or
             rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or
             rec.INFO.get('PCGR_MUTATION_HOTSPOT', False) or
@@ -105,8 +149,8 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
             return rec
 
         # Increasing AF threshold
-        if af is not None and af < 0.1:
-            add_cyvcf2_filter(rec, 'AF10')
+        if af is not None and af < min_af:
+            add_cyvcf2_filter(rec, 'MinAF')
 
         if rec.INFO.get('ENCODE'):
             add_cyvcf2_filter(rec, 'ENCODE')
@@ -120,10 +164,10 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_index=None, strand_bias=True, hp_coe
 
         # filter strand biased variants in vardict
         if strand_bias:
-            rec = _vardict_strand_bias(rec, tumor_index)
+            rec = _vardict_strand_bias(rec, tumor_indices)
 
         if vardict2mut:
-            rec = vardict2mut.filter(rec, tumor_index)
+            rec = vardict2mut.filter(rec, tumor_indices)
 
         # Dragen filter
         rec = dragen_filter(rec)
@@ -199,29 +243,6 @@ def _mq_filter(rec, vcf, tumor_index, vd):
 
     return rec
 
-
-def _somatic_vcf_filter_hdr(vcf):
-    vcf.add_filter_to_header({'ID': 'gnomAD_common',        'Description': 'Occurs in gnomAD with frequency above 1%'})
-    vcf.add_filter_to_header({'ID': 'PoN',                  'Description': 'Panel of normals hits 1 or more'})
-    vcf.add_filter_to_header({'ID': 'ENCODE',               'Description': 'Hits ENCODE blacklist regions https://github.com/Boyle-Lab/Blacklist'})
-    vcf.add_filter_to_header({'ID': 'bad_promoter',         'Description': 'Indel overlapping bad promoter tricky region'})
-    vcf.add_filter_to_header({'ID': 'HP',                   'Description': 'Low AF indel in a homopolymer region (AF lt (INFO/MSI - 1)/0.4%'})
-    vcf.add_filter_to_header({'ID': 'lowVD',                'Description': 'AF*DP below 3 (i.e. fewer than 3 reads support the variant)'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LCR',            'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps GC=0-15% or GC=70-100%, or an LCR longer than 50bp, or ENCODE low mappability'})
-    vcf.add_filter_to_header({'ID': 'LowVD_GIAB_LCR',       'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and does not overlap GiaB high confidence regions'})
-    vcf.add_filter_to_header({'ID': 'LowVD_LowMappability', 'Description': 'AF*DP below 5 (i.e. fewer than 5 reads support the variant), and overlaps a low mappability region'})
-    vcf.add_filter_to_header({'ID': 'StrandBias',           'Description': 'Strand bias as reported by VarDict'})
-    vcf.add_filter_to_header({'ID': 'StrandBias1:1',        'Description': 'Strand bias as reported by VarDict'})
-    vcf.add_filter_to_header({'ID': 'StrandBias2:0',        'Description': 'Strand bias as reported by VarDict'})
-    vcf.add_filter_to_header({'ID': 'StrandBias2:1',        'Description': 'Strand bias as reported by VarDict'})
-    vcf.add_filter_to_header({'ID': 'ActGermline',          'Description': 'Strand bias as reported by VarDict'})
-    vcf.add_filter_to_header({'ID': 'AF10',                 'Description': 'TUMOR_AF<10%'})
-    vcf.add_filter_to_header({'ID': 'LowTLOD',              'Description': 'Dragen call with tumor LOD (TLOD field) below 15 for indels, 15 for SNPs (likely false positive)'})
-    vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
-    vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
-    vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
-    if not '##INFO=<ID=TRICKY,' in vcf.raw_header:  # legacy
-        vcf.add_info_to_header({'ID': 'TRICKY',  'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
 def _check_hp(rec, af, _coef=None):
     _coef = _coef or 40
@@ -306,7 +327,7 @@ def _callers(rec):
         return tuple()
 
 
-def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
+def _vardict_strand_bias(rec, tumor_indices, damage_p_value=0.01, min_vd=5):
     """
     Filter VarDict variants with single strand support for ALT, while REF has
     both; or REF and ALT have opposite supporting strands.
@@ -331,23 +352,29 @@ def _vardict_strand_bias(rec, tumor_index, damage_p_value=0.01, min_vd=5):
     if 'BIAS' not in rec.FORMAT or 'SBF' not in rec.FORMAT:
         return rec
 
-    bias = rec.format('BIAS')[tumor_index]
-    sbf = float(rec.format('SBF')[tumor_index])
+    bias_filts = []
+    for ti in tumor_indices:
+        bias = rec.format('BIAS')[ti]
+        sbf = float(rec.format('SBF')[ti])
 
-    ref, alt = map(int, bias.split(','))
+        ref, alt = map(int, bias.split(','))
 
-    if ref < 2 or alt < 2 and sbf is not None:
-        if ref == 2 and alt == 1 and sbf < damage_p_value * 10:
-            # ALT has only single strand support, while REF has both
-            add_cyvcf2_filter(rec, 'StrandBias2:1')
+        if ref < 2 or alt < 2 and sbf is not None:
+            if ref == 2 and alt == 1 and sbf < damage_p_value * 10:
+                # ALT has only single strand support, while REF has both
+                bias_filts.append('StrandBias2:1')
 
-        if ref == 2 and alt == 0 and sbf < damage_p_value:
-            # ALT has only single strand support and p-value is low, while reference has both
-            add_cyvcf2_filter(rec, 'StrandBias2:0')
+            if ref == 2 and alt == 0 and sbf < damage_p_value:
+                # ALT has only single strand support and p-value is low, while reference has both
+                bias_filts.append('StrandBias2:0')
 
-        if ref == alt == 1 and sbf < damage_p_value / 10:
-            # Filter variants with opposite supporting strands for REF and ALT
-            add_cyvcf2_filter(rec, 'StrandBias1:1')
+            if ref == alt == 1 and sbf < damage_p_value / 10:
+                # Filter variants with opposite supporting strands for REF and ALT
+                bias_filts.append('StrandBias1:1')
+
+    # Filtering only if all tumors are filtered
+    if all(b is not None for b in bias_filts):
+        add_cyvcf2_filter(rec, bias_filts[0])
 
     return rec
 
