@@ -37,10 +37,11 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
     )
     # t_index will be an array if there are multiple tumors (i.e. tumor_vcf_sample is comma-separated)
     t_indices = [t_index] if isinstance(t_index, int) else t_index
+    n_indices = [n_index] if isinstance(n_index, int) else n_index
 
     if not tumor_vcf_sample or not normal_vcf_sample:
         warn(f'Assuming tumor name(s): {t_name}' +
-             (f', normal name: {n_name}' if n_name else '') +
+             (f', normal name(s): {n_name}' if n_name else '') +
              '. If it\'s incorrect, please provide sample name(s) explicitly '
              'with -tn (and -nn options).')
 
@@ -51,7 +52,7 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
 
     # Add headers
     new_header = []
-    for h in vcf.raw_header.split('\n'):
+    for h in vcf.raw_header.strip().split('\n'):
         # Reached the last row of the header, adding new lines right before CHROM:
         if h.startswith('#CHROM'):
             for tag in ['AF', 'DP', 'VD']:
@@ -82,14 +83,13 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
                    for tag in ['AF', 'DP', 'VD']
                    for p in [tumor_prefix, normal_prefix]):
             # to make sure we don't add duplicated TUMOR_AF,... fields
-            new_header.append(h)
+            new_header.append(h.strip())
 
+    out = sys.stdout
     if output_file:
-        w = Writer(output_file, vcf)
-        w.write_header()
-    else:
-        w = None
-        sys.stdout.write('\n'.join(new_header))
+        out = open(output_file, 'w')
+    for h_line in new_header:
+        out.write(h_line + '\n')
 
     # Go through each record and add new INFO fields
     for rec in vcf:
@@ -98,35 +98,41 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
             af, dp, vd, ad = res
 
             # when there are multiple samples, using the sample with the max VD, then DP
-            sample_with_max_vd_idx = None
+            ti_with_max_vd = None
+            ni_with_max_vd = None
             for t, v in zip(['VD', 'DP', 'AF'], [vd, af, dp]):
                 if v is not None:
-                    if sample_with_max_vd_idx is None:
-                        _, sample_with_max_vd_idx = max(
-                            (v[ti], ti)
-                            for ti in t_indices
-                            if _to_string(v[ti]) is not None)
-                    rec.INFO[tumor_prefix + t] = _to_string(v[sample_with_max_vd_idx])
+                    if ti_with_max_vd is None:
+                        _, ti_with_max_vd = max(
+                            (v[ind], ind)
+                            for ind in t_indices
+                            if _to_string(v[ind]) is not None)
+                    rec.INFO[tumor_prefix + t] = _to_string(v[ti_with_max_vd])
 
-                    if n_index is not None:
-                        if len(v) <= n_index:
-                            sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} '
-                                             f'is less than index {n_index} of control sample. Record {v}\n')
-                        elif v[n_index] is not None:
-                            rec.INFO[normal_prefix + t] = _to_string(v[n_index])
+                    if n_indices:
+                        if ni_with_max_vd is None:
+                            _, ni_with_max_vd = max(
+                                (v[ind], ind)
+                                for ind in n_indices
+                                if _to_string(v[ind]) is not None)
+                        if ni_with_max_vd:
+                            rec.INFO[normal_prefix + t] = _to_string(v[ni_with_max_vd])
+
+                    # if n_index is not None:
+                    #     if len(v) <= n_index:
+                    #         sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} '
+                    #                          f'is less than index {n_index} of control sample. Record {v}\n')
+                    #     elif v[n_index] is not None:
+                    #         rec.INFO[normal_prefix + t] = _to_string(v[n_index])
 
             # Writing AD into FORMAT for Purple
             if 'AD' not in rec.FORMAT:
                 rec.set_format('AD', ad)
 
-        if w:
-            w.write_record(rec)
-        else:
-            sys.stdout.write(str(rec))
+        out.write(str(rec))
 
-    if w:
-        w.close()
-    # vcf.close()
+    if output_file:
+        out.close()
 
     sys.stderr.write('Done\n')
 
