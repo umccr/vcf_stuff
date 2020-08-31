@@ -260,12 +260,14 @@ rule somatic_vcf_pon_anno:
     params:
         genome_build = GENOME,
         pon_hits = 3,
-        pon_dir = refdata.get_ref_file(GENOME, 'panel_of_normals_dir')
+        pon_dir = refdata.get_ref_file(GENOME, 'panel_of_normals_dir'),
+        work_dir = safe_mkdir(f'somatic_anno/pon/tmp'),
     output:
         vcf = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz.tbi',
     shell:
-        'pon_anno {input.vcf} --pon-dir {params.pon_dir} | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
+        'pon_anno {input.vcf} --pon-dir {params.pon_dir} --work-dir {params.work_dir} | '
+        'bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
         # ' && tabix -f -p vcf {output.vcf} '
 
