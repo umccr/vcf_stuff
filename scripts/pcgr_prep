@@ -40,7 +40,7 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
     t_indices = [t_index] if isinstance(t_index, int) else t_index
     n_indices = [n_index] if isinstance(n_index, int) else n_index
 
-    if not tumor_vcf_sample or not normal_vcf_sample:
+    if len(t_indices + n_indices) > 1 and not tumor_vcf_sample or not normal_vcf_sample:
         warn(f'Assuming tumor name(s): {t_name}' +
              (f', normal name(s): {n_name}' if n_name else '') +
              '. If it\'s incorrect, please provide sample name(s) explicitly '
