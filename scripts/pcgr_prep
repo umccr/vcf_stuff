@@ -148,28 +148,35 @@ def _to_string(v):
 
 ''' 
 VarDict
-FORMAT/DP,       FORMAT/AF,     FORMAT/VD,                     FORMAT/MQ (somatic), INFO/MQ (germline)
+FORMAT/DP,       FORMAT/AF,     FORMAT/VD,                     
 
 Mutect2                     
-FORMAT/DP,       FORMAT/AF,     FORMAT/AD[1:]                  FORMAT/MMQ
+FORMAT/DP,       FORMAT/AF,     FORMAT/AD[1:]                  
                                        
 Freebayes                                                                          
-FORMAT/DP        FORMAT/AD = ref_count,alt_count               INFO/MQM+INFO/MQMR
+FORMAT/DP        FORMAT/AD = ref_count,alt_count               
                                        
 GATK-Haplotype                                                                     
-FORMAT/DP        FORMAT/AD = ref_count,alt_count               FORMAT/MMQ
+FORMAT/DP        FORMAT/AD = ref_count,alt_count               
                            
 Strelka2 - germline                                                 
 SNV:                       
-sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              INFO/MQ
+sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              
 INDEL:                       
-sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              INFO/MQ
+sum(alt_counts)  FORMAT/AD = ref_count,alt_counts              
                   
 Strelka2 - somatic                                   
 SNV:                  
-FORMAT/DP        FORMAT/{ALT}U[0] = alt_count(tier1,tier2)     INFO/MQ
+FORMAT/DP        FORMAT/{ALT}U[0] = alt_count(tier1,tier2)
 INDEL:                  
-FORMAT/DP        FORMAT/TIR = alt_count(tier1,tier2)           INFO/MQ
+FORMAT/DP        FORMAT/TIR = alt_count(tier1,tier2)
+
+SAGE
+FORMAT/DP        FORMAT/AD = ref_count,alt_count
+
+Varlociraptor
+FORMAT/DP        FORMAT/AF
+
 
 ### AF:
     If FORMAT/AF exists, report it as af (vardict, mutect).
