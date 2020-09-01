@@ -40,6 +40,10 @@ input_mutect2_vcf = join(data_dir, 'test-mutect2.vcf.gz')
 input_vardict_vcf = join(data_dir, 'test-vardict.vcf.gz')
 input_strelka2_vcf = join(data_dir, 'test-strelka2.vcf.gz')
 input_sage_vcf = join(data_dir, 'test-sage.vcf.gz')
+input_sage2_multitumor = join(data_dir, 'test-sage2-multitumor.vcf.gz')
+input_varlociraptor_tumoronly = join(data_dir, 'test-varlociraptor-tumoronly.vcf.gz')
+input_tso500_tumoronly = join(data_dir, 'test-tso500-tumoronly.vcf.gz')
+
 genome_name = 'test-GRCh37'
 ref_fa = join(data_dir, f'{genome_name}.fa')
 
@@ -157,8 +161,8 @@ class TestPcgrPrep(BaseTestCase):
         cmdl = f'pcgr_prep {input_vcf}{extra_opts} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
         self._check_file_throws(out_vcf,
-            wrapper='bcftools query -f "%TUMOR_DP\\t%NORMAL_DP\\t%TUMOR_MQ\\n" | '
-                    'awk \'{printf("%.2f %.2f %.2f\\n", $1, $2, $3) }\'')
+            wrapper='bcftools query -f "%TUMOR_DP\\t%NORMAL_DP\\n" | '
+                    'awk \'{printf("%.2f %.2f\\n", $1, $2) }\'')
 
     def test_pcgr_prep_vardict(self):
         self._run_pcgr_prep(input_vardict_vcf)
@@ -171,3 +175,12 @@ class TestPcgrPrep(BaseTestCase):
 
     def test_pcgr_prep_sage(self):
         self._run_pcgr_prep(input_sage_vcf, extra_opts=' -tn PRJ180253_E190-T01-D')
+
+    def test_pcgr_prep_sage2_multitumor(self):
+        self._run_pcgr_prep(input_sage2_multitumor)
+
+    def test_pcgr_prep_varlociraptor_tumoronly(self):
+        self._run_pcgr_prep(input_varlociraptor_tumoronly)
+
+    def test_pcgr_prep_tso500_tumoronly(self):
+        self._run_pcgr_prep(input_tso500_tumoronly)
