@@ -75,40 +75,89 @@ events:
 varlociraptor call variants --threads 16 generic --scenario varloc_ffpe2.yaml --obs ffpetumor=varloc.tumor.bcf > varloc.ffpe2.bcf
 ```
 
-Filtering to probability the variant is real >0 (also removing the SVLEN field and sorting the VCF for further analysis with PCGR):
+How do we filter it now? Varlociraptor recommends to filter using a control-fdr function: 
 
 ```
-bcftools filter -i "PROB_REAL>0" varloc.ffpe2.bcf | bcftools annotate -x "INFO/SVLEN" | bcftools sort | bcftools view -Oz -o varloc.ffpe2.real.vcf.gz
+varlociraptor filter-calls control-fdr varloc.ffpe2.bcf --events REAL --fdr 0.05 --var SNV > varloc.ffpe2.filt_fdr.bcf
 ```
 
-Now it looks better. Filters 50315 down to 28593. Still noise left.
+It filters only down to 50315>45394 and leaves a lot of noize according to the SNP distribution. 
 
-If we filter using a PROB_REAL>PROB_FFPE_ARTIFACT criteria, we'll end up with just 11 variants.
+Instead of changing the FDR threshold, let's apply PROB_REAL>PROB_FFPE_ARTIFACT:
 
 ```
 bcftools filter -i "PROB_REAL>PROB_FFPE_ARTIFACT" varloc.ffpe2.bcf | bcftools annotate -x "INFO/SVLEN" | bcftools sort | bcftools stats
 ```
 
+We end up with just 14 variants. 
+
+Filtering to PROB_REAL>0 looks better:
+
+```
+bcftools filter -i "PROB_REAL>0" varloc.ffpe2.bcf | bcftools view -Oz -o varloc.ffpe2.real.vcf.gz
+```
+
+Shrinks the size of the VCF from 50315 down to 28593. Though a lot of noise left (umccrise filtering left 25k variants, which is lower). 
+
+Also if we look at the distribution:
+
+```
+export PATH=/g/data/gx8/extras/umccrise_2020_Aug/miniconda/envs/umccrise_cancer_report/bin:$PATH
+Rscript -e "rmarkdown::render('signatures/signatures.Rmd', output_file='signatures/signatures.html')"
+```
+
+![signatures_varlociraptor.png](signatures_varlociraptor.png)
+
+Compared to umccrised:
+
+![sigantures_umccrise.png](sigantures_umccrise.png)
+
+We'll see that more C>T noize is left with a Varlociraptor.
+
+We can't move the PROB_REAL threshold any down further, so let's try to instead experiement with encreasing the PROB_FFPE_ARTIFACT thresholds. Setting it to >1000 leaves us with around 13k variants:
+
+```
+bcftools filter -e "PROB_FFPE_ARTIFACT>1000" varloc.ffpe2.bcf | bcftools annotate -x "INFO/SVLEN" | bcftools sort | bcftools view -Oz -o varloc.ffpe2.real.vcf.gz
+```
+
+However, for some reason the distribution shows they are all C>T. Weird.
+
+Anyway, getting back to the controlled FDR filtering. Lowering the `--fdr` parameter down to a value where we left with 36385 variants:
+
+```
+varlociraptor filter-calls control-fdr varloc.ffpe2.bcf --events REAL --fdr 0.0005 --var SNV | bcftools view -Oz -o varloc.ffpe2.filt_fdr.vcf.gz
+```
+
+Now the distribution looks reasonable:
+
+![signatures_varlociraptor_fdr00005.png](signatures_varlociraptor_fdr00005.png)
+
+Compared to umccrised:
+
+![sigantures_umccrise.png](sigantures_umccrise.png)
+
 Now calculating the TMB for the PROB_REAL>0 variants using both PCGR and PURPLE:
 
 ```
-pcgr_prep varloc.ffpe2.real.vcf.gz -o varloc.ffpe2.real.prepped.vcf.gz
-pcgr varloc.ffpe2.real.prepped.vcf.gz -g hg38 -o varloc.ffpe2.real.prepped.pcgr
+# Removing the SVLEN field and sorting the VCF for further analysis with PCGR):
+bcftools annotate -x "INFO/SVLEN" varloc.ffpe2.filt_fdr.vcf.gz | bcftools sort | bcftools view -Oz -o varloc.ffpe2.filt_fdr.fix.vcf.gz
 
-bcftools view varloc.ffpe2.real.prepped.vcf.gz | sed s/ffpetumor/SBJ00573__SBJ00573_PRJ200397_L2000721/ > varloc.ffpe2.real.prepped.purplefix.vcf
-PURPLE -Xms4g -Xmx16g -amber /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/purple/amber -cobalt /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/purple/cobalt -output_dir varloc.ffpe2.real.prepped.purpled -reference SBJ00573_PRJ200396_L2000720  -tumor  SBJ00573__SBJ00573_PRJ200397_L2000721 -threads 16  -gc_profile /g/data/gx8/extras/vlad/synced/umccr/genomes/hg38/hmf/GC_profile.1000bp.cnp -structural_vcf /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/structural/filt/SBJ00573__SBJ00573_PRJ200397_L2000721-manta.vcf.gz -somatic_vcf varloc.ffpe2.real.prepped.purplefix.vcf -ref_genome /g/data/gx8/extras/vlad/synced/umccr/genomes/hg38/hg38.fa
+pcgr_prep varloc.ffpe2.filt_fdr.fix.vcf.gz -o varloc.ffpe2.filt_fdr.fix.prepped.vcf.gz
+
+export PATH=/g/data/gx8/extras/umccrise_2020_Aug/miniconda/envs/umccrise_pcgr/bin:$PATH
+pcgr varloc.ffpe2.filt_fdr.fix.prepped.vcf.gz -g hg38 -o varloc.ffpe2.filt_fdr.fix.prepped.pcgr
+
+export PATH=/g/data/gx8/extras/umccrise_2020_Aug/miniconda/envs/umccrise_hmf/bin:$PATH
+bcftools view varloc.ffpe2.filt_fdr.fix.prepped.vcf.gz| sed s/ffpetumor/SBJ00573__SBJ00573_PRJ200397_L2000721/ > varloc.ffpe2.filt_fdr.fix.prepped.purplefix.vcf
+PURPLE -Xms4g -Xmx16g -amber /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/purple/amber -cobalt /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/purple/cobalt -output_dir varloc.ffpe2.filt_fdr.fix.prepped.purplefix.purpled -reference SBJ00573_PRJ200396_L2000720  -tumor  SBJ00573__SBJ00573_PRJ200397_L2000721 -threads 16  -gc_profile /g/data/gx8/extras/vlad/synced/umccr/genomes/hg38/hmf/GC_profile.1000bp.cnp -structural_vcf /g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/umccrised/work/SBJ00573__SBJ00573_PRJ200397_L2000721/structural/filt/SBJ00573__SBJ00573_PRJ200397_L2000721-manta.vcf.gz -somatic_vcf varloc.ffpe2.filt_fdr.fix.prepped.purplefix.vcf -ref_genome /g/data/gx8/extras/vlad/synced/umccr/genomes/hg38/hg38.fa
 ```
 
-PCGR TMb is now 3.09 (<5 = LOW), PURPEL TMb is 9.99 - almost about the same as before. Sot he FFPE noise barely affects TMb.
+PCGR TMb is now 5.53 (5-20 = Intermediate), PURPLE TMb is 12.725078698845751. Even higher now, but the ratio is about the same.
+
 
 
 ### Further
 
-Varlociraptor recommends to further filter variatns using a control-fdr function. However need some work to figure out the best parameter for this one.
-
-```
-varlociraptor filter-calls control-fdr varloc.ffpe.bcf --events PRESENT --fdr 0.05 --var SNV > varloc.ffpe.filt.bcf
-```
 
 Also would be interesting to combine the FFPE with a tumor/normal calling, e.g. something like this:
 

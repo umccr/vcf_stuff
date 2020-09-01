@@ -1,0 +1,450 @@
+---
+author: "University of Melbourne Centre for Cancer Research"
+date: "`r Sys.time()`"
+output:
+  html_document:
+    theme: cosmo # darkly
+    css: style.css
+    toc: false
+    code_download: true
+  rmdformats::material:
+    highlight: kate
+params:
+  title: "Cancer Report for Sample "
+  genome_build:     'hg38'
+  tumor_name:       'T_SRR7890902_20pc'
+  batch_name:       'T_SRR7890902_20pc'
+  somatic_snv:      '/g/data/gx8/extras/vlad/tmp/ffpe_cup/CUP1170/final/varloc/varloc.ffpe.noffpe.morelikelypresent.sorted.prep.nosvlen.vcf.gz'
+description: "Analysis of tumor/normal samples at UMCCR"
+title: "`r paste(params$title, params$batch_name)`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r knitr_opts, include=F}
+knitr::opts_chunk$set(collapse = TRUE, echo = FALSE,
+                      warning = FALSE, message = FALSE)
+```
+
+```{r render_report_interactively, eval=F, echo=F}
+batch_name <- "Elon"
+# tumor_name <- strsplit(batch_name, "__")[[1]][2]
+tumor_name <- "Elon_T"
+snv_caller <- "ensemble" # ensemble
+
+params_tmp <- list(
+  spartan = list(
+    tumor_name='',
+    batch_name='',
+    genome_build='',
+    key_genes='',
+    af_global='',
+    af_keygenes='',
+    somatic_snv='',
+    somatic_sv='',
+    purple_gene_cnv='',
+    purple_cnv='',
+    purple_purity='',
+    purple_qc=''),
+  raijin = list(
+    tumor_name='',
+    batch_name='',
+    genome_build='',
+    key_genes='',
+    af_global='',
+    af_keygenes='',
+    somatic_snv='',
+    somatic_sv='',
+    purple_gene_cnv='',
+    purple_cnv='',
+    purple_purity='',
+    purple_qc=''),
+  local = list(
+    genome_build='hg38',
+    key_genes='data/ref/umccr_cancer_genes.latest.tsv',
+    af_global=glue::glue('data/work/{batch_name}/rmd/afs/af_tumor.txt'),
+    af_keygenes=glue::glue('data/work/{batch_name}/rmd/afs/af_tumor_keygenes.txt'),
+    somatic_snv=glue::glue('data/work/{batch_name}/rmd/{snv_caller}-with_chr_prefix.vcf'),
+    somatic_sv=glue::glue('data/{batch_name}/structural/{batch_name}-manta.tsv'),
+    purple_gene_cnv=glue::glue('data/work/{batch_name}/purple/{batch_name}.purple.cnv.gene.tsv'),
+    purple_cnv=glue::glue('data/work/{batch_name}/purple/{batch_name}.purple.cnv.somatic.tsv'),
+    purple_purity=glue::glue('data/work/{batch_name}/purple/{batch_name}.purple.purity.tsv'),
+    purple_qc=glue::glue('data/work/{batch_name}/purple/{batch_name}.purple.qc'),
+    conda_list=glue::glue('data/work/conda_pkg_list.txt')
+  )
+)
+
+params <- params_tmp[["local"]]
+params$batch_name <- batch_name
+params$tumor_name <- tumor_name
+
+render_me <- function() {
+  rmarkdown::render(
+    "cancer_report.Rmd",
+    params = params)
+}
+render_me()
+```
+
+```{r load_pkgs}
+# Bioconductor
+library(BSgenome)
+library(MutationalPatterns)
+ref_genome <- paste0("BSgenome.Hsapiens.UCSC.", params$genome_build)
+library(ref_genome, character.only = TRUE)
+tx_ref_genome <- paste0("TxDb.Hsapiens.UCSC.", params$genome_build, ".knownGene")
+library(tx_ref_genome, character.only = TRUE)
+# CRAN
+library(devtools)
+library(DT)
+library(dplyr)
+library(glue)
+library(ggplot2)
+library(htmltools)
+library(knitr)
+library(kableExtra)
+library(purrr)
+library(readr)
+library(rmarkdown)
+library(stringr)
+library(tidyr)
+```
+```{r funcs}
+# for checking if the columns in the dt are all described
+check_cols_described <- function(cols, descr) {
+  stopifnot(is.character(cols), is.atomic(cols))
+  stopifnot(is.character(descr), is.atomic(descr))
+  for (col in cols) {
+    if (!col %in% descr) {
+      warning(glue::glue("{col} is not described!"))
+    }
+  }
+}
+
+# get js indices when using in DT options
+col_ind_js <- function(dt, col) {
+  ntab <- setNames((1:ncol(dt) - 1), names(dt))
+  stopifnot(all(col %in% names(dt)))
+  sort(unname(ntab[col]))
+}
+
+# used in SV table Details
+sv_detail_table <- function(tab) {
+  check_cols_described(colnames(tab), sv_col_descr$Column)
+  list(Column = colnames(tab)) %>%
+    tibble::as_tibble() %>%
+    dplyr::left_join(sv_col_descr, by = "Column") %>%
+    dplyr::mutate(
+      Column = kableExtra::cell_spec(Column, bold = TRUE)) %>%
+    knitr::kable(escape = FALSE) %>%
+    kableExtra::kable_styling(full_width = FALSE, position = "left") %>%
+    kableExtra::scroll_box(height = "200px")
+}
+```
+
+
+```{r mutational_sigs_prep}
+#---- Mutational Signatures ----#
+somatic_snv <- MutationalPatterns::read_vcfs_as_granges(
+  vcf_files = params$somatic_snv,
+  sample_names = params$tumor_name,
+  genome = ref_genome,
+  group = "auto+sex")
+
+mut_mat <- MutationalPatterns::mut_matrix(vcf_list = somatic_snv, ref_genome = ref_genome)
+
+###--- OLD Sigs ---###
+# Get Sanger sigs from "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
+sig_probs <- file.path("misc/sig/v2_mar2015/signatures_probabilities.txt")
+# better be explicit - the sig_probs file has 7 extra empty columns
+col_types <- paste0(c("ccc", paste0(rep("d", 30), collapse = ""), "ccccccc"), collapse = "")
+col_names <- c("SubstType", "Trinucleotide", "SomMutType", paste0("Sig", 1:30), paste0("foo", 1:7))
+cancer_signatures <-
+  readr::read_tsv(sig_probs, col_names = col_names, col_types = col_types, skip = 1) %>%
+  dplyr::arrange(SubstType)
+
+# sanity check - need to be in same order
+stopifnot(all(cancer_signatures$SomMutType == rownames(mut_mat)))
+# select only 30 sig columns, 96 mut types
+cancer_signatures <- cancer_signatures %>%
+  dplyr::select(4:33) %>%
+  as.matrix()
+
+###--- NEW Sigs ---###
+sig_probs2 <- file.path("misc/sig/v3_may2019/sigProfiler_SBS_signatures_2019_05_22.csv")
+cancer_signatures2 <-
+  readr::read_csv(sig_probs2, col_types = cols(.default = "d", Type = "c", SubType = "c")) %>%
+  dplyr::mutate(SomMutType = paste0(substr(SubType, 1, 1),
+                                    "[", Type, "]",
+                                    substr(SubType, 3, 3))) %>%
+  dplyr::select(SomMutType, SBS1:SBS85)
+
+# sanity check - need to be in same order
+stopifnot(all(cancer_signatures2$SomMutType == rownames(mut_mat)))
+# select only 67 sig columns, 96 mut types
+cancer_signatures2 <- cancer_signatures2 %>%
+  dplyr::select(-1) %>%
+  as.matrix()
+
+# Fit mutation matrix to cancer signatures
+fit_res <- MutationalPatterns::fit_to_signatures(mut_matrix = mut_mat, signatures = cancer_signatures)
+fit_res2 <- MutationalPatterns::fit_to_signatures(mut_matrix = mut_mat, signatures = cancer_signatures2)
+
+# Convert to tibbles for more bullet-proof subsetting
+fit_res <- tibble::tibble(
+  sig = rownames(fit_res$contribution), # matrix rownames
+  contr = unname(fit_res$contribution[, 1])) # matrix single column -> vector
+
+fit_res2 <- tibble::tibble(
+  sig = rownames(fit_res2$contribution),
+  contr = unname(fit_res2$contribution[, 1]))
+
+# Select signatures with some contribution
+fit_res_contr <- dplyr::filter(fit_res, contr > 0)
+fit_res_contr2 <- dplyr::filter(fit_res2, contr > 0)
+
+# If there are no signatures, return a dummy tibble
+if (nrow(fit_res_contr) == 0) {
+  fit_res_contr <- tibble::tibble(
+    sig = "NOSIGS",
+    contr = 0
+  )
+}
+
+if (nrow(fit_res_contr2) == 0) {
+  fit_res_contr2 <- tibble::tibble(
+    sig = "NOSIGS",
+    contr = 0
+  )
+}
+
+mut_sig_contr <-
+  fit_res_contr %>%
+  dplyr::mutate(contr = round(contr, 0),
+                Rank = as.integer(base::rank(-contr))) %>%
+  dplyr::select(Rank, Signature = sig, Contribution = contr) %>%
+  dplyr::arrange(Rank)
+mut_sig_contr2 <-
+  fit_res_contr2 %>%
+  dplyr::mutate(contr = round(contr, 0),
+                Rank = as.integer(base::rank(-contr))) %>%
+  dplyr::select(Rank, Signature = sig, Contribution = contr) %>%
+  dplyr::arrange(Rank)
+```
+
+### Mutational Signatures {.tabset .tabset-fade #signatures}
+
+Deciphering the mutational signature of a tumor sample can provide insight into the mutational
+processes involved in carcinogenesis and help in cancer treatment and prevention.
+The [MutationalPatterns](http://bioconductor.org/packages/release/bioc/html/MutationalPatterns.html)
+R package is used to generate a mutation signature for the sample. We use the final filtered somatic
+calls as input.
+
+#### Context signature
+
+```{r plot_96_prof, fig.height=3}
+MutationalPatterns::plot_96_profile(mut_mat, condensed = TRUE)
+```
+
+#### Point mutation spectrum
+
+<details>
+<summary>Description</summary>
+
+We can count the mutation type occurrences for the input VCF.
+For `C>T` mutations, a distinction is made between `C>T` at CpG sites
+and other sites, as deamination of methylated cytosine at CpG sites is a common mutational
+process. This is the reason the reference genome is needed.
+
+A mutation spectrum shows the relative contribution of each mutation type in the base
+substitution catalogs. We can plot the mean relative contribution of
+each of the 6 base substitution types over all samples. Error bars indicate standard deviation
+over all samples. The total number of mutations is indicated. We can also distinguish
+between `C>T` at CpG sites and other sites.
+
+</details>
+
+```{r plot_mut_type_occurrences, fig.height=3}
+type_occurrences <- mut_type_occurrences(vcf_list = somatic_snv, ref_genome = ref_genome)
+plot_spectrum(type_occurrences, CT = TRUE)
+```
+
+#### Transcriptional strand bias
+
+<details>
+<summary>Description</summary>
+
+We can determine if a gene mutation is on the transcribed or non-transcribed
+strand, which can be used to evaluate the involvement of transcription-coupled
+repair. By convention base substitutions are regarded as C>X or T>X, so we try
+to determine whether the C or T base is on the same strand as the gene
+definition. Base substitutions on the same strand as the gene definition are
+considered 'untranscribed', and on the opposite strand 'transcribed', since the
+gene definitions report the coding or sense strand, which is untranscribed. No
+strand information is reported for base substitutions that overlap with more
+than one gene on different strands.
+
+</details>
+
+```{r tran_strand_bias, fig.height=3}
+# Get known genes table from UCSC
+if (params$genome_build == 'hg19') {
+  genes_list <- genes(TxDb.Hsapiens.UCSC.hg19.knownGene)
+} else {
+  genes_list <- genes(TxDb.Hsapiens.UCSC.hg38.knownGene)
+}
+
+# Mutation count matrix with strand info (4*6*4=96 -> 96*2=192)
+mut_mat_s <- MutationalPatterns::mut_matrix_stranded(somatic_snv,
+                                                     ref_genome = ref_genome,
+                                                     ranges = genes_list,
+                                                     mode = "transcription")
+
+# Mutation count per type and strand
+strand_counts <- MutationalPatterns::strand_occurrences(mut_mat_s, by = "all")
+# Poisson test for strand asymmetry significance testing
+strand_bias <- MutationalPatterns::strand_bias_test(strand_counts)
+
+# mutation spectrum with strand distinction
+MutationalPatterns::plot_strand(strand_counts, mode = "relative")
+# effect size of strand bias
+MutationalPatterns::plot_strand_bias(strand_bias)
+```
+
+#### Replicative strand bias
+
+<details>
+<summary>Description</summary>
+
+The involvement of replication-associated mechanisms can be evaluated by
+testing for a mutational bias between the leading and lagging strand.
+The replication strand is dependent on the locations of replication
+origins from which DNA replication is fired.
+However, replication timing is dynamic and cell-type specific,
+which makes replication strand determination less straightforward than
+transcriptional strand bias analysis.
+Replication timing profiles can be generated with
+Repli-Seq experiments. Once the replication direction is defined,
+a strand asymmetry analysis can be performed similarly as the transcription
+strand bias analysis.
+
+</details>
+
+```{r rep_strand_bias, fig.height=3}
+repli_file <- system.file("extdata/ReplicationDirectionRegions.bed",
+                          package = "MutationalPatterns")
+# start/stop contain scientific notation, so need to be doubles
+repli_strand <-
+  readr::read_tsv(repli_file, col_names = TRUE, col_types = "cddcc") %>%
+  dplyr::mutate_if(is.character, as.factor)
+repli_strand_granges <- GRanges(
+  seqnames = repli_strand$Chr,
+  ranges = IRanges(start = repli_strand$Start + 1,
+                   end = repli_strand$Stop),
+  strand_info = repli_strand$Class)
+
+seqlevelsStyle(repli_strand_granges) <- seqlevelsStyle(base::get(ref_genome))
+
+mut_mat_s_rep <-
+  MutationalPatterns::mut_matrix_stranded(
+    vcf_list = somatic_snv,
+    ref_genome = ref_genome,
+    ranges = repli_strand_granges,
+    mode = "replication")
+# Mutation count per type and strand
+strand_counts_rep <- strand_occurrences(mut_mat_s_rep, by = "all")
+# Poisson test for strand asymmetry significance testing
+strand_bias_rep <- strand_bias_test(strand_counts_rep)
+
+MutationalPatterns::plot_strand(strand_counts_rep, mode = "relative")
+MutationalPatterns::plot_strand_bias(strand_bias_rep)
+```
+
+### Signature Contribution {.tabset .tabset-fade #contributions}
+
+<details>
+<summary>Description</summary>
+
+The contribution of any set of signatures to the mutational profile of a
+sample can be quantified. This unique feature is specifically useful
+for mutational signature analyses of small cohorts or individual samples,
+but also to relate own findings to known signatures and published findings.
+The `fit_to_signatures` function finds the optimal linear combination of
+mutational signatures that most closely reconstructs
+the mutation matrix by solving a non-negative least-squares constraints problem.
+
+Shown are signatures with positive Contribution values, along with summarised descriptions
+and reference signature plots from <https://cancer.sanger.ac.uk/cosmic/signatures>.
+
+</details>
+
+<p>&nbsp;</p>
+
+#### OLD
+
+```{r mutational_signature_contribution}
+sig_table <-
+  readr::read_tsv(file = "misc/sig/v2_mar2015/signatures_description.tsv", col_types = "cc") %>%
+  dplyr::mutate(Plot = paste0("![](misc/sig/v2_mar2015/img/sig-", signature, ".png)"),
+                signature = paste0("Sig", signature)) %>%
+  dplyr::select(Signature = signature, Description = description, Plot)
+
+mut_sig_contr %>%
+  dplyr::left_join(sig_table, by = "Signature") %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling(font_size = 12) %>%
+  kableExtra::scroll_box(height = "400px")
+```
+
+#### NEW
+
+```{r mutational_signature_contribution2}
+sig_table2 <-
+  readr::read_tsv(file = "misc/sig/v3_may2019/signatures_description.tsv", col_types = "cc") %>%
+  dplyr::mutate(Plot = paste0("![](misc/sig/v3_may2019/img/sbs", signature, ".png)"),
+                signature = paste0("SBS", signature)) %>%
+  dplyr::select(Signature = signature, Description = description, Plot)
+
+possible_seq_artefacts <- c("SBS27", "SBS43", "SBS45", "SBS46", "SBS47", "SBS48", "SBS49", "SBS50", "SBS51", "SBS52",
+                            "SBS53", "SBS54", "SBS55", "SBS56", "SBS57", "SBS58", "SBS59", "SBS60")
+
+mut_sig_contr2 %>%
+  dplyr::left_join(sig_table2, by = "Signature") %>%
+  dplyr::mutate(Signature = ifelse(Signature %in% possible_seq_artefacts, paste0(Signature, " (SA)"), Signature)) %>%
+  knitr::kable() %>%
+  kableExtra::kable_styling(font_size = 12) %>%
+  kableExtra::scroll_box(height = "400px")
+```
+
+<p>&nbsp;</p>
+
+### Rainfall Plot {#rainfall}
+Rainfall plots show the distribution of mutations along the genome, with mutation types
+indicated with different colors. The y-axis corresponds to the distance of a mutation from the
+previous mutation, and is log10 transformed. Drop-downs from the plots indicate clusters or
+"hotspots" of mutations.
+
+```{r mutationalpatterns_rainfall, out.width="90%", fig.width=14}
+# When there is only 1 or lower number of variants on a chromosome, MutationalPatterns::plot_rainfall will crash with an error. So need to check if it will work beforehand.
+chromosomes = seqnames(get(ref_genome))[1:22]
+vcf = somatic_snv[[1]]
+chr_subset = vcf[seqnames(vcf) == chromosomes[1]]
+n = length(chr_subset)
+will_work = FALSE
+for (i in 1:length(chromosomes)) {
+  chr_subset = vcf[seqnames(vcf) == chromosomes[i]]
+  n = length(chr_subset)
+  if (n >= 2) {
+    will_work = TRUE
+  }
+}
+if (will_work) {
+  MutationalPatterns::plot_rainfall(somatic_snv[[1]], chromosomes = seqnames(get(ref_genome))[1:22], cex = 1.2, ylim = 1e+09)
+}
+```
