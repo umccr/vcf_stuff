@@ -11,6 +11,7 @@ import numpy as np
 from ngs_utils.logger import warn, critical
 from ngs_utils.vcf_utils import get_sample_ids, add_cyvcf2_hdr, get_sample_names
 from ngs_utils.file_utils import get_ungz_gz
+from ngs_utils.call_process import run_simple
 
 from ngs_utils.utils import set_locale
 set_locale()
@@ -129,7 +130,7 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
 
     if output_file and output_file.endswith('.gz'):
         output_ungz, output_gz = get_ungz_gz(output_file)
-        run_simple(f'bgzip {output_ungz}')
+        run_simple(f'bgzip -f {output_ungz}')
         run_simple(f'tabix -p vcf {output_gz}')
 
     sys.stderr.write('Done\n')
@@ -234,12 +235,12 @@ def _collect_vals_per_sample(rec):
         if rec.REF + 'U' in rec.FORMAT:
             ref_depth = rec.format(rec.REF + 'U')[:,0]
         elif vd is not None:
-            if vd.shape == (1,):
+            if vd.shape == (1,):   # only one sample in VCF
                 ref_depth = dp - vd
             else:
                 ref_depth = dp - np.sum(vd, axis=1)
         if ref_depth is not None:
-            if vd.shape == (1,):
+            if vd.shape == (1,):  # only one sample in VCF
                 ad = np.zeros((2,), dtype=vd.dtype)
                 ad[0] = ref_depth
                 ad[1] = vd
