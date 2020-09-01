@@ -17,6 +17,7 @@ from vcf_stuff.filtering import add_cyvcf2_filter
 
 
 PON_HITS = 5
+SAGE_PON_HITS = 2
 MIN_AF = 0.1
 
 
@@ -130,8 +131,8 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_indices=None, strand_bias=True, hp_c
 
         if rec.INFO.get('PON_COUNT', '.') != '.':
             # sage PoN
-            if rec.INFO.get('PON_COUNT') >= PON_HITS and rec.INFO.get('PON_MAX') >= 5 or \
-                    rec.INFO.get('TIER') != 'PANEL' and rec.INFO.get('PON_COUNT') >= PON_HITS:
+            if rec.INFO.get('PON_COUNT') >= SAGE_PON_HITS and rec.INFO.get('PON_MAX') >= 5 or \
+                    rec.INFO.get('TIER') != 'PANEL' and rec.INFO.get('PON_COUNT') >= SAGE_PON_HITS:
                 add_cyvcf2_filter(rec, 'SAGE_PoN')
                 if not rec.FILTER:  # not filtered otherwise -> can report as germline
                     if af >= 0.2:  # higher frequency variants go as germline
@@ -373,7 +374,7 @@ def _vardict_strand_bias(rec, tumor_indices, damage_p_value=0.01, min_vd=5):
                 bias_filts.append('StrandBias1:1')
 
     # Filtering only if all tumors are filtered
-    if all(b is not None for b in bias_filts):
+    if bias_filts and all(b is not None for b in bias_filts):
         add_cyvcf2_filter(rec, bias_filts[0])
 
     return rec
