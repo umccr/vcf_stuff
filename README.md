@@ -274,7 +274,7 @@ into 2 separate ones:
 
 ```
 #CHROM  POS     ID      REF     ALT
-1       20       .      A       G
+1       20       .      A       C
 1       20       .      G       T
 ```
 
