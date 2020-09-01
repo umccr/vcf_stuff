@@ -95,41 +95,32 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
 
     # Go through each record and add new INFO fields
     for rec in vcf:
-        res = _collect_vals_per_sample(rec, n_index, t_indices)
-        if res is not None:
-            af, dp, vd, ad = res
+        af, dp, vd, ad = _collect_vals_per_sample(rec)
 
-            # when there are multiple samples, using the sample with the max VD, then DP
-            ti_with_max_vd = None
-            ni_with_max_vd = None
-            for t, v in zip(['VD', 'DP', 'AF'], [vd, af, dp]):
-                if v is not None:
-                    if ti_with_max_vd is None:
-                        _, ti_with_max_vd = max(
+        # when there are multiple samples, using the sample with the max VD, then DP
+        ti_with_max_vd = None
+        ni_with_max_vd = None
+        for t, v in zip(['VD', 'DP', 'AF'], [vd, af, dp]):
+            if v is not None:
+                if ti_with_max_vd is None:
+                    _, ti_with_max_vd = max(
+                        (v[ind], ind)
+                        for ind in t_indices
+                        if _to_string(v[ind]) is not None)
+                rec.INFO[tumor_prefix + t] = _to_string(v[ti_with_max_vd])
+
+                if n_indices:
+                    if ni_with_max_vd is None:
+                        _, ni_with_max_vd = max(
                             (v[ind], ind)
-                            for ind in t_indices
+                            for ind in n_indices
                             if _to_string(v[ind]) is not None)
-                    rec.INFO[tumor_prefix + t] = _to_string(v[ti_with_max_vd])
+                    if ni_with_max_vd:
+                        rec.INFO[normal_prefix + t] = _to_string(v[ni_with_max_vd])
 
-                    if n_indices:
-                        if ni_with_max_vd is None:
-                            _, ni_with_max_vd = max(
-                                (v[ind], ind)
-                                for ind in n_indices
-                                if _to_string(v[ind]) is not None)
-                        if ni_with_max_vd:
-                            rec.INFO[normal_prefix + t] = _to_string(v[ni_with_max_vd])
-
-                    # if n_index is not None:
-                    #     if len(v) <= n_index:
-                    #         sys.stderr.write(f'Warning: for tag {t}, len of v={len(v)} '
-                    #                          f'is less than index {n_index} of control sample. Record {v}\n')
-                    #     elif v[n_index] is not None:
-                    #         rec.INFO[normal_prefix + t] = _to_string(v[n_index])
-
-            # Writing AD into FORMAT for Purple
-            if 'AD' not in rec.FORMAT:
-                rec.set_format('AD', ad)
+        # Writing AD into FORMAT for Purple
+        if ad is not None and 'AD' not in rec.FORMAT:
+            rec.set_format('AD', ad)
 
         out.write(str(rec))
 
@@ -224,7 +215,7 @@ def _collect_vals_per_sample(rec):
         elif rec.REF + 'U' in rec.FORMAT:  # strelka2 somatic snp?
             vd = np.array([rec.format(alt + 'U')[:,0] for alt in rec.ALT]).transpose()
         else:
-            wrn = f'Cannot read variant depth. Unknown caller?'
+            wrn = f'Cannot read or infer variant depth. Unknown caller?'
             if wrn not in warnings:
                 warn(f'{wrn} at record: {rec}\n' 
                      'This warning may appear multiple times. Showing once.')
@@ -236,23 +227,15 @@ def _collect_vals_per_sample(rec):
             af = np.true_divide(vdt, dp, where=dp!=0, out=np.zeros(vdt.shape)).transpose()
 
     if ad is None:
+        ref_depth = None
         if rec.REF + 'U' in rec.FORMAT:
             ref_depth = rec.format(rec.REF + 'U')[:,0]
-        else:
+        elif vd is not None:
             ref_depth = dp - np.sum(vd, axis=1)
-        ad = np.zeros((vd.shape[0], vd.shape[1] + 1), dtype=vd.dtype)
-        ad[:,0] = ref_depth
-        ad[:,1:] = vd
-
-    # if 'MQ' in rec.FORMAT:
-    #     mq = rec.format('MQ', float)[:,0]
-    #     # VarDict has an incorrect MQ header (with Integer type instead of Float),
-    #     # so need to specify "float" type here explicitly otherwise MQ won't be parsed
-    # elif 'MMQ' in rec.FORMAT:
-    #     mq = rec.format('MMQ')[:,0]
-    # else:
-    #     mq = [None for _ in [control_index] + tumor_indices]
-    #     mq[tumor_indices[0]] = rec.INFO.get('MQ')
+        if ref_depth is not None:
+            ad = np.zeros((vd.shape[0], vd.shape[1] + 1), dtype=vd.dtype)
+            ad[:,0] = ref_depth
+            ad[:,1:] = vd
 
     return af, dp, vd, ad
 
