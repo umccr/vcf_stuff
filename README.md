@@ -307,7 +307,7 @@ These steps are applied to each input VCF for the `eval_vcf` pipeline above.
 
 ## INFO fields normalisation
 
-VCFs coming from bcbio-nextgen are called with different callers, each using its own way to report quality, depth and allelic frequencies (if at all). To facilitate processing and reporting VCFs in [PCGR](https://github.com/sigven/pcgr), we prepared a script that calculates and populates `TUMOR_AF`, `NORMAL_AF`, `TUMOR_DP`, `NORMAL_DP`, `TUMOR_MQ`, `NORMAL_MQ` fields, this way standardizing output from Strelka2, Mutect2, Freebayes, GATK Haplotype Caller, and VarDict, and consequenctly, Ensemble calls.
+VCFs coming from bcbio-nextgen are called with different callers, each using its own way to report quality, depth and allelic frequencies (if at all). To facilitate processing and reporting VCFs in [PCGR](https://github.com/sigven/pcgr), we prepared a script that calculates and populates `TUMOR_AF`, `NORMAL_AF`, `TUMOR_DP`, `NORMAL_DP` fields, this way standardizing output from Strelka2, Mutect2, Freebayes, GATK Haplotype Caller, and VarDict, and consequenctly, Ensemble calls.
 
 ```
 pcgr_prep data/test-ensemble.vcf.gz -g GRCh37 > test-ensemble.pcgr_prep.vcf
