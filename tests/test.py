@@ -42,13 +42,14 @@ input_strelka2_vcf = join(data_dir, 'test-strelka2.vcf.gz')
 input_sage_vcf = join(data_dir, 'test-sage.vcf.gz')
 input_sage2_multitumor = join(data_dir, 'test-sage2-multitumor.vcf.gz')
 input_varlociraptor_tumoronly = join(data_dir, 'test-varlociraptor-tumoronly.vcf.gz')
+input_varlociraptor_tn = join(data_dir, 'test-varlociraptor-tn.vcf.gz')
 input_tso500_tumoronly = join(data_dir, 'test-tso500-tumoronly.vcf.gz')
 
 genome_name = 'test-GRCh37'
 ref_fa = join(data_dir, f'{genome_name}.fa')
 
 
-@attr(kind='eval')
+@attr('eval')
 class TestEvalVcf(BaseTestCase):
     script = 'eval_vcf'
     data_dir = join(dirname(__file__), BaseTestCase.data_dir)
@@ -75,7 +76,7 @@ class TestEvalVcf(BaseTestCase):
         self._check_file_throws(join(out_dir, 'report.tsv'), ignore_matching_lines=vcf_ignore_lines)
 
 
-# @attr(kind='eval_cnv')
+# @attr('eval_cnv')
 # class TestEvalCnv(BaseTestCase):
 #     script = 'eval_cnv'
 #     data_dir = join(dirname(__file__), BaseTestCase.data_dir, 'cnv', 'hcc2218')
@@ -102,7 +103,7 @@ class TestEvalVcf(BaseTestCase):
 
 pon_data_dir = join(data_dir, 'panel_of_normals')
 
-@attr(kind='pon')
+@attr('pon')
 class TestPonAnno(BaseTestCase):
     script = 'pon_anno'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -114,7 +115,7 @@ class TestPonAnno(BaseTestCase):
         self._run_cmd(cmdl, input_vardict_vcf, out_vcf)
         self._check_file_throws(out_vcf, ignore_matching_lines=vcf_ignore_lines)
 
-@attr(kind='pon')
+@attr('pon')
 class TestPoNPipeline(BaseTestCase):
     script = 'pon_pipeline'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -128,7 +129,7 @@ class TestPoNPipeline(BaseTestCase):
         self._check_file_throws(join(TestPoNPipeline.results_dir, 'pon_filter', 'test-vardict-n2.vcf.gz'), ignore_matching_lines=vcf_ignore_lines)
 
 
-@attr(kind='norm')
+@attr('norm')
 class TestNormVcf(BaseTestCase):
     script = 'norm_vcf'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -149,7 +150,7 @@ class TestNormVcf(BaseTestCase):
     def test_norm_vcf_mutect(self):
         self._run_norm_vcf(input_mutect2_vcf)
 
-@attr(kind='norm')
+@attr('pcgr_prep')
 class TestPcgrPrep(BaseTestCase):
     script = 'pcgr_prep'
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
@@ -177,7 +178,10 @@ class TestPcgrPrep(BaseTestCase):
         self._run_pcgr_prep(input_sage_vcf, extra_opts=' -tn PRJ180253_E190-T01-D')
 
     def test_pcgr_prep_sage2_multitumor(self):
-        self._run_pcgr_prep(input_sage2_multitumor)
+        self._run_pcgr_prep(input_sage2_multitumor, extra_opts=' -tn APGI_1965,APGI_1965_exome')
+
+    def test_pcgr_prep_varlociraptor_tn(self):
+        self._run_pcgr_prep(input_varlociraptor_tn, extra_opts=' -tn tumor')
 
     def test_pcgr_prep_varlociraptor_tumoronly(self):
         self._run_pcgr_prep(input_varlociraptor_tumoronly)

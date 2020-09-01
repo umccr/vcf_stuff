@@ -1,0 +1,527 @@
+##fileformat=VCFv4.1
+##FILTER=<ID=PASS,Description="All filters passed">
+##ALT=<ID=<M>,Description="There is an overlapping other allele that has been called in a separate VCF record">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
+##FILTER=<ID=LowDP,Description="Low coverage (DP tag), therefore no genotype called. Note different depth thresholds for variant and reference calls.">
+##FILTER=<ID=Blacklist,Description="Variant overlaps a region in the blacklist BED file">
+##FILTER=<ID=LowSupport,Description="Variant is supported by too few fragments">
+##FILTER=<ID=LowVarSupport,Description="Variant is supported by too few reads">
+##FILTER=<ID=q0,Description="Quality score less than 0, by Scylla">
+##FILTER=<ID=SB,Description="Variant strand bias too high, by Scylla">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
+##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allele Depth">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Depth Used For Variant Calling">
+##FORMAT=<ID=VF,Number=.,Type=Float,Description="Variant Frequency">
+##FORMAT=<ID=NL,Number=1,Type=Integer,Description="Applied BaseCall Noise Level">
+##FORMAT=<ID=SB,Number=1,Type=Float,Description="StrandBias Score">
+##FORMAT=<ID=NC,Number=1,Type=Float,Description="Fraction of bases which were uncalled or with basecall quality below the minimum threshold">
+##FORMAT=<ID=US,Number=.,Type=Integer,Description="Supporting read type counts">
+##FORMAT=<ID=AQ,Number=1,Type=Float,Description="Variant artifact adjusted quality score">
+##FORMAT=<ID=LQ,Number=1,Type=Float,Description="Likelihood ratio quality score">
+##contig=<ID=chr1,length=248956422,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr10,length=133797422,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr10_GL383545v1_alt,length=179254,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr10_GL383546v1_alt,length=309802,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr10_KI270824v1_alt,length=181496,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr10_KI270825v1_alt,length=188315,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11,length=135086622,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_GL383547v1_alt,length=154407,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_JH159136v1_alt,length=200998,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_JH159137v1_alt,length=191409,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270721v1_random,length=100316,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270826v1_alt,length=186169,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270827v1_alt,length=67707,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270829v1_alt,length=204059,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270830v1_alt,length=177092,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270831v1_alt,length=296895,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270832v1_alt,length=210133,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270902v1_alt,length=106711,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270903v1_alt,length=214625,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr11_KI270927v1_alt,length=218612,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12,length=133275309,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL383549v1_alt,length=120804,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL383550v2_alt,length=169178,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL383551v1_alt,length=184319,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL383552v1_alt,length=138655,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL383553v2_alt,length=152874,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL877875v1_alt,length=167313,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_GL877876v1_alt,length=408271,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270833v1_alt,length=76061,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270834v1_alt,length=119498,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270835v1_alt,length=238139,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270836v1_alt,length=56134,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270837v1_alt,length=40090,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr12_KI270904v1_alt,length=572349,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13,length=114364328,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270838v1_alt,length=306913,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270839v1_alt,length=180306,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270840v1_alt,length=191684,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270841v1_alt,length=169134,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270842v1_alt,length=37287,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr13_KI270843v1_alt,length=103832,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14,length=107043718,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_GL000009v2_random,length=201709,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_GL000194v1_random,length=191469,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_GL000225v1_random,length=211173,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270722v1_random,length=194050,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270723v1_random,length=38115,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270724v1_random,length=39555,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270725v1_random,length=172810,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270726v1_random,length=43739,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270844v1_alt,length=322166,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270845v1_alt,length=180703,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270846v1_alt,length=1351393,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr14_KI270847v1_alt,length=1511111,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15,length=101991189,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_GL383554v1_alt,length=296527,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_GL383555v2_alt,length=388773,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270727v1_random,length=448248,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270848v1_alt,length=327382,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270849v1_alt,length=244917,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270850v1_alt,length=430880,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270851v1_alt,length=263054,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270852v1_alt,length=478999,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270905v1_alt,length=5161414,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr15_KI270906v1_alt,length=196384,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16,length=90338345,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_GL383556v1_alt,length=192462,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_GL383557v1_alt,length=89672,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_KI270728v1_random,length=1872759,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_KI270853v1_alt,length=2659700,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_KI270854v1_alt,length=134193,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_KI270855v1_alt,length=232857,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr16_KI270856v1_alt,length=63982,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17,length=83257441,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL000205v2_random,length=185591,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL000258v2_alt,length=1821992,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL383563v3_alt,length=375691,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL383564v2_alt,length=133151,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL383565v1_alt,length=223995,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_GL383566v1_alt,length=90219,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_JH159146v1_alt,length=278131,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_JH159147v1_alt,length=70345,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_JH159148v1_alt,length=88070,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270729v1_random,length=280839,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270730v1_random,length=112551,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270857v1_alt,length=2877074,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270858v1_alt,length=235827,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270859v1_alt,length=108763,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270860v1_alt,length=178921,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270861v1_alt,length=196688,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270862v1_alt,length=391357,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270907v1_alt,length=137721,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270908v1_alt,length=1423190,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270909v1_alt,length=325800,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr17_KI270910v1_alt,length=157099,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18,length=80373285,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383567v1_alt,length=289831,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383568v1_alt,length=104552,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383569v1_alt,length=167950,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383570v1_alt,length=164789,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383571v1_alt,length=198278,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_GL383572v1_alt,length=159547,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_KI270863v1_alt,length=167999,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_KI270864v1_alt,length=111737,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_KI270911v1_alt,length=157710,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr18_KI270912v1_alt,length=174061,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19,length=58617616,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL000209v2_alt,length=177381,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL383573v1_alt,length=385657,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL383574v1_alt,length=155864,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL383575v2_alt,length=170222,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL383576v1_alt,length=188024,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949746v1_alt,length=987716,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949747v2_alt,length=729520,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949748v2_alt,length=1064304,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949749v2_alt,length=1091841,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949750v2_alt,length=1066390,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949751v2_alt,length=1002683,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949752v1_alt,length=987100,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_GL949753v2_alt,length=796479,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270865v1_alt,length=52969,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270866v1_alt,length=43156,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270867v1_alt,length=233762,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270868v1_alt,length=61734,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270882v1_alt,length=248807,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270883v1_alt,length=170399,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270884v1_alt,length=157053,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270885v1_alt,length=171027,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270886v1_alt,length=204239,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270887v1_alt,length=209512,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270888v1_alt,length=155532,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270889v1_alt,length=170698,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270890v1_alt,length=184499,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270891v1_alt,length=170680,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270914v1_alt,length=205194,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270915v1_alt,length=170665,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270916v1_alt,length=184516,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270917v1_alt,length=190932,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270918v1_alt,length=123111,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270919v1_alt,length=170701,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270920v1_alt,length=198005,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270921v1_alt,length=282224,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270922v1_alt,length=187935,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270923v1_alt,length=189352,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270929v1_alt,length=186203,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270930v1_alt,length=200773,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270931v1_alt,length=170148,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270932v1_alt,length=215732,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270933v1_alt,length=170537,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr19_KI270938v1_alt,length=1066800,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_GL383518v1_alt,length=182439,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_GL383519v1_alt,length=110268,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_GL383520v2_alt,length=366580,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270706v1_random,length=175055,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270707v1_random,length=32032,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270708v1_random,length=127682,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270709v1_random,length=66860,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270710v1_random,length=40176,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270711v1_random,length=42210,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270712v1_random,length=176043,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270713v1_random,length=40745,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270714v1_random,length=41717,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270759v1_alt,length=425601,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270760v1_alt,length=109528,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270761v1_alt,length=165834,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270762v1_alt,length=354444,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270763v1_alt,length=911658,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270764v1_alt,length=50258,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270765v1_alt,length=185285,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270766v1_alt,length=256271,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr1_KI270892v1_alt,length=162212,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2,length=242193529,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr20,length=64444167,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr20_GL383577v2_alt,length=128386,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr20_KI270869v1_alt,length=118774,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr20_KI270870v1_alt,length=183433,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr20_KI270871v1_alt,length=58661,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21,length=46709983,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_GL383578v2_alt,length=63917,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_GL383579v2_alt,length=201197,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_GL383580v2_alt,length=74653,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_GL383581v2_alt,length=116689,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_KI270872v1_alt,length=82692,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_KI270873v1_alt,length=143900,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr21_KI270874v1_alt,length=166743,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22,length=50818468,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_GL383582v2_alt,length=162811,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_GL383583v2_alt,length=96924,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KB663609v1_alt,length=74013,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270731v1_random,length=150754,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270732v1_random,length=41543,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270733v1_random,length=179772,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270734v1_random,length=165050,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270735v1_random,length=42811,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270736v1_random,length=181920,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270737v1_random,length=103838,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270738v1_random,length=99375,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270739v1_random,length=73985,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270875v1_alt,length=259914,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270876v1_alt,length=263666,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270877v1_alt,length=101331,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270878v1_alt,length=186262,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270879v1_alt,length=304135,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr22_KI270928v1_alt,length=176103,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_GL383521v1_alt,length=143390,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_GL383522v1_alt,length=123821,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_GL582966v2_alt,length=96131,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270715v1_random,length=161471,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270716v1_random,length=153799,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270767v1_alt,length=161578,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270768v1_alt,length=110099,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270769v1_alt,length=120616,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270770v1_alt,length=136240,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270771v1_alt,length=110395,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270772v1_alt,length=133041,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270773v1_alt,length=70887,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270774v1_alt,length=223625,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270775v1_alt,length=138019,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270776v1_alt,length=174166,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270893v1_alt,length=161218,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr2_KI270894v1_alt,length=214158,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3,length=198295559,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_GL000221v1_random,length=155397,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_GL383526v1_alt,length=180671,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_JH636055v2_alt,length=173151,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270777v1_alt,length=173649,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270778v1_alt,length=248252,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270779v1_alt,length=205312,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270780v1_alt,length=224108,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270781v1_alt,length=113034,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270782v1_alt,length=162429,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270783v1_alt,length=109187,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270784v1_alt,length=184404,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270895v1_alt,length=162896,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270924v1_alt,length=166540,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270934v1_alt,length=163458,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270935v1_alt,length=197351,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270936v1_alt,length=164170,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr3_KI270937v1_alt,length=165607,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4,length=190214555,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_GL000008v2_random,length=209709,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_GL000257v2_alt,length=586476,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_GL383527v1_alt,length=164536,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_GL383528v1_alt,length=376187,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270785v1_alt,length=119912,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270786v1_alt,length=244096,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270787v1_alt,length=111943,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270788v1_alt,length=158965,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270789v1_alt,length=205944,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270790v1_alt,length=220246,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270896v1_alt,length=378547,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr4_KI270925v1_alt,length=555799,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5,length=181538259,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL000208v1_random,length=92689,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL339449v2_alt,length=1612928,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL383530v1_alt,length=101241,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL383531v1_alt,length=173459,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL383532v1_alt,length=82728,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_GL949742v1_alt,length=226852,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270791v1_alt,length=195710,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270792v1_alt,length=179043,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270793v1_alt,length=126136,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270794v1_alt,length=164558,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270795v1_alt,length=131892,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270796v1_alt,length=172708,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270897v1_alt,length=1144418,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr5_KI270898v1_alt,length=130957,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6,length=170805979,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000250v2_alt,length=4672374,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000251v2_alt,length=4795265,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000252v2_alt,length=4604811,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000253v2_alt,length=4677643,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000254v2_alt,length=4827813,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000255v2_alt,length=4606388,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL000256v2_alt,length=4929269,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_GL383533v1_alt,length=124736,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KB021644v2_alt,length=185823,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270758v1_alt,length=76752,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270797v1_alt,length=197536,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270798v1_alt,length=271782,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270799v1_alt,length=152148,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270800v1_alt,length=175808,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270801v1_alt,length=870480,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr6_KI270802v1_alt,length=75005,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7,length=159345973,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_GL383534v2_alt,length=119183,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270803v1_alt,length=1111570,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270804v1_alt,length=157952,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270805v1_alt,length=209988,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270806v1_alt,length=158166,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270807v1_alt,length=126434,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270808v1_alt,length=271455,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270809v1_alt,length=209586,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr7_KI270899v1_alt,length=190869,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8,length=145138636,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270810v1_alt,length=374415,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270811v1_alt,length=292436,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270812v1_alt,length=282736,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270813v1_alt,length=300230,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270814v1_alt,length=141812,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270815v1_alt,length=132244,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270816v1_alt,length=305841,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270817v1_alt,length=158983,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270818v1_alt,length=145606,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270819v1_alt,length=133535,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270820v1_alt,length=36640,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270821v1_alt,length=985506,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270822v1_alt,length=624492,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270900v1_alt,length=318687,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270901v1_alt,length=136959,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr8_KI270926v1_alt,length=229282,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9,length=138394717,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_GL383539v1_alt,length=162988,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_GL383540v1_alt,length=71551,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_GL383541v1_alt,length=171286,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_GL383542v1_alt,length=60032,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_KI270717v1_random,length=40062,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_KI270718v1_random,length=38054,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_KI270719v1_random,length=176845,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_KI270720v1_random,length=39050,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chr9_KI270823v1_alt,length=439082,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrM,length=16569,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000195v1,length=182896,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000213v1,length=164239,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000214v1,length=137718,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000216v2,length=176608,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000218v1,length=161147,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000219v1,length=179198,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000220v1,length=161802,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000224v1,length=179693,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_GL000226v1,length=15008,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270302v1,length=2274,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270303v1,length=1942,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270304v1,length=2165,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270305v1,length=1472,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270310v1,length=1201,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270311v1,length=12399,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270312v1,length=998,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270315v1,length=2276,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270316v1,length=1444,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270317v1,length=37690,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270320v1,length=4416,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270322v1,length=21476,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270329v1,length=1040,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270330v1,length=1652,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270333v1,length=2699,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270334v1,length=1368,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270335v1,length=1048,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270336v1,length=1026,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270337v1,length=1121,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270338v1,length=1428,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270340v1,length=1428,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270362v1,length=3530,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270363v1,length=1803,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270364v1,length=2855,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270366v1,length=8320,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270371v1,length=2805,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270372v1,length=1650,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270373v1,length=1451,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270374v1,length=2656,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270375v1,length=2378,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270376v1,length=1136,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270378v1,length=1048,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270379v1,length=1045,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270381v1,length=1930,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270382v1,length=4215,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270383v1,length=1750,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270384v1,length=1658,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270385v1,length=990,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270386v1,length=1788,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270387v1,length=1537,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270388v1,length=1216,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270389v1,length=1298,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270390v1,length=2387,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270391v1,length=1484,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270392v1,length=971,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270393v1,length=1308,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270394v1,length=970,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270395v1,length=1143,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270396v1,length=1880,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270411v1,length=2646,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270412v1,length=1179,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270414v1,length=2489,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270417v1,length=2043,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270418v1,length=2145,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270419v1,length=1029,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270420v1,length=2321,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270422v1,length=1445,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270423v1,length=981,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270424v1,length=2140,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270425v1,length=1884,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270429v1,length=1361,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270435v1,length=92983,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270438v1,length=112505,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270442v1,length=392061,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270448v1,length=7992,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270465v1,length=1774,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270466v1,length=1233,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270467v1,length=3920,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270468v1,length=4055,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270507v1,length=5353,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270508v1,length=1951,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270509v1,length=2318,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270510v1,length=2415,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270511v1,length=8127,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270512v1,length=22689,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270515v1,length=6361,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270516v1,length=1300,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270517v1,length=3253,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270518v1,length=2186,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270519v1,length=138126,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270521v1,length=7642,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270522v1,length=5674,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270528v1,length=2983,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270529v1,length=1899,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270530v1,length=2168,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270538v1,length=91309,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270539v1,length=993,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270544v1,length=1202,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270548v1,length=1599,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270579v1,length=31033,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270580v1,length=1553,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270581v1,length=7046,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270582v1,length=6504,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270583v1,length=1400,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270584v1,length=4513,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270587v1,length=2969,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270588v1,length=6158,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270589v1,length=44474,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270590v1,length=4685,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270591v1,length=5796,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270593v1,length=3041,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270741v1,length=157432,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270742v1,length=186739,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270743v1,length=210658,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270744v1,length=168472,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270745v1,length=41891,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270746v1,length=66486,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270747v1,length=198735,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270748v1,length=93321,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270749v1,length=158759,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270750v1,length=148850,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270751v1,length=150742,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270752v1,length=27745,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270753v1,length=62944,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270754v1,length=40191,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270755v1,length=36723,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270756v1,length=79590,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrUn_KI270757v1,length=71251,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrX,length=156040895,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrX_KI270880v1_alt,length=284869,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrX_KI270881v1_alt,length=144206,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrX_KI270913v1_alt,length=274009,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrY,length=57227415,assembly=UCSC_hg38.genome.fa>
+##contig=<ID=chrY_KI270740v1_random,length=37240,assembly=UCSC_hg38.genome.fa>
+##liftOverProgram=CrossMap(https://sourceforge.net/projects/crossmap/)
+##liftOverFile=/data/runs/ywang16_test/Reference/UCSC_Chain_files/hg19ToHg38.over.chain.gz
+##new_reference_genome=/data/runs/ywang16_test/Reference/UCSC_hg38/UCSC_hg38.genome.fa
+##liftOverTime=August27,2020
+##bcftools_filterVersion=1.10.2+htslib-1.10.2
+##bcftools_filterCommand=filter -i GT!="0/0" ./PTC_TSO200609VD_L2000553_MergedSmallVariants.GermlineTag.hg38.genome.vcf; Date=Mon Aug 31 14:23:40 2020
+##bcftools_viewVersion=1.10.2+htslib-1.10.2
+##bcftools_viewCommand=view -f.,PASS calls.vcf; Date=Mon Aug 31 14:24:03 2020
+##bcftools_filterCommand=filter -i GT!="0/." calls.pass.vcf; Date=Mon Aug 31 14:24:35 2020
+##INFO=<ID=TUMOR_AF,Number=1,Type=Float,Description="AF in tumor sample">
+##INFO=<ID=NORMAL_AF,Number=1,Type=Float,Description="AF in control sample">
+##INFO=<ID=TUMOR_DP,Number=1,Type=Integer,Description="DP in tumor sample">
+##INFO=<ID=NORMAL_DP,Number=1,Type=Integer,Description="DP in control sample">
+##INFO=<ID=TUMOR_VD,Number=A,Type=Integer,Description="VD in tumor sample">
+##INFO=<ID=NORMAL_VD,Number=A,Type=Integer,Description="VD in control sample">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	PTC_TSO200609VD_L2000553.bam
+chr1	156880040	.	C	A	100	PASS	DP=3022;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=62;TUMOR_DP=3022;TUMOR_AF=0.020516214427531435	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2960,62:3022:0.02052:30:-100:0.0385:3,13,3,19,4,20,176,566,337,803,337,803:100:100
+chr1	179109010	.	T	C	100	PASS	DP=2406;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=258;TUMOR_DP=2406;TUMOR_AF=0.10723192019950124	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2148,258:2406:0.10723:30:-100:0.324:20,61,30,48,38,61,244,595,287,447,318,515:100:100
+chr1	204469485	.	A	G	100	PASS	DP=3646;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=True;TUMOR_VD=432;TUMOR_DP=3646;TUMOR_AF=0.11848601206801974	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:3214,432:3646:0.11849:30:-100:0.036:33,147,29,88,35,100,309,1104,297,727,332,877:100:100
+chr1	206474453	.	C	G	100	PASS	DP=3507;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=True;TUMOR_VD=293;TUMOR_DP=3507;TUMOR_AF=0.08354719133162247	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:3214,293:3507:0.08355:30:-100:0.0754:22,64,40,49,44,74,257,823,431,721,396,879:100:100
+chr2	47806320	.	G	A	100	PASS	DP=2172;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=261;TUMOR_DP=2172;TUMOR_AF=0.12016574585635359	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1911,261:2172:0.12017:30:-100:0.0273:6,59,20,77,16,83,72,456,179,604,225,636:100:100
+chr2	113226623	.	TGA	T	100	PASS	DP=2209;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=26;TUMOR_DP=2209;TUMOR_AF=0.011770031688546853	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2183,26:2209:0.01177:30:-1.8086:0:0,12,1,5,1,7,103,617,202,494,229,560:100:100
+chr6	117319674	.	G	T	100	PASS	DP=2879;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=759;TUMOR_DP=2879;TUMOR_AF=0.2636332059742966	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2120,759:2879:0.26363:30:-100:0.0381:38,155,66,189,88,223,161,650,268,709,308,783:100:100
+chr6	117332446	.	A	G	100	PASS	DP=1787;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=1346;TUMOR_DP=1787;TUMOR_AF=0.7532176832680471	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:440,1346:1787:0.75322:30:-100:0.0449:34,209,111,428,126,438,46,262,151,581,161,586:100:100
+chr6	160992027	.	A	G	100	PASS	DP=702;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=22;TUMOR_DP=702;TUMOR_AF=0.03133903133903134	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:679,22:702:0.03134:30:-20.9507:0.0462:0,1,3,8,4,6,61,12,196,101,215,117:97.256:100
+chr7	13939600	.	GA	AC	100	PASS	DP=1360;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=408;TUMOR_DP=1360;TUMOR_AF=0.3	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:952,408:1360:0.3:30:-100:0:19,63,41,123,31,131,172,468,322,698,302,740:100:100
+chr7	13961075	.	G	T	100	PASS	DP=1134;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=292;TUMOR_DP=1134;TUMOR_AF=0.25749559082892415	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:842,292:1134:0.2575:30:-100:0.0283:6,53,27,91,24,91,24,182,113,338,121,356:100:100
+chr7	13975852	.	T	G	100	PASS	DP=1918;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=23;TUMOR_DP=1918;TUMOR_AF=0.011991657977059436	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1895,23:1918:0.01199:30:-57.4423:0.0357:1,4,1,9,3,5,177,395,215,428,236,467:100:100
+chr7	86786605	.	C	T	100	PASS	DP=4988;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=True;TUMOR_VD=1287;TUMOR_DP=4988;TUMOR_AF=0.2580192461908581	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:3700,1287:4988:0.25802:30:-100:0.0346:91,339,112,312,114,319,365,1306,459,1169,488,1201:100:100
+chr8	37698105	.	CA	C	100	PASS	DP=1185;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=False;TUMOR_VD=19;TUMOR_DP=1185;TUMOR_AF=0.016033755274261603	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1166,19:1185:0.01603:30:-14.2994:0:0,7,1,4,1,6,105,165,227,238,203,247:98.477:100
+chr8	68080779	.	T	.	0	PASS	DP=1302;TUMOR_VD;TUMOR_DP=1302;TUMOR_AF	GT:GQ:AD:DP:VF:NL:SB:NC:US	./.:0:0:1302:1:0:0:0.0503:0,0,0,0,0,0,80,161,130,366,141,424
+chr10	27037173	.	G	A	100	PASS	DP=1260;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=113;TUMOR_DP=1260;TUMOR_AF=0.08968253968253968	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1147,113:1260:0.08968:30:-100:0.0519:4,23,12,32,19,23,73,280,125,296,159,327:100:100
+chr10	32011409	.	AT	A	100	PASS	DP=2411;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=32;TUMOR_DP=2411;TUMOR_AF=0.013272501036914143	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2379,32:2411:0.01327:30:-4.1994:0:0,15,1,5,1,10,154,570,235,585,246,621:100:100
+chr10	87928739	.	C	G	100	PASS	DP=1950;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=268;TUMOR_DP=1950;TUMOR_AF=0.13743589743589743	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1682,268:1950:0.13744:30:-100:0.0347:20,60,22,62,26,78,152,438,190,423,209,538:100:100
+chr10	102504278	.	C	G	100	PASS	DP=1943;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=True;TUMOR_VD=681;TUMOR_DP=1943;TUMOR_AF=0.350488934637159	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1261,681:1943:0.35049:30:-100:0.041:80,102,102,123,110,164,224,333,230,376,301,479:100:100
+chr11	69698678	.	C	A	100	PASS	DP=3485;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=1056;TUMOR_DP=3485;TUMOR_AF=0.303012912482066	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2428,1056:3485:0.30301:30:-100:0.0434:51,254,86,273,103,289,200,846,312,886,357,884:100:100
+chr11	108295030	.	A	T	100	PASS	DP=1799;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=605;TUMOR_DP=1799;TUMOR_AF=0.3362979433018344	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1194,605:1799:0.3363:30:-100:0.0223:43,106,66,159,72,159,120,336,227,449,193,474:100:100
+chr11	118473221	.	T	A	100	PASS	DP=2625;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=1005;TUMOR_DP=2625;TUMOR_AF=0.38285714285714284	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1619,1005:2625:0.38286:30:-100:0.0378:59,282,65,227,110,262,160,729,202,577,289,668:100:100
+chr12	4434230	.	G	A	100	PASS	DP=2760;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=30;TUMOR_DP=2760;TUMOR_AF=0.010869565217391304	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2730,30:2760:0.01087:30:-72.7947:0.0343:1,7,3,5,2,12,128,620,290,687,315,720:100:100
+chr12	18563498	.	A	G	100	PASS	DP=2544;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=False;TUMOR_VD=29;TUMOR_DP=2544;TUMOR_AF=0.01139937106918239	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2515,29:2544:0.0114:30:-44.4808:0.0301:3,7,4,8,2,5,172,518,276,586,357,635:100:100
+chr12	25206386	.	C	CT	85	PASS	DP=1398;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=13;TUMOR_DP=1398;TUMOR_AF=0.009298998569384835	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:85:1385,13:1398:0.0093:30:-24.0236:0:0,0,0,8,1,4,61,274,151,371,158,398:80.842:100
+chr12	94282133	.	G	.	0	PASS	DP=1131;TUMOR_VD;TUMOR_DP=1131;TUMOR_AF	GT:GQ:AD:DP:VF:NL:SB:NC:US	./.:0:0:1131:1:0:0:0.0026:0,0,0,0,0,0,70,107,170,292,172,320
+chr12	94282134	.	T	.	0	PASS	DP=1131;TUMOR_VD;TUMOR_DP=1131;TUMOR_AF	GT:GQ:AD:DP:VF:NL:SB:NC:US	./.:0:0:1131:1:0:0:0.0018:0,0,0,0,0,0,70,107,170,292,172,320
+chr13	32339132	.	G	T	100	PASS	DP=2391;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=466;TUMOR_DP=2391;TUMOR_AF=0.19489753241321622	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1925,466:2391:0.1949:30:-100:0.0413:31,85,54,116,57,123,157,453,270,593,302,616:100:100
+chr16	11256956	.	G	.	0	PASS	DP=3018;TUMOR_VD;TUMOR_DP=3018;TUMOR_AF	GT:GQ:AD:DP:VF:NL:SB:NC:US	./.:0:0:3018:1:0:0:0.0102:0,0,0,0,0,0,142,760,327,703,330,756
+chr17	43071107	.	GA	G	100	PASS	DP=2876;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=False;TUMOR_VD=100;TUMOR_DP=2876;TUMOR_AF=0.03477051460361613	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2776,100:2876:0.03477:30:-100:0:5,25,19,25,8,18,216,796,269,631,281,683:100:100
+chr19	10160049	.	A	AT	100	PASS	DP=1781;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=False;TUMOR_VD=17;TUMOR_DP=1781;TUMOR_AF=0.009545199326221224	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1764,17:1781:0.00955:30:-1.5057:0:0,1,1,5,0,10,85,291,221,458,244,542:79.76:100
+chr22	28687961	.	CG	C	100	PASS	DP=2223;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=442;TUMOR_DP=2223;TUMOR_AF=0.19883040935672514	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:1781,442:2223:0.19883:30:-100:0:24,66,29,140,38,145,160,262,283,572,326,620:100:100
+chr22	29286163	.	G	A	100	PASS	DP=2780;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=False;Nonsynonymous=False;IncludedInTMBNumerator=False;TUMOR_VD=744;TUMOR_DP=2780;TUMOR_AF=0.26762589928057556	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:2036,744:2780:0.26763:30:-100:0.0605:43,87,107,167,114,226,157,333,404,673,403,810:100:100
+chrX	71378281	.	GAGATAT	G	100	PASS	DP=1107;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=293;TUMOR_DP=1107;TUMOR_AF=0.2646793134598013	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:814,293:1107:0.26468:30:-100:0:20,76,21,63,17,96,55,258,89,259,111,337:100:100
+chrX	77681733	.	T	C	100	PASS	DP=495;GermlineFilterDatabase=False;GermlineFilterProxi=False;CodingVariant=True;Nonsynonymous=True;IncludedInTMBNumerator=True;TUMOR_VD=126;TUMOR_DP=495;TUMOR_AF=0.2545454545454545	GT:GQ:AD:DP:VF:NL:SB:NC:US:AQ:LQ	0/1:100:369,126:495:0.25455:30:-100:0.0407:2,13,15,36,22,38,30,53,61,125,82,144:100:100
