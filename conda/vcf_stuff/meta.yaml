@@ -1,4 +1,4 @@
-{% set version=load_setup_py_data() %}
+{% set data=load_setup_py_data() %}
 
 package:
   name: vcf_stuff
