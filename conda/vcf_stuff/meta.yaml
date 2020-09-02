@@ -1,22 +1,22 @@
-{% set version=load_setup_py_data().get('version') %}
+{% set version=load_setup_py_data() %}
 
 package:
   name: vcf_stuff
-  version: "{{ version }}"
+  version: {{ data.version }}
 
 source:
-  path: ../../../
+  path: ../../
 
 build:
   number: 0
 
 requirements:
   build:
-    - python ==3.7.*
-    - ngs_utils >=2.5.6
+    - python {{ python }}
+    - ngs_utils >=2.8.0
   run:
-    - python ==3.7.*
-    - ngs_utils >=2.5.6
+    - python {{ python }}
+    - ngs_utils >=2.8.0
     - bcftools
     - tabix
     - bedops
@@ -41,7 +41,6 @@ test:
     - vcf_stuff.eval_cnv
 
 about:
-  home: https://github.com/vladsaveliev/vcf_stuff
-  license: GNU General Public License v3 (GPLv3)
-  summary: '📊Evaluating, filtering, comparing, and visualising variant calls'
-  license_family: GPL3
+  home: {{ data['url'] }}
+  license: {{ data['license'] }}
+  summary: {{ data['description'] }}

@@ -16,7 +16,7 @@ setup(
     author_email='vladislav.sav@gmail.com',
     description='Evaluating, filtering, comparing, and visualising variant calls',
     keywords='bioinformatics',
-    url='https://github.com/umccr/vcf-stuff',
+    url='https://github.com/vladsaveliev/vcf_stuff',
     license='GPLv3',
     packages=find_packages(),
     package_data={

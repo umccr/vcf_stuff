@@ -1,0 +1,44 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  build-test-publish:
+    # For tag pushes, we want to assure only the tag event triggers CI,
+    # not the accompanying commit:
+    if: "! startsWith(github.event.head_commit.message, 'Bump ') || startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Add miniconda to PATH
+        run: echo "::add-path::${HOME}/miniconda3/bin"
+
+      - name: Setup conda
+        run: |
+          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+            --no-verbose -O miniconda.sh
+          bash miniconda.sh -b
+          conda config --set always_yes yes --set changeps1 no
+          conda install -c conda-forge mamba
+          mamba update conda
+          conda config --add channels vladsaveliev --add channels bioconda --add channels conda-forge
+          mamba install pip versionpy conda-build conda-verify anaconda-client
+
+      - name: Build package
+        run: mamba build conda/$(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+
+      - name: Install
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: mamba install --use-local $(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+
+      - name: Test
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        run: |
+          python -c "vcf_stuff.eval_cnv"
+          nosetests --nocapture tests/test.py:TestPonAnno
+          nosetests --nocapture tests/test.py:TestPcgrPrep
+
+      - name: Upload to anaconda
+        if: "startsWith(github.ref, 'refs/tags/')"
+        run: |
+          anaconda -t ${{ secrets.ANACONDA_TOKEN }} upload ${HOME}/miniconda3/conda-bld/**/*.tar.bz2
