@@ -12,7 +12,7 @@ version = versionpy.get_version(pkg)
 setup(
     name=pkg,
     version=version,
-    author='Vlad Saveliev',
+    author='Vlad Savelyev',
     author_email='vladislav.sav@gmail.com',
     description='Evaluating, filtering, comparing, and visualising variant calls',
     keywords='bioinformatics',

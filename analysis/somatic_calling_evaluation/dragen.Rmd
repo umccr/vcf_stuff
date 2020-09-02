@@ -29,8 +29,10 @@ load_seqcii = T
 
 load_dragen = T
 load_bcbio = T
+
 load_dragen_strelka = F
 load_bcbio_strelka = F
+
 dir = "/Users/vsaveliev/Analysis/Dragen/"
 ```
 
@@ -97,10 +99,23 @@ if (load_seqcii) {
   truth_vcf$vcf = truth_vcf$vcf %>% mutate(NORMAL_AF = NVAF)
   
   bcbio = tibble()
+  # 1. Bcbio                          /g/data/gx8/projects/Saveliev_SEQCII/validation/bcbio/$TNAME.vcf.gz
+  # 3. Bcbio, umccrised               /g/data/gx8/projects/Saveliev_SEQCII/validation/bcbio/$TNAME.PASS.vcf.gz
   dragen = tibble()
-  dragen_strelka = tibble()
+  # 2. Dragen                         /g/data/gx8/projects/Saveliev_SEQCII/validation/dragen/$TNAME.PREP.NOALT.vcf.gz
+  # 4. Dragen, umccrised              /g/data/gx8/projects/Saveliev_SEQCII/validation/dragen/$TNAME.PREP.NOALT.ANNO.FILT.PASS.vcf.gz
+  sage = tibble()
+  # 5. SAGE                           /g/data/gx8/projects/Saveliev_SEQCII/sage/$TNAME.sage.PASS.vcf.gz
+  # 6. SAGE + PON                     /g/data/gx8/projects/Saveliev_SEQCII/sage/$TNAME.sage.pon_ann.pon_filt.PASS.vcf.gz
+  # 7. SAGE, umccrised
+  # 8. SAGE + PON, umccrised
+  varloc = tibble()
+  # 9. Bcbio, varlociraptor positive  /g/data/gx8/projects/Saveliev_SEQCII/varlociraptor/${TNAME}_varloc.calls.positive.vcf.gz
   
-  for (p in c(20, 50, 75, 100)) {
+  # 10. Bcbio, varlociraptor strong   /g/data/gx8/projects/Saveliev_SEQCII/varlociraptor/${TNAME}_varloc.calls.strong.vcf.gz
+
+  for (p in c(50)) {  
+  # for (p in c(20, 50, 75, 100)) {
     # bcbio
     bcbio_callers = c()
     if (load_bcbio)
@@ -222,9 +237,19 @@ filtered_vs_unfiltered = bind_rows(
 Summarize filtering reasons for false negatives
 
 ```{r fig.width = 8}
-bcbio %>% filter(caller == "bwa_ensemble", purity == 20) %>% select(FILT) %>% mutate(filters = str_split(FILT, ';')) %>% mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>% count(filt, sort = T)
+bcbio %>% 
+  filter(caller == "bwa_ensemble", purity == 20) %>% 
+  select(FILT) %>% 
+  mutate(filters = str_split(FILT, ';')) %>% 
+  mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>%
+  count(filt, sort = T)
 
-bcbio %>% filter(caller == "bwa_ensemble", purity == 20) %>% filter(is_fn) %>% select(FILT) %>% mutate(filters = str_split(FILT, ';')) %>% mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>% count(filt, sort = T)
+bcbio %>% 
+  filter(caller == "bwa_ensemble", purity == 20) %>% 
+  filter(is_fn) %>% select(FILT) %>% 
+  mutate(filters = str_split(FILT, ';')) %>% 
+  mutate(filt = map_chr(filters, ~ifelse(length(.) == 0, "", str_c(sort(as.character(.), decreasing = T), collapse = ';')))) %>% 
+  count(filt, sort = T)
 ```
 
 
