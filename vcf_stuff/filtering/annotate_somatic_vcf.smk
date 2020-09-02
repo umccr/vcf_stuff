@@ -253,10 +253,25 @@ rule somatic_vcf_prep:
         shell(f'pcgr_prep {t_name_arg} {n_name_arg} {input.vcf}' 
               f' | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
 
-rule somatic_vcf_pon_anno:
+rule sage_pon:
     input:
         vcf = rules.somatic_vcf_prep.output.vcf,
         tbi = rules.somatic_vcf_prep.output.tbi,
+        hmf_pon = refdata.get_ref_file(GENOME, key='hmf_pon'),
+    output:
+        vcf = f'somatic_anno/sage_pon/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/sage_pon/{SAMPLE}-somatic.vcf.gz.tbi',
+    shell:
+        # PON_MAX is the maximum allelic variant depth for a PoN variant
+        # PON_COUNT is the number of hits in the PoN
+        'bcftools annotate -a {input.hmf_pon} '
+        '-c PON_COUNT,PON_MAX {input.vcf} -Oz -o {output.vcf} '
+        '&& tabix -f -p vcf {output.vcf}'
+
+rule somatic_vcf_pon_anno:
+    input:
+        vcf = rules.sage_pon.output.vcf,
+        tbi = rules.sage_pon.output.tbi,
     params:
         genome_build = GENOME,
         pon_hits = 3,
@@ -267,7 +282,8 @@ rule somatic_vcf_pon_anno:
         tbi = f'somatic_anno/pon/{SAMPLE}-somatic.vcf.gz.tbi',
     shell:
         'pon_anno {input.vcf} --pon-dir {params.pon_dir} --work-dir {params.work_dir} | '
-        'bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}'
+        'bgzip -c > {output.vcf} '
+        '&& tabix -f -p vcf {output.vcf}'
         # ' | bcftools filter -e "INFO/PoN_CNT>={params.pon_hits}" --soft-filter PoN --mode + -Oz -o {output.vcf}' \
         # ' && tabix -f -p vcf {output.vcf} '
 
