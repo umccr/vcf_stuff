@@ -17,7 +17,7 @@ from vcf_stuff.filtering import add_cyvcf2_filter
 
 
 PON_HITS = 5
-SAGE_PON_HITS = 2
+SAGE_PON_HITS = 3
 MIN_AF = 0.1
 
 
