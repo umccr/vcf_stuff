@@ -7,6 +7,9 @@ jobs:
     # not the accompanying commit:
     if: "! startsWith(github.event.head_commit.message, 'Bump ') || startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8]
     steps:
       - uses: actions/checkout@master
 
@@ -19,13 +22,15 @@ jobs:
             --no-verbose -O miniconda.sh
           bash miniconda.sh -b
           conda config --set always_yes yes --set changeps1 no
-          conda install -c conda-forge mamba
+          conda install -c conda-forge mamba "python==${{ matrix.python-version }}.*"
           mamba update conda
           conda config --add channels vladsaveliev --add channels bioconda --add channels conda-forge
           mamba install pip versionpy conda-build conda-verify anaconda-client
 
       - name: Build package
-        run: mamba build conda/$(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')
+        run: |
+          mamba build conda/$(basename $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]') \
+          --python=${{ matrix.python-version }}
 
       - name: Install
         if: "!startsWith(github.ref, 'refs/tags/')"
