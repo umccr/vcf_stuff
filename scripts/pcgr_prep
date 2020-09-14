@@ -19,27 +19,40 @@ set_locale()
 @click.command()
 @click.argument('input_file', type=click.Path(exists=True))
 @click.option('-o', 'output_file', type=click.Path())
-@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
-@click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
-def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=None):
+@click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name(s) in the VCF')
+@click.option('-nn', 'normal_vcf_sample', help='Normal sample name(s) in the VCF')
+@click.option('-rn', 'rna_vcf_sample', help='RNA sample name(s) in the VCF')
+def main(input_file, output_file=None,
+         tumor_vcf_sample=None, normal_vcf_sample=None, rna_vcf_sample=None):
     """ Prepares a VCF file for exposing in PCGR:
-        adds TUMOR_AF, NORMAL_AF, TUMOR_DP, NORMAL_DP fields.
+        adds TUMOR_AF, NORMAL_AF, TUMOR_DP, NORMAL_DP, RNA_AF, RNA_DP fields.
     """
 
     # will throw a critical error if it can't guess sample names:
-    t_name, n_name = get_sample_names(
+    names = get_sample_names(
         input_file,
         provided_tumor_name=tumor_vcf_sample,
-        provided_normal_name=normal_vcf_sample
+        provided_normal_name=normal_vcf_sample,
+        provided_rna_name=rna_vcf_sample,
     )
-    t_index, n_index = get_sample_ids(
+    ids = get_sample_ids(
         input_file,
         provided_t_name=tumor_vcf_sample,
-        provided_n_name=normal_vcf_sample
+        provided_n_name=normal_vcf_sample,
+        provided_r_name=rna_vcf_sample,
     )
+    r_index = []
+    if rna_vcf_sample:
+        t_name, n_name, r_name = names
+        t_index, n_index, r_index = ids
+    else:
+        t_name, n_name = names
+        t_index, n_index = ids
+
     # t_index will be an array if there are multiple tumors (i.e. tumor_vcf_sample is comma-separated)
     t_indices = [i for i in (t_index if isinstance(t_index, list) else [t_index]) if i is not None]
     n_indices = [i for i in (n_index if isinstance(n_index, list) else [n_index]) if i is not None]
+    r_indices = [i for i in (r_index if isinstance(r_index, list) else [r_index]) if i is not None]
 
     if len(t_indices + n_indices) > 1 and not tumor_vcf_sample or not normal_vcf_sample:
         warn(f'Assuming tumor name(s): {t_name}' +
@@ -51,6 +64,7 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
 
     tumor_prefix = 'TUMOR_'
     normal_prefix = 'NORMAL_'
+    rna_prefix = 'RNA_'
 
     # Add headers
     new_header = []
@@ -69,21 +83,25 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
 
                 tumor_tag = tumor_prefix + tag
                 normal_tag = normal_prefix + tag
+                rna_tag = rna_prefix + tag
 
                 add_cyvcf2_hdr(vcf, new_header=new_header, id=tumor_tag, number=number, type=type,
                                descr=f"{tag} in tumor sample")
-                if n_index is not None:
+                if n_indices:
                     add_cyvcf2_hdr(vcf, new_header=new_header, id=normal_tag, number=number, type=type,
                                    descr=f"{tag} in control sample")
+                if r_indices:
+                    add_cyvcf2_hdr(vcf, new_header=new_header, id=rna_tag, number=number, type=type,
+                                   descr=f"{tag} in RNA sample")
 
             if not any(h2.startswith(f'##FORMAT=<ID=AD,') for h2 in vcf.raw_header.split('\n')):
-                # need to add the AD field into FORMAT:
+                # for adding the AD field into FORMAT:
                 add_cyvcf2_hdr(vcf, hdr='FORMAT', new_header=new_header, id='AD', number='R', type='Integer',
                                descr=f"Allelic depths for the ref and alt alleles in the order listed")
 
         if not any(h.startswith(f'##INFO=<ID={p+tag},')
                    for tag in ['AF', 'DP', 'VD']
-                   for p in [tumor_prefix, normal_prefix]):
+                   for p in [tumor_prefix, normal_prefix, rna_prefix]):
             # to make sure we don't add duplicated TUMOR_AF,... fields
             new_header.append(h.strip())
 
@@ -101,6 +119,7 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
         # when there are multiple samples, using the sample with the max VD, then DP
         ti_with_max_vd = None
         ni_with_max_vd = None
+        ri_with_max_vd = None
         for t, v in zip(['VD', 'DP', 'AF'], [vd, dp, af]):
             if v is not None:
                 if ti_with_max_vd is None:
@@ -117,6 +136,14 @@ def main(input_file, output_file=None, tumor_vcf_sample=None, normal_vcf_sample=
                             for ind in n_indices
                             if _to_string(v[ind]) is not None)
                     rec.INFO[normal_prefix + t] = _to_string(v[ni_with_max_vd])
+
+                if len(r_indices) > 0:
+                    if ri_with_max_vd is None:
+                        _, ri_with_max_vd = max(
+                            (v[ind], ind)
+                            for ind in r_indices
+                            if _to_string(v[ind]) is not None)
+                    rec.INFO[rna_prefix + t] = _to_string(v[ri_with_max_vd])
 
         # Writing AD into FORMAT for Purple
         if ad is not None and 'AD' not in rec.FORMAT:
