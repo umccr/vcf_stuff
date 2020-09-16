@@ -19,6 +19,7 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF '
               '(can use multiple values, in this case the maximum AF and the maximum DP will be used)')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
+@click.option('-rn', 'rna_vcf_sample', help='RNA sample name in the VCF')
 
 @click.option('-n', '--dryrun', 'dryrun', is_flag=True, help='Propagated to snakemake. Prints rules and commands '
                                                              'to be run without actually executing them.')
@@ -29,20 +30,10 @@ from ngs_utils.utils import set_locale; set_locale()
 @click.option('--dag', 'dag', is_flag=True,
               help='Propagated to snakemake. Print the DAG of jobs in the dot language. '
                    'Usage: umccrise --dag > tmp.txt; cat <cleaned-tmp.txt> | dot -Tsvg > dag.svg')
-@click.option('--tibanna', 'tibanna', is_flag=True,
-              help='Uses tibanna to run snakemake rules on AWS. '
-                   'Need to first assume role, and deploy tibanna (needs an s3 bucket for provisioning):\n'
-                   '$ aws-google-auth ...'
-                   '$ tibanna deploy_unicorn -g my_unicorn -b my_bucket --no-setenv'
-                   '$ export TIBANNA_DEFAULT_STEP_FUNCTION_NAME=tibanna_unicorn_my_unicorn'
-              )
-@click.option('--tibanna-id', 'tibanna_id',
-              help='Will use this ID to access tibanna resources. Will try to deploy if doesn\'t exist.')
-@click.option('--output-s3', 'output_s3',
-              help='Requied to be used along with --tibanna. Output will be stored in the specified s3 location')
 
-def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_vcf_sample=None, normal_vcf_sample=None,
-         dryrun=None, unlock=None, report=None, dag=None, tibanna=False, tibanna_id=None, output_s3=None):
+def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None,
+         tumor_vcf_sample=None, normal_vcf_sample=None, rna_vcf_sample=None,
+         dryrun=None, unlock=None, report=None, dag=None):
 
     if not vcf.endswith('.vcf.gz'):
         raise click.BadParameter('VCF must be bgzip compresed')
@@ -55,7 +46,7 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
     if not genome:
         raise click.BadParameter('Please, specify genome build with -g (GRCh37 or hg38)')
 
-    check_vcf_samples(vcf, tumor_vcf_sample, normal_vcf_sample)
+    check_vcf_samples(vcf, tumor_vcf_sample, normal_vcf_sample, rna_vcf_sample)
 
     conf = {
         'input_vcf': abspath(vcf),
@@ -69,6 +60,8 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
         conf['tumor_vcf_sample'] = tumor_vcf_sample
     if normal_vcf_sample:
         conf['normal_vcf_sample'] = normal_vcf_sample
+    if rna_vcf_sample:
+        conf['rna_vcf_sample'] = rna_vcf_sample
 
     if not work_dir:
         work_dir = output_file + '_work'
@@ -78,25 +71,19 @@ def main(vcf, genome, output_file, work_dir=None, input_genomes_url=None, tumor_
     pcgr_env_path = conda_utils.secondary_conda_env('pcgr')
     conf['pcgr_env_path'] = pcgr_env_path
 
-    tibanna_cfg = None
-    if tibanna:
-        tibanna_cfg = {
-            'id': tibanna_id,
-            'output_s3': output_s3,
-        }
-
     run_snakemake(join(package_path(), "annotate_somatic_vcf.smk"), conf, cores=1, output_dir=work_dir,
-                  unlock=unlock, dryrun=dryrun, report=report, dag=dag, tibanna_cfg=tibanna_cfg)
+                  unlock=unlock, dryrun=dryrun, report=report, dag=dag)
 
 
-def check_vcf_samples(input_file, tumor_vcf_sample=None, normal_vcf_sample=None):
+def check_vcf_samples(input_file, tumor_vcf_sample=None, normal_vcf_sample=None, rna_vcf_sample=None):
     """ Check if we can automatically determine the order of tumor and normal in VCF.
         get_sample_names will throw a critical error if it can't guess
     """
     get_sample_names(
         input_file,
         provided_tumor_name=tumor_vcf_sample,
-        provided_normal_name=normal_vcf_sample
+        provided_normal_name=normal_vcf_sample,
+        provided_rna_name=rna_vcf_sample,
     )
 
 

@@ -50,7 +50,9 @@ rule all:
 rule run_sage:
     input:
         tumor_bam    = TUMOR_BAM,
+        tumor_bai    = TUMOR_BAM + '.bai',
         normal_bam   = NORMAL_BAM,
+        normal_bai   = NORMAL_BAM + '.bai',
         ref_fa       = refdata.get_ref_file(GENOME, key='fa'),
         hotspots_vcf = HOTSPOTS_VCF,
     output:
@@ -103,7 +105,8 @@ if EXISTING_VCF:
             sage_tbi = f'work/sage_reorder_samples/{SAMPLE}-sage.vcf.gz.tbi',
         group: "sage"
         run:
-            tumor_index, normal_index = get_sample_ids(input.vcf, provided_t_name=T_NAME, provided_n_name=N_NAME)
+            idx = get_sample_ids(input.vcf, provided_t_name=T_NAME, provided_n_name=N_NAME)
+            tumor_index, normal_index = idx[:2]
             assert sorted([tumor_index, normal_index]) == [0, 1]
             sample_in_order = [None, None]
             sample_in_order[tumor_index] = T_NAME

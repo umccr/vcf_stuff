@@ -25,6 +25,7 @@ INPUT_VCF = config['input_vcf']
 OUTPUT_VCF = config['output_vcf']
 T_NAME = config.get('tumor_vcf_sample')
 N_NAME = config.get('normal_vcf_sample')
+R_NAME = config.get('rna_vcf_sample')
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
 assert INPUT_VCF.endswith('.vcf.gz'), INPUT_VCF
 
@@ -247,10 +248,12 @@ rule somatic_vcf_prep:
     params:
         t_name = T_NAME,
         n_name = N_NAME,
+        r_name = R_NAME,
     run:
         t_name_arg = f"-tn {params.t_name}" if params.t_name else ""
         n_name_arg = f"-nn {params.n_name}" if params.n_name else ""
-        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {input.vcf}' 
+        r_name_arg = f"-rn {params.r_name}" if params.r_name else ""
+        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {r_name_arg} {input.vcf}' 
               f' | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 rule sage_pon:

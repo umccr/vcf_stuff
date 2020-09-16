@@ -27,17 +27,26 @@ MIN_AF = 0.1
 @click.option('-g', 'genome', default='GRCh37')
 @click.option('-tn', 'tumor_vcf_sample', help='Tumor sample name in the VCF')
 @click.option('-nn', 'normal_vcf_sample', help='Normal sample name in the VCF')
+@click.option('-rn', 'rna_vcf_sample', help='RNA sample name in the VCF')
 @click.option('--sb/--no-sb', '--strand-bias', 'strand_bias', is_flag=True, default=True)
 @click.option('--hp', 'hp_coef', type=click.INT, help="Set to -1 to disable filtering")
 @click.option('--vardict2mut', 'vardict2mut', is_flag=True, default=False)
 @click.option('--min-af', 'min_af', type=click.FLOAT, default=MIN_AF)
-def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf_sample=None,
+def main(input_file, output_file, genome=None,
+         tumor_vcf_sample=None, normal_vcf_sample=None, rna_vcf_sample=None,
          strand_bias=None, hp_coef=None, vardict2mut=False, min_af=None):
 
-    tumor_index, control_index = get_sample_ids(input_file,
-        provided_t_name=tumor_vcf_sample, provided_n_name=normal_vcf_sample)
+    ids = get_sample_ids(
+        input_file,
+        provided_t_name=tumor_vcf_sample,
+        provided_n_name=normal_vcf_sample,
+        provided_r_name=rna_vcf_sample)
+    if rna_vcf_sample:
+        t_index, n_index, r_index = ids
+    else:
+        t_index, n_index = ids
     # t_index will be an array if there are multiple tumors (i.e. tumor_vcf_sample is comma-separated)
-    tumor_indices = [tumor_index] if isinstance(tumor_index, int) else tumor_index
+    tumor_indices = [t_index] if isinstance(t_index, int) else t_index
 
     if vardict2mut:
         from vcf_stuff.filtering.ngs_reporting.vardict2mut import VarDict2Mut
@@ -66,7 +75,7 @@ def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf
         vcf.add_info_to_header({'ID': 'AZ_hotspot',  'Description': 'Hotspot based on AZ data knowledge',                         'Type': 'String', 'Number': '1'})
         vcf.add_info_to_header({'ID': 'AZ_artefact', 'Description': 'Artefact based on AZ data knowledge',                        'Type': 'String', 'Number': '1'})
         vcf.add_info_to_header({'ID': 'Germline',    'Description': 'Germline leackage, can be added into the germline VCF file', 'Type': 'Flag', 'Number': '0'})
-        if not '##INFO=<ID=TRICKY,' in vcf.raw_header:  # legacy
+        if '##INFO=<ID=TRICKY,' not in vcf.raw_header:  # legacy
             vcf.add_info_to_header({'ID': 'TRICKY',  'Description': 'Tricky regions from bcbio folders at coverage/problem_regions/GA4GH and coverage/problem_regions/LCR', 'Type': 'String', 'Number': '1'})
 
     iter_vcf(
@@ -74,7 +83,6 @@ def main(input_file, output_file, genome=None, tumor_vcf_sample=None, normal_vcf
         proc_rec=_somatic_vcf_filter_rec,
         proc_hdr=_somatic_vcf_filter_hdr,
         tumor_indices=tumor_indices,
-        control_index=control_index,
         strand_bias=strand_bias,
         hp_coef=hp_coef,
         vardict2mut=vardict2mut,
@@ -382,36 +390,3 @@ def _vardict_strand_bias(rec, tumor_indices, damage_p_value=0.01, min_vd=5):
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
