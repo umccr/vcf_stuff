@@ -41,6 +41,7 @@ input_vardict_vcf = join(data_dir, 'test-vardict.vcf.gz')
 input_strelka2_vcf = join(data_dir, 'test-strelka2.vcf.gz')
 input_sage_vcf = join(data_dir, 'test-sage.vcf.gz')
 input_sage2_multitumor = join(data_dir, 'test-sage2-multitumor.vcf.gz')
+input_sage2_rna = join(data_dir, 'test-sage2-rna.vcf.gz')
 input_varlociraptor_tumoronly = join(data_dir, 'test-varlociraptor-tumoronly.vcf.gz')
 input_varlociraptor_tn = join(data_dir, 'test-varlociraptor-tn.vcf.gz')
 input_tso500_tumoronly = join(data_dir, 'test-tso500-tumoronly.vcf.gz')
@@ -156,14 +157,18 @@ class TestPcgrPrep(BaseTestCase):
     results_dir = join(dirname(__file__), BaseTestCase.results_dir, script)
     gold_standard_dir = join(dirname(__file__), BaseTestCase.gold_standard_dir, script)
 
-    def _run_pcgr_prep(self, input_vcf=None, extra_opts=''):
+    def _run_pcgr_prep(self, input_vcf=None, extra_opts='',
+                       fields_to_cmp=['TUMOR_DP', 'NORMAL_DP']):
         ungz, _ = get_ungz_gz(input_vcf)
         out_vcf = join(TestPcgrPrep.results_dir, basename(add_suffix(ungz, 'pcgr')))
         cmdl = f'pcgr_prep {input_vcf}{extra_opts} > {out_vcf}'
         self._run_cmd(cmdl, [input_vcf], out_vcf)
-        self._check_file_throws(out_vcf,
-            wrapper='bcftools query -f "%TUMOR_DP\\t%NORMAL_DP\\n" | '
-                    'awk \'{printf("%.2f %.2f\\n", $1, $2) }\'')
+        if fields_to_cmp:
+            query = '\\t'.join([f'%{f}' for f in fields_to_cmp]) + '\\n'
+            awk = '"' + ' '.join('%.2f' for _ in fields_to_cmp) + '\\n"'
+            awk += ''.join(f', ${i + 1}' for i in range(len(fields_to_cmp)))
+            self._check_file_throws(out_vcf,
+                wrapper=f'bcftools query -f "{query}" | awk \'{{printf({awk}) }}\'')
 
     def test_pcgr_prep_vardict(self):
         self._run_pcgr_prep(input_vardict_vcf)
@@ -180,11 +185,15 @@ class TestPcgrPrep(BaseTestCase):
     def test_pcgr_prep_sage2_multitumor(self):
         self._run_pcgr_prep(input_sage2_multitumor, extra_opts=' -tn APGI_1965,APGI_1965_exome')
 
+    def test_pcgr_prep_sage2_rna(self):
+        self._run_pcgr_prep(input_sage2_rna, extra_opts=' -tn LTS_APGI_2056_T -rn APGI_2056_rna',
+                            fields_to_cmp=['TUMOR_DP', 'NORMAL_DP', 'RNA_DP'])
+
     def test_pcgr_prep_varlociraptor_tn(self):
         self._run_pcgr_prep(input_varlociraptor_tn, extra_opts=' -tn tumor')
 
     def test_pcgr_prep_varlociraptor_tumoronly(self):
-        self._run_pcgr_prep(input_varlociraptor_tumoronly)
+        self._run_pcgr_prep(input_varlociraptor_tumoronly, fields_to_cmp=['TUMOR_DP'])
 
     def test_pcgr_prep_tso500_tumoronly(self):
-        self._run_pcgr_prep(input_tso500_tumoronly)
+        self._run_pcgr_prep(input_tso500_tumoronly, fields_to_cmp=['TUMOR_DP'])
