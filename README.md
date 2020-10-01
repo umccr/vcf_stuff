@@ -2,7 +2,7 @@ VCF Stuff
 ---------
 📊Evaluating, filtering, comparing, and visualising genomic variants
 
-[![Build Status](https://travis-ci.org/vladsaveliev/vcf_stuff.svg?branch=master)](https://travis-ci.org/vladsaveliev/vcf_stuff)
+![Build](https://github.com/umccr/vcf_stuff/workflows/CI/badge.svg) [![Anaconda-Server Badge](https://anaconda.org/umccr/vcf_stuff/badges/installer/conda.svg)](https://anaconda.org/umccr/vcf_stuff) [![PyPI version](https://badge.fury.io/py/vcf_stuff.svg)](https://pypi.org/project/vcf_stuff)
 
 
 ## Installation
