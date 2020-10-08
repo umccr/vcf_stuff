@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: Add miniconda to PATH
-        run: echo "::add-path::${HOME}/miniconda3/bin"
+        run: echo "PATH=${HOME}/miniconda3/bin:${PATH}" >> $GITHUB_ENV
 
       - name: Setup conda
         run: |
