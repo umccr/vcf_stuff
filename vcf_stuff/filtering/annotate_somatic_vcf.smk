@@ -309,6 +309,17 @@ rule somatic_vcf_pcgr_round1:
         ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
         '{params.opt} --pcgr-data {input.pcgr_data}'
 
+def parse_igcg_cnt(ct):
+    cnt = 0
+    try:
+        cnt = int(ct.split('|')[2])
+    except:
+        try:
+            cnt = int(ct.split('|')[1])
+        except:
+            pass
+    return cnt
+
 rule somatic_vcf_pcgr_anno:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -353,7 +364,8 @@ rule somatic_vcf_pcgr_anno:
                 cosmic_by_snp[change] = len(cosmic.split('&')) if cosmic != 'NA' else 0
 
                 icgc = row['ICGC_PCAWG_OCCURRENCE']
-                icgc_by_snp[change] = sum([int(ct.split('|')[1]) for ct in icgc.split(', ')]) if icgc != 'NA' else 0
+                icgc_by_snp[change] = sum([parse_igcg_cnt(ct) for ct in icgc.split(', ')]) \
+                    if icgc != 'NA' else 0
 
         # Reading CSQ from PCGR VCF file as the tiers file has it incomplete
         csq_by_snp = dict()
