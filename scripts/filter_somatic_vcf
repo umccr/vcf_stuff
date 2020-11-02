@@ -137,15 +137,6 @@ def _somatic_vcf_filter_rec(rec, vcf, tumor_indices=None, strand_bias=True, hp_c
                 if af >= 0.2:  # higher frequency variants go as germline
                     rec.INFO['Germline'] = True
 
-        if rec.INFO.get('PON_COUNT', '.') != '.':
-            # sage PoN
-            if rec.INFO.get('PON_COUNT') >= SAGE_PON_HITS and rec.INFO.get('PON_MAX') >= 5 or \
-                    rec.INFO.get('TIER') != 'PANEL' and rec.INFO.get('PON_COUNT') >= SAGE_PON_HITS:
-                add_cyvcf2_filter(rec, 'SAGE_PoN')
-                if not rec.FILTER:  # not filtered otherwise -> can report as germline
-                    if af >= 0.2:  # higher frequency variants go as germline
-                        rec.INFO['Germline'] = True
-
         # Rescuing potentical hotspots
         if (rec.INFO.get('HMF_HOTSPOT', False) or
             rec.INFO.get('PCGR_INTOGEN_DRIVER_MUT', False) or
