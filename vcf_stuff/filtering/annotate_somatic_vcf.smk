@@ -79,6 +79,7 @@ rule prep_anno_toml:
         gnomad_vcf   = refdata.get_ref_file(GENOME, key='gnomad'),
         hmf_hotspots = rules.prep_hmf_hotspots.output.vcf,
         hmf_giab     = refdata.get_ref_file(GENOME, key='hmf_giab_conf'),
+        hmf_giab_tbi = refdata.get_ref_file(GENOME, key='hmf_giab_conf') + '.tbi',
         encode       = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'ENCODE',
                            {'hg38': 'encode4_unified_blacklist.bed.gz', 'GRCh37': 'blacklist.v2.bed.gz'}[GENOME])
     output:
