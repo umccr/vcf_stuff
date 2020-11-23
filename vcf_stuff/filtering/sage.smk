@@ -1,4 +1,5 @@
 from os.path import isfile, join, basename, splitext
+import shutil
 from ngs_utils import logger as log
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.vcf_utils import get_sample_ids, get_sample_names, iter_vcf
@@ -227,13 +228,7 @@ rule sage:
         'cp {input.sage_tbi} {output.tbi} ;'
 
 
-
-
-
-
-
-
-
-
-
+onsuccess:
+    print("sage workflow finished! Deleting .snakemake/metadata")
+        shutil.rmtree(".snakemake/metadata")
 

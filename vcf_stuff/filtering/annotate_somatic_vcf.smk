@@ -4,6 +4,7 @@ import cyvcf2
 import toml
 import csv
 import yaml
+import shutil
 from ngs_utils.file_utils import which, safe_mkdir
 from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
@@ -423,6 +424,7 @@ rule annotate:
     shell:
         'cp {input.vcf} {output.vcf} && cp {input.tbi} {output.tbi}'
 
-
-
+onsuccess:
+    print("annotate_somatic_vcf workflow finished! Deleting .snakemake/metadata")
+        shutil.rmtree(".snakemake/metadata")
 
