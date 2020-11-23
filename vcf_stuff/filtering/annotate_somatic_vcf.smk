@@ -426,5 +426,5 @@ rule annotate:
 
 onsuccess:
     print("annotate_somatic_vcf workflow finished! Deleting .snakemake/metadata")
-        shutil.rmtree(".snakemake/metadata")
+    shutil.rmtree(".snakemake/metadata")
 

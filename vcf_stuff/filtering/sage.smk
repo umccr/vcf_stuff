@@ -230,5 +230,5 @@ rule sage:
 
 onsuccess:
     print("sage workflow finished! Deleting .snakemake/metadata")
-        shutil.rmtree(".snakemake/metadata")
+    shutil.rmtree(".snakemake/metadata")
 
