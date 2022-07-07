@@ -30,6 +30,8 @@ R_NAME = config.get('rna_vcf_sample')
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
 assert INPUT_VCF.endswith('.vcf.gz'), INPUT_VCF
 
+MAX_VARIANTS = 500_000
+
 PCGR_ENV_PATH = config.get('pcgr_env_path')
 conda_cmd = ''
 if PCGR_ENV_PATH:
@@ -63,6 +65,7 @@ rule all:
 #   Remove DP<25 & AF<5% in tricky regions: gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp, non-GIAB confident, unless coding in cancer genes
 
 
+# Filters HMF hotspots file from 17,875 in total down to 10,209 HMF variants (Jul2022)
 rule prep_hmf_hotspots:
     input:
         vcf = refdata.get_ref_file(GENOME, key='hotspots'),
@@ -72,6 +75,7 @@ rule prep_hmf_hotspots:
     shell:
         'bcftools filter -i "HMF=1" {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
 
+# Prepares TOML file for use with vcfanno
 rule prep_anno_toml:
     input:
         ga4gh_dir    = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
@@ -139,6 +143,7 @@ names = ["TRICKY_{name}"]
 ops = ["flag"]
 """)
 
+# Runs vcfanno
 rule somatic_vcf_regions_anno:
     input:
         vcf = INPUT_VCF,
@@ -150,71 +155,11 @@ rule somatic_vcf_regions_anno:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && '
         'tabix -f -p vcf {output.vcf}'
 
-
-# Possibly subset VCF to avoid PCGR choking with R stuff.
-# too higly mutated samples might indicate germline contamination.
-# If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
-# subsetting to cancer genes in this case.
-rule maybe_subset_highly_mutated:
-    input:
-        vcf = rules.somatic_vcf_regions_anno.output.vcf,
-        tbi = rules.somatic_vcf_regions_anno.output.tbi,
-    output:
-        vcf = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz.tbi',
-        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
-    params:
-        no_gnomad_vcf = f'somatic_anno/subset/no_gnomad/{SAMPLE}.vcf.gz',
-    run:
-        total_vars = count_vars(input.vcf)
-        vars_no_gnomad = None
-        vars_cancer_genes = None
-        if total_vars > 500_000:
-            warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
-            def func(rec, vcf):
-                gnomad_af = rec.INFO.get('gnomAD_AF')
-                if gnomad_af is not None and float(gnomad_af) >= 0.01 \
-                        and not rec.INFO.get('HMF_HOTSPOT')\
-                        and not rec.INFO.get('SAGE_HOTSPOT'):
-                    return None
-                else:
-                    return rec
-            safe_mkdir(dirname(params.no_gnomad_vcf))
-            iter_vcf(input.vcf, params.no_gnomad_vcf, func)
-            vars_no_gnomad = count_vars(params.no_gnomad_vcf)
-            if vars_no_gnomad > 500_000:
-                warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
-                     f'So _instead_ subsetting to cancer genes.')
-                genes = get_key_genes_set()
-                def func(rec, vcf):
-                    if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
-                        return rec
-                iter_vcf(input.vcf, output.vcf, func)
-                vars_no_gnomad = None
-                vars_cancer_genes = count_vars(output.vcf)
-                warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
-            else:
-                warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad}<=500k somatic variants, '
-                     f'no need to subset to cancer genes keeping all of them for futher reporting')
-                shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
-        else:
-            shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
-
-        with open(output.subset_highly_mutated_stats, 'w') as out:
-            stats = dict(
-                total_vars=total_vars
-            )
-            if vars_no_gnomad is not None:
-                stats['vars_no_gnomad'] = vars_no_gnomad
-            if vars_cancer_genes is not None:
-                stats['vars_cancer_genes'] = vars_cancer_genes
-            yaml.dump(stats, out, default_flow_style=False)
-
 # Removes TRICKY_ and ANN fields
 rule somatic_vcf_clean_info:
     input:
-        vcf = rules.maybe_subset_highly_mutated.output.vcf,
-        tbi = rules.maybe_subset_highly_mutated.output.tbi,
+        vcf = rules.somatic_vcf_regions_anno.output.vcf,
+        tbi = rules.somatic_vcf_regions_anno.output.tbi,
     output:
         vcf = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz.tbi',
@@ -240,7 +185,7 @@ rule somatic_vcf_clean_info:
             return rec
         iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
 
-# Preparations: annotate TUMOR_X and NORMAL_X fields for PCGR, remove non-standard chromosomes and mitochondria, remove non-PASSed calls
+# Annotates 'TUMOR/NORMAL_'-'AF/DP/VD' fields for PCGR
 rule somatic_vcf_prep:
     input:
         vcf = rules.somatic_vcf_clean_info.output.vcf,
@@ -255,10 +200,11 @@ rule somatic_vcf_prep:
         t_name_arg = f"-tn {params.t_name}" if params.t_name else ""
         n_name_arg = f"-nn {params.n_name}" if params.n_name else ""
         r_name_arg = f"-rn {params.r_name}" if params.r_name else ""
-        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {r_name_arg} {input.vcf}' 
-              f' | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
+        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {r_name_arg} {input.vcf} | '
+              f'bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 if GENOME != 'GRCh37':
+    # Annotates VCF with 'SageGermlinePon.hg38.98x.vcf.gz' HMF PoN counts
     rule sage_pon:
         input:
             vcf = rules.somatic_vcf_prep.output.vcf,
@@ -274,6 +220,7 @@ if GENOME != 'GRCh37':
             '-c PON_COUNT,PON_MAX {input.vcf} -Oz -o {output.vcf} '
             '&& tabix -f -p vcf {output.vcf}'
 
+# Annotates with 'INFO/PoN_CNT', optionally 'INFO/PoN_CNT>=filter_hits with FILTER=PoN'
 rule somatic_vcf_pon_anno:
     input:
         vcf = f'somatic_anno/sage_pon/{SAMPLE}-somatic.vcf.gz' if GENOME != 'GRCh37' else rules.somatic_vcf_prep.output.vcf,
@@ -291,6 +238,13 @@ rule somatic_vcf_pon_anno:
         'bgzip -c > {output.vcf} '
         '&& tabix -f -p vcf {output.vcf}'
 
+# PCGR first run. Required to help with downstream filtering.
+# For hypermutated samples (>500K variants) we need to use the
+# vep --no_intergenic option to reduce the load,
+# else it will take ages to finish and might even crash.
+# The older PCGR versions (pre v1) handled that via a TOML config
+# (with the vep_skip_intergenic option) so we handle that
+# via the umccrise/scripts/pcgr wrapper.
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -304,13 +258,18 @@ rule somatic_vcf_pcgr_round1:
         sample_name = f'{SAMPLE}-somatic',
         opt='--no-docker' if not which('docker') else '',
     resources:
-        mem_mb = 20000
-    shell:
-        conda_cmd + which('pcgr') +
-        ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
-        '{params.opt} --pcgr-data {input.pcgr_data}'
+        mem_mb = lambda wildcards, attempt: attempt * 20000
+    run:
+        cmd = (conda_cmd + shutil.which("pcgr") +
+            ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
+            '{params.opt} --pcgr-data {input.pcgr_data}')
+        total_vars = count_vars(input.vcf)
+        if total_vars > MAX_VARIANTS:
+            warn(f'Found {total_vars} > {MAX_VARIANTS} somatic variants, run PCGR with --vep_no_intergenic')
+            cmd += ' --vep_no_intergenic'
+        shell(cmd)
 
-def parse_igcg_cnt(ct):
+def parse_icgc_cnt(ct):
     cnt = 0
     try:
         cnt = int(ct.split('|')[2])
@@ -321,6 +280,8 @@ def parse_igcg_cnt(ct):
             pass
     return cnt
 
+# Annotates with PCGR_ `SYMBOL`,`TIER`,`CONSEQUENCE`,`MUTATION_HOTSPOT`,`PUTATIVE_DRIVER_MUTATION`,
+# `TCGA_PANCANCER_COUNT`,`CLINVAR_CLNSIG`, and `COSMIC_CNT`, `ICGC_PCAWG_HITS`, `CSQ`
 rule somatic_vcf_pcgr_anno:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -365,7 +326,7 @@ rule somatic_vcf_pcgr_anno:
                 cosmic_by_snp[change] = len(cosmic.split('&')) if cosmic != 'NA' else 0
 
                 icgc = row['ICGC_PCAWG_OCCURRENCE']
-                icgc_by_snp[change] = sum([parse_igcg_cnt(ct) for ct in icgc.split(', ')]) \
+                icgc_by_snp[change] = sum([parse_icgc_cnt(ct) for ct in icgc.split(', ')]) \
                     if icgc != 'NA' else 0
 
         # Reading CSQ from PCGR VCF file as the tiers file has it incomplete
@@ -417,7 +378,6 @@ rule annotate:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
-        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
