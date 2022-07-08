@@ -155,11 +155,71 @@ rule somatic_vcf_regions_anno:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && '
         'tabix -f -p vcf {output.vcf}'
 
-# Removes TRICKY_ and ANN fields
-rule somatic_vcf_clean_info:
+# Possibly subset VCF to avoid downstream problems with R tools.
+# Hypermutated samples might indicate germline contamination.
+# If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
+rule maybe_subset_highly_mutated:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
+    output:
+        vcf = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz.tbi',
+        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
+    params:
+        no_gnomad_vcf = f'somatic_anno/subset/no_gnomad/{SAMPLE}.vcf.gz',
+    run:
+        total_vars = count_vars(input.vcf)
+        vars_no_gnomad = None
+        vars_cancer_genes = None
+        if total_vars > MAX_VARIANTS:
+            warn(f'Found {total_vars}>{MAX_VARIANTS} somatic variants, removing those where gnomAD_AF>0.01')
+            def func(rec, vcf):
+                gnomad_af = rec.INFO.get('gnomAD_AF')
+                if gnomad_af is not None and float(gnomad_af) >= 0.01 \
+                        and not rec.INFO.get('HMF_HOTSPOT')\
+                        and not rec.INFO.get('SAGE_HOTSPOT'):
+                    return None
+                else:
+                    return rec
+            safe_mkdir(dirname(params.no_gnomad_vcf))
+            iter_vcf(input.vcf, params.no_gnomad_vcf, func)
+            vars_no_gnomad = count_vars(params.no_gnomad_vcf)
+            #if vars_no_gnomad > MAX_VARIANTS:
+            #    warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
+            #         f'So _instead_ subsetting to cancer genes.')
+            #    genes = get_key_genes_set()
+            #    def func(rec, vcf):
+            #        if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
+            #            return rec
+            #    iter_vcf(input.vcf, output.vcf, func)
+            #    vars_no_gnomad = None
+            #    vars_cancer_genes = count_vars(output.vcf)
+            #    warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
+            #else:
+            warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad} somatic variants, '
+                 f'hopefully this will not choke downstream tools!')
+            shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
+        else:
+            # not hypermutated so proceed as normal
+            shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
+
+        with open(output.subset_highly_mutated_stats, 'w') as out:
+            stats = dict(
+                total_vars=total_vars
+            )
+            if vars_no_gnomad is not None:
+                stats['vars_no_gnomad'] = vars_no_gnomad
+            if vars_cancer_genes is not None:
+                stats['vars_cancer_genes'] = vars_cancer_genes
+            yaml.dump(stats, out, default_flow_style=False)
+
+
+# Removes TRICKY_ and ANN fields
+rule somatic_vcf_clean_info:
+    input:
+        vcf = rules.maybe_subset_highly_mutated.output.vcf,
+        tbi = rules.maybe_subset_highly_mutated.output.tbi,
     output:
         vcf = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/clean_info/{SAMPLE}-somatic.vcf.gz.tbi',
