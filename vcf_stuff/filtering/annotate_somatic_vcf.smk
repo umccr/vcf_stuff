@@ -46,25 +46,6 @@ rule all:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi'
 
-
-# Call variants with 1%
-# Apply to VarDict only: (INFO/QUAL * TUMOR_AF) >= 4
-# Call ensemble
-# First PoN round: remove PoN_CNT>2'
-# Annotate with PCGR (VEP+known cancer databases)
-#   Tier 1 - variants of strong clinical significance
-#   Tier 2 - variants of potential clinical significance
-#   Tier 3 - variants of unknown clinical significance
-#   Tier 4 - other coding variants
-#   Noncoding variants
-# Tier 1-3 - keep all variants
-# Tier 4 and noncoding - filter with:
-#   Remove gnomad_AF <=0.02
-#   Remove PoN_CNT>{0 if issnp else 1}'
-#   Remove indels in "bad_promoter" tricky regions
-#   Remove DP<25 & AF<5% in tricky regions: gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp, non-GIAB confident, unless coding in cancer genes
-
-
 # Filters HMF hotspots file from 17,875 in total down to 10,209 HMF variants (Jul2022)
 rule prep_hmf_hotspots:
     input:
@@ -299,6 +280,10 @@ rule somatic_vcf_pon_anno:
         '&& tabix -f -p vcf {output.vcf}'
 
 # PCGR first run. Required to help with downstream filtering.
+# - The tiers output is used to grab SYMBOL, TIER, CONSEQUENCE,
+# MUTATION_HOTSPOT etc. as annotated by PCGR.
+# - The raw VEP output is used to grab CSQ.
+#
 # For hypermutated samples (>500K variants) we need to use the
 # vep --no_intergenic option to reduce the load,
 # else it will take ages to finish and might even crash.
@@ -330,6 +315,11 @@ rule somatic_vcf_pcgr_round1:
         shell(cmd)
 
 def parse_icgc_cnt(ct):
+    # e.g.
+    # ct = MELA-AU|Metastatic|1|60|0.0167
+    # project_code, tumor_type, affected_donors, tested_donors, frequency.
+    # Looking for affected_donors, so probably in older icgc version that was
+    # in the second part of the string, hence the exception handling.
     cnt = 0
     try:
         cnt = int(ct.split('|')[2])
@@ -360,8 +350,8 @@ rule somatic_vcf_pcgr_anno:
         with open(input.pcgr_tiers) as f:
             reader = csv.DictReader(f, delimiter='\t', fieldnames=f.readline().strip().split('\t'))
             for row in reader:
-                change = row['GENOMIC_CHANGE']
-                # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+                change = row['GENOMIC_CHANGE'] # '17:g.7673788G>C'
+                # PCGR strips the chr prefixes
                 if params.genome_build == 'hg38':
                     change = 'chr' + change.replace('MT', 'M')
                 pcgr_fields_by_snp[change] = dict()
@@ -382,10 +372,17 @@ rule somatic_vcf_pcgr_anno:
                     if val and val != 'NA':
                         pcgr_fields_by_snp[change][k] = val
 
-                cosmic = row['COSMIC_MUTATION_ID']
+                # e.g. pcgr_fields_by_snp =
+                #  "chr7:g.140781611C>A": {
+                #    "SYMBOL": "BRAF", "TIER": "TIER_3", "CONSEQUENCE": "missense_variant",
+                #    "MUTATION_HOTSPOT": "BRAF|G466|6.72e-35", "PUTATIVE_DRIVER_MUTATION": true,
+                #    "TCGA_PANCANCER_COUNT": "7", "CLINVAR_CLNSIG": "pathogenic" }
+
+                cosmic = row['COSMIC_MUTATION_ID'] # e.g. "COSV53165155&COSV53219732&COSV53700637"
                 cosmic_by_snp[change] = len(cosmic.split('&')) if cosmic != 'NA' else 0
 
-                icgc = row['ICGC_PCAWG_OCCURRENCE']
+                icgc = row['ICGC_PCAWG_OCCURRENCE'] # e.g. "LIRI-JP|Primary|1|250|0.004, ..."
+                # e.g. "chr7:g.140781611C>A": 1
                 icgc_by_snp[change] = sum([parse_icgc_cnt(ct) for ct in icgc.split(', ')]) \
                     if icgc != 'NA' else 0
 
@@ -394,44 +391,56 @@ rule somatic_vcf_pcgr_anno:
         vcf = VCF(input.pcgr_vcf)
         for rec in vcf:
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
-            # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+            # PCGR strips the chr prefixes
             if params.genome_build == 'hg38':
                 change = 'chr' + change.replace('MT', 'M')
             try:
                 csq = rec.INFO['CSQ']
             except:
+            # skip if no INFO/CSQ
                 pass
             else:
                 csq_by_snp[change] = csq
 
         def func_hdr(vcf):
-            vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description':
-                'VEP gene symbol, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description': 'TIER as reported by PCGR in .snvs_indels.tiers.tsv file. '
-                                                                      '1: strong clinical significance; '
-                                                                      '2: potential clinical significance; '
-                                                                      '3: unknown clinical significance; '
-                                                                      '4: other coding variants',                                                                                                  'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE',          'Description': 'VEP consequence, reported by PCGR in .snvs_indels.tiers.tsv file',                                          'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT',     'Description': 'Mutation hotspot, reported by PCGR in .snvs_indels.tiers.tsv file',                                         'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION',   'Description': 'Putative driver mutation, reported by PCGR in .snvs_indels.tiers.tsv file',                           'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': 'Occurences in TCGR, reported by PCGR in .snvs_indels.tiers.tsv file',                                       'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG',       'Description': 'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',                            'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'COSMIC_CNT',                'Description': 'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',                                           'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS',           'Description': 'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file', 'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'CSQ', 'Description': 'Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|ALLELE_NUM|DISTANCE|STRAND|FLAGS|PICK|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|RefSeq|DOMAINS|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|CLIN_SIG|SOMATIC|PHENO|CHECK_REF',
-                                    'Type': 'String', 'Number': '.'})
+            reported = f'reported by PCGR in .snvs_indels.tiers.tsv'
+            tier_description = (
+                    f'TIER as {reported}, where: '
+                    f'1: strong clinical significance; 2: potential clinical significance; '
+                    f'3: uncertain clinical significance; '
+                    f'4: other coding variants')
+            csq_description = 'Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|ALLELE_NUM|DISTANCE|STRAND|FLAGS|PICK|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|MANE|TSL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|RefSeq|DOMAINS|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|CLIN_SIG|SOMATIC|PHENO|CHECK_REF|NearestExonJB'
+            vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description': f'VEP gene symbol, {reported}.', 'Type': 'String', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description': tier_description, 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE', 'Description': f'VEP consequence, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT', 'Description': f'Mutation hotspot, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION', 'Description': f'Putative driver mutation, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': f'Occurences in TCGA, {reported}.', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG', 'Description': f'ClinVar clinical significance, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'COSMIC_CNT', 'Description': f'Hits in COSMIC, {reported}.', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS', 'Description': f'Hits in ICGC_PCAWG, {reported}', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'CSQ', 'Description': f'Consequence annotations from Ensembl VEP as reported via PCGR. Format: {csq_description}', 'Type': 'String', 'Number': '.'})
+
+
+        # So up to here we have:
+        # csq_by_snp = {"chr7:g.140781611C>A": "A|missense_variant|MODERATE|BRAF|ENSGXXX|Transcript|...", ... }
+        # pcgr_fields_by_snp = {"chr7:g.140781611C>A": {"SYMBOL": "BRAF", "TIER": "TIER_3", "CONSEQUENCE": "missense_variant", ...}, ...}
+        # cosmic_by_snp: {"chr7:g.140781611C>A": 3, ...}
+        # icgc_by_snp: {"chr7:g.140781611C>A": 2, ...}
+
         def func(rec, vcf):
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
             pcgr_d = pcgr_fields_by_snp.get(change, {})
+            # if the variant is in the tiers file
             if pcgr_d:
                 for k, v in pcgr_d.items():
+                    # SYMBOL -> PCGR_SYMBOL, TIER -> PCGR_TIER, ...
                     rec.INFO[f'PCGR_{k}'] = v
             rec.INFO['COSMIC_CNT'] = cosmic_by_snp.get(change, 0)
             rec.INFO['ICGC_PCAWG_HITS'] = icgc_by_snp.get(change, 0)
-            rec.INFO['CSQ'] = csq_by_snp.get(change, '.')
+            rec.INFO['CSQ'] = csq_by_snp.get(change, '.')  # if not annotated by VEP, gets a CSQ=.
             return rec
+
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
 rule annotate:
