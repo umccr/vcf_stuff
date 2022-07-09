@@ -331,7 +331,9 @@ def parse_icgc_cnt(ct):
     return cnt
 
 # Annotates with PCGR_ `SYMBOL`,`TIER`,`CONSEQUENCE`,`MUTATION_HOTSPOT`,`PUTATIVE_DRIVER_MUTATION`,
-# `TCGA_PANCANCER_COUNT`,`CLINVAR_CLNSIG`, and `COSMIC_CNT`, `ICGC_PCAWG_HITS`, `CSQ`
+# `TCGA_PANCANCER_COUNT`,`CLINVAR_CLNSIG`, and `COSMIC_CNT`, `ICGC_PCAWG_HITS`, `CSQ`.
+# If VEP has skipped annotation for a variant, CSQ=. in the output VCF.
+# This can be used to filter out e.g. intergenic variants.
 rule somatic_vcf_pcgr_anno:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -443,10 +445,22 @@ rule somatic_vcf_pcgr_anno:
 
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
-rule annotate:
+# Filter out variants that haven't been VEP-annotated with CSQ.
+# This is to get rid of intergenic variants in hypermutated samples.
+rule filter_no_vep_csq:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
+    output:
+        vcf = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz.tbi',
+    shell:
+        'bcftools filter -e \'CSQ="."\' {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
+
+rule annotate:
+    input:
+        vcf = rules.filter_no_vep_csq.output.vcf,
+        tbi = rules.filter_no_vep_csq.output.tbi,
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
