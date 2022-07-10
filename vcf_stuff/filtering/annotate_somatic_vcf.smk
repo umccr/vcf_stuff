@@ -285,11 +285,12 @@ rule somatic_vcf_pon_anno:
 # - The raw VEP output is used to grab CSQ.
 #
 # For hypermutated samples (>500K variants) we need to use the
-# vep --no_intergenic option to reduce the load,
+# vep --no_intergenic (or --coding_only) option to reduce the load,
 # else it will take ages to finish and might even crash.
 # The older PCGR versions (pre v1) handled that via a TOML config
 # (with the vep_skip_intergenic option) so we handle that
-# via the umccrise/scripts/pcgr wrapper.
+# via the umccrise/scripts/pcgr wrapper. The --coding_only option
+# is provided via a small hack in the pcgr wrapper.
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -310,8 +311,8 @@ rule somatic_vcf_pcgr_round1:
             '{params.opt} --pcgr-data {input.pcgr_data}')
         total_vars = count_vars(input.vcf)
         if total_vars > MAX_VARIANTS:
-            warn(f'Found {total_vars} > {MAX_VARIANTS} somatic variants, run PCGR with --vep_no_intergenic')
-            cmd += ' --vep_no_intergenic'
+            warn(f'Found {total_vars} > {MAX_VARIANTS} somatic variants, run PCGR with --vep_coding_only to keep only coding variants.')
+            cmd += ' --vep_coding_only'
         shell(cmd)
 
 def parse_icgc_cnt(ct):
