@@ -13,10 +13,10 @@ build:
 requirements:
   build:
     - python {{ python }}
-    - ngs_utils >=2.8.0
+    - ngs_utils >=2.9.2
   run:
     - python {{ python }}
-    - ngs_utils >=2.8.0
+    - ngs_utils >=2.9.2
     - bcftools
     - tabix
     - bedops

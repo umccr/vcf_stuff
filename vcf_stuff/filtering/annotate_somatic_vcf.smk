@@ -30,6 +30,8 @@ R_NAME = config.get('rna_vcf_sample')
 assert OUTPUT_VCF.endswith('.vcf.gz'), OUTPUT_VCF
 assert INPUT_VCF.endswith('.vcf.gz'), INPUT_VCF
 
+MAX_VARIANTS = 500_000
+
 PCGR_ENV_PATH = config.get('pcgr_env_path')
 conda_cmd = ''
 if PCGR_ENV_PATH:
@@ -44,25 +46,7 @@ rule all:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi'
 
-
-# Call variants with 1%
-# Apply to VarDict only: (INFO/QUAL * TUMOR_AF) >= 4
-# Call ensemble
-# First PoN round: remove PoN_CNT>2'
-# Annotate with PCGR (VEP+known cancer databases)
-#   Tier 1 - variants of strong clinical significance
-#   Tier 2 - variants of potential clinical significance
-#   Tier 3 - variants of unknown clinical significance
-#   Tier 4 - other coding variants
-#   Noncoding variants
-# Tier 1-3 - keep all variants
-# Tier 4 and noncoding - filter with:
-#   Remove gnomad_AF <=0.02
-#   Remove PoN_CNT>{0 if issnp else 1}'
-#   Remove indels in "bad_promoter" tricky regions
-#   Remove DP<25 & AF<5% in tricky regions: gc15, gc70to75, gc75to80, gc80to85, gc85, low_complexity_51to200bp, low_complexity_gt200bp, non-GIAB confident, unless coding in cancer genes
-
-
+# Filters HMF hotspots file from 17,875 in total down to 10,209 HMF variants (Jul2022)
 rule prep_hmf_hotspots:
     input:
         vcf = refdata.get_ref_file(GENOME, key='hotspots'),
@@ -72,6 +56,7 @@ rule prep_hmf_hotspots:
     shell:
         'bcftools filter -i "HMF=1" {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
 
+# Prepares TOML file for use with vcfanno
 rule prep_anno_toml:
     input:
         ga4gh_dir    = join(refdata.get_ref_file(GENOME, key='problem_regions_dir'), 'GA4GH'),
@@ -139,6 +124,7 @@ names = ["TRICKY_{name}"]
 ops = ["flag"]
 """)
 
+# Runs vcfanno
 rule somatic_vcf_regions_anno:
     input:
         vcf = INPUT_VCF,
@@ -150,11 +136,9 @@ rule somatic_vcf_regions_anno:
         'vcfanno {input.toml} {input.vcf} | bgzip -c > {output.vcf} && '
         'tabix -f -p vcf {output.vcf}'
 
-
-# Possibly subset VCF to avoid PCGR choking with R stuff.
-# too higly mutated samples might indicate germline contamination.
+# Possibly subset VCF to avoid downstream problems with R tools.
+# Hypermutated samples might indicate germline contamination.
 # If the noise wasn't germline, it might be artefacts/errors from FFPE or ortherwise low quality data.
-# subsetting to cancer genes in this case.
 rule maybe_subset_highly_mutated:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
@@ -169,8 +153,8 @@ rule maybe_subset_highly_mutated:
         total_vars = count_vars(input.vcf)
         vars_no_gnomad = None
         vars_cancer_genes = None
-        if total_vars > 500_000:
-            warn(f'Found {total_vars}>500k somatic variants, start with removing gnomAD_AF>0.01')
+        if total_vars > MAX_VARIANTS:
+            warn(f'Found {total_vars}>{MAX_VARIANTS} somatic variants, removing those where gnomAD_AF>0.01')
             def func(rec, vcf):
                 gnomad_af = rec.INFO.get('gnomAD_AF')
                 if gnomad_af is not None and float(gnomad_af) >= 0.01 \
@@ -182,22 +166,23 @@ rule maybe_subset_highly_mutated:
             safe_mkdir(dirname(params.no_gnomad_vcf))
             iter_vcf(input.vcf, params.no_gnomad_vcf, func)
             vars_no_gnomad = count_vars(params.no_gnomad_vcf)
-            if vars_no_gnomad > 500_000:
-                warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
-                     f'So _instead_ subsetting to cancer genes.')
-                genes = get_key_genes_set()
-                def func(rec, vcf):
-                    if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
-                        return rec
-                iter_vcf(input.vcf, output.vcf, func)
-                vars_no_gnomad = None
-                vars_cancer_genes = count_vars(output.vcf)
-                warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
-            else:
-                warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad}<=500k somatic variants, '
-                     f'no need to subset to cancer genes keeping all of them for futher reporting')
-                shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
+            #if vars_no_gnomad > MAX_VARIANTS:
+            #    warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
+            #         f'So _instead_ subsetting to cancer genes.')
+            #    genes = get_key_genes_set()
+            #    def func(rec, vcf):
+            #        if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
+            #            return rec
+            #    iter_vcf(input.vcf, output.vcf, func)
+            #    vars_no_gnomad = None
+            #    vars_cancer_genes = count_vars(output.vcf)
+            #    warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
+            #else:
+            warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad} somatic variants, '
+                 f'hopefully this will not choke downstream tools!')
+            shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
         else:
+            # not hypermutated so proceed as normal
             shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
 
         with open(output.subset_highly_mutated_stats, 'w') as out:
@@ -209,6 +194,7 @@ rule maybe_subset_highly_mutated:
             if vars_cancer_genes is not None:
                 stats['vars_cancer_genes'] = vars_cancer_genes
             yaml.dump(stats, out, default_flow_style=False)
+
 
 # Removes TRICKY_ and ANN fields
 rule somatic_vcf_clean_info:
@@ -240,7 +226,7 @@ rule somatic_vcf_clean_info:
             return rec
         iter_vcf(input.vcf, output.vcf, func, proc_hdr=proc_hdr, postproc_hdr=postproc_hdr)
 
-# Preparations: annotate TUMOR_X and NORMAL_X fields for PCGR, remove non-standard chromosomes and mitochondria, remove non-PASSed calls
+# Annotates 'TUMOR/NORMAL_'-'AF/DP/VD' fields for PCGR
 rule somatic_vcf_prep:
     input:
         vcf = rules.somatic_vcf_clean_info.output.vcf,
@@ -255,10 +241,11 @@ rule somatic_vcf_prep:
         t_name_arg = f"-tn {params.t_name}" if params.t_name else ""
         n_name_arg = f"-nn {params.n_name}" if params.n_name else ""
         r_name_arg = f"-rn {params.r_name}" if params.r_name else ""
-        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {r_name_arg} {input.vcf}' 
-              f' | bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
+        shell(f'pcgr_prep {t_name_arg} {n_name_arg} {r_name_arg} {input.vcf} | '
+              f'bgzip -c > {output.vcf} && tabix -f -p vcf {output.vcf}')
 
 if GENOME != 'GRCh37':
+    # Annotates VCF with 'SageGermlinePon.hg38.98x.vcf.gz' HMF PoN counts
     rule sage_pon:
         input:
             vcf = rules.somatic_vcf_prep.output.vcf,
@@ -274,6 +261,7 @@ if GENOME != 'GRCh37':
             '-c PON_COUNT,PON_MAX {input.vcf} -Oz -o {output.vcf} '
             '&& tabix -f -p vcf {output.vcf}'
 
+# Annotates with 'INFO/PoN_CNT', optionally 'INFO/PoN_CNT>=filter_hits with FILTER=PoN'
 rule somatic_vcf_pon_anno:
     input:
         vcf = f'somatic_anno/sage_pon/{SAMPLE}-somatic.vcf.gz' if GENOME != 'GRCh37' else rules.somatic_vcf_prep.output.vcf,
@@ -291,6 +279,18 @@ rule somatic_vcf_pon_anno:
         'bgzip -c > {output.vcf} '
         '&& tabix -f -p vcf {output.vcf}'
 
+# PCGR first run. Required to help with downstream filtering.
+# - The tiers output is used to grab SYMBOL, TIER, CONSEQUENCE,
+# MUTATION_HOTSPOT etc. as annotated by PCGR.
+# - The raw VEP output is used to grab CSQ.
+#
+# For hypermutated samples (>500K variants) we need to use the
+# vep --no_intergenic (or --coding_only) option to reduce the load,
+# else it will take ages to finish and might even crash.
+# The older PCGR versions (pre v1) handled that via a TOML config
+# (with the vep_skip_intergenic option) so we handle that
+# via the umccrise/scripts/pcgr wrapper. The --coding_only option
+# is provided via a small hack in the pcgr wrapper.
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -304,13 +304,23 @@ rule somatic_vcf_pcgr_round1:
         sample_name = f'{SAMPLE}-somatic',
         opt='--no-docker' if not which('docker') else '',
     resources:
-        mem_mb = 20000
-    shell:
-        conda_cmd + which('pcgr') +
-        ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
-        '{params.opt} --pcgr-data {input.pcgr_data}'
+        mem_mb = lambda wildcards, attempt: attempt * 20000
+    run:
+        cmd = (conda_cmd + shutil.which("pcgr") +
+            ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
+            '{params.opt} --pcgr-data {input.pcgr_data}')
+        total_vars = count_vars(input.vcf)
+        if total_vars > MAX_VARIANTS:
+            warn(f'Found {total_vars} > {MAX_VARIANTS} somatic variants, run PCGR with --vep_coding_only to keep only coding variants.')
+            cmd += ' --vep_coding_only'
+        shell(cmd)
 
-def parse_igcg_cnt(ct):
+def parse_icgc_cnt(ct):
+    # e.g.
+    # ct = MELA-AU|Metastatic|1|60|0.0167
+    # project_code, tumor_type, affected_donors, tested_donors, frequency.
+    # Looking for affected_donors, so probably in older icgc version that was
+    # in the second part of the string, hence the exception handling.
     cnt = 0
     try:
         cnt = int(ct.split('|')[2])
@@ -321,6 +331,10 @@ def parse_igcg_cnt(ct):
             pass
     return cnt
 
+# Annotates with PCGR_ `SYMBOL`,`TIER`,`CONSEQUENCE`,`MUTATION_HOTSPOT`,`PUTATIVE_DRIVER_MUTATION`,
+# `TCGA_PANCANCER_COUNT`,`CLINVAR_CLNSIG`, and `COSMIC_CNT`, `ICGC_PCAWG_HITS`, `CSQ`.
+# If VEP has skipped annotation for a variant, CSQ=. in the output VCF.
+# This can be used to filter out e.g. intergenic variants.
 rule somatic_vcf_pcgr_anno:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -339,8 +353,8 @@ rule somatic_vcf_pcgr_anno:
         with open(input.pcgr_tiers) as f:
             reader = csv.DictReader(f, delimiter='\t', fieldnames=f.readline().strip().split('\t'))
             for row in reader:
-                change = row['GENOMIC_CHANGE']
-                # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+                change = row['GENOMIC_CHANGE'] # '17:g.7673788G>C'
+                # PCGR strips the chr prefixes
                 if params.genome_build == 'hg38':
                     change = 'chr' + change.replace('MT', 'M')
                 pcgr_fields_by_snp[change] = dict()
@@ -361,11 +375,18 @@ rule somatic_vcf_pcgr_anno:
                     if val and val != 'NA':
                         pcgr_fields_by_snp[change][k] = val
 
-                cosmic = row['COSMIC_MUTATION_ID']
+                # e.g. pcgr_fields_by_snp =
+                #  "chr7:g.140781611C>A": {
+                #    "SYMBOL": "BRAF", "TIER": "TIER_3", "CONSEQUENCE": "missense_variant",
+                #    "MUTATION_HOTSPOT": "BRAF|G466|6.72e-35", "PUTATIVE_DRIVER_MUTATION": true,
+                #    "TCGA_PANCANCER_COUNT": "7", "CLINVAR_CLNSIG": "pathogenic" }
+
+                cosmic = row['COSMIC_MUTATION_ID'] # e.g. "COSV53165155&COSV53219732&COSV53700637"
                 cosmic_by_snp[change] = len(cosmic.split('&')) if cosmic != 'NA' else 0
 
-                icgc = row['ICGC_PCAWG_OCCURRENCE']
-                icgc_by_snp[change] = sum([parse_igcg_cnt(ct) for ct in icgc.split(', ')]) \
+                icgc = row['ICGC_PCAWG_OCCURRENCE'] # e.g. "LIRI-JP|Primary|1|250|0.004, ..."
+                # e.g. "chr7:g.140781611C>A": 1
+                icgc_by_snp[change] = sum([parse_icgc_cnt(ct) for ct in icgc.split(', ')]) \
                     if icgc != 'NA' else 0
 
         # Reading CSQ from PCGR VCF file as the tiers file has it incomplete
@@ -373,51 +394,74 @@ rule somatic_vcf_pcgr_anno:
         vcf = VCF(input.pcgr_vcf)
         for rec in vcf:
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
-            # Fixing the chromosome name 1 -> chr1 as PCGR strips the chr prefixes
+            # PCGR strips the chr prefixes
             if params.genome_build == 'hg38':
                 change = 'chr' + change.replace('MT', 'M')
             try:
                 csq = rec.INFO['CSQ']
             except:
+            # skip if no INFO/CSQ
                 pass
             else:
                 csq_by_snp[change] = csq
 
         def func_hdr(vcf):
-            vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description':
-                'VEP gene symbol, reported by PCGR in .snvs_indels.tiers.tsv file',
-                                    'Type': 'String', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description': 'TIER as reported by PCGR in .snvs_indels.tiers.tsv file. '
-                                                                      '1: strong clinical significance; '
-                                                                      '2: potential clinical significance; '
-                                                                      '3: unknown clinical significance; '
-                                                                      '4: other coding variants',                                                                                                  'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE',          'Description': 'VEP consequence, reported by PCGR in .snvs_indels.tiers.tsv file',                                          'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT',     'Description': 'Mutation hotspot, reported by PCGR in .snvs_indels.tiers.tsv file',                                         'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION',   'Description': 'Putative driver mutation, reported by PCGR in .snvs_indels.tiers.tsv file',                           'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': 'Occurences in TCGR, reported by PCGR in .snvs_indels.tiers.tsv file',                                       'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG',       'Description': 'ClinVar clinical significance, reported by PCGR in .snvs_indels.tiers.tsv file',                            'Type': 'String',  'Number': '1'})
-            vcf.add_info_to_header({'ID': 'COSMIC_CNT',                'Description': 'Hits in COSMIC, reported by PCGR in .snvs_indels.tiers.tsv file',                                           'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS',           'Description': 'Hits in ICGC PanCancer Analysis of Whole Genomes (PCAWG), reported by PCGR in .snvs_indels.tiers.tsv file', 'Type': 'Integer', 'Number': '1'})
-            vcf.add_info_to_header({'ID': 'CSQ', 'Description': 'Consequence annotations from Ensembl VEP. Format: Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|ALLELE_NUM|DISTANCE|STRAND|FLAGS|PICK|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|RefSeq|DOMAINS|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|CLIN_SIG|SOMATIC|PHENO|CHECK_REF',
-                                    'Type': 'String', 'Number': '.'})
+            reported = f'reported by PCGR in .snvs_indels.tiers.tsv'
+            tier_description = (
+                    f'TIER as {reported}, where: '
+                    f'1: strong clinical significance; 2: potential clinical significance; '
+                    f'3: uncertain clinical significance; '
+                    f'4: other coding variants')
+            csq_description = 'Allele|Consequence|IMPACT|SYMBOL|Gene|Feature_type|Feature|BIOTYPE|EXON|INTRON|HGVSc|HGVSp|cDNA_position|CDS_position|Protein_position|Amino_acids|Codons|Existing_variation|ALLELE_NUM|DISTANCE|STRAND|FLAGS|PICK|VARIANT_CLASS|SYMBOL_SOURCE|HGNC_ID|CANONICAL|MANE|TSL|APPRIS|CCDS|ENSP|SWISSPROT|TREMBL|UNIPARC|RefSeq|DOMAINS|HGVS_OFFSET|AF|AFR_AF|AMR_AF|EAS_AF|EUR_AF|SAS_AF|gnomAD_AF|gnomAD_AFR_AF|gnomAD_AMR_AF|gnomAD_ASJ_AF|gnomAD_EAS_AF|gnomAD_FIN_AF|gnomAD_NFE_AF|gnomAD_OTH_AF|gnomAD_SAS_AF|CLIN_SIG|SOMATIC|PHENO|CHECK_REF|NearestExonJB'
+            vcf.add_info_to_header({'ID': 'PCGR_SYMBOL', 'Description': f'VEP gene symbol, {reported}.', 'Type': 'String', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TIER', 'Description': tier_description, 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CONSEQUENCE', 'Description': f'VEP consequence, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_MUTATION_HOTSPOT', 'Description': f'Mutation hotspot, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_PUTATIVE_DRIVER_MUTATION', 'Description': f'Putative driver mutation, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_TCGA_PANCANCER_COUNT', 'Description': f'Occurences in TCGA, {reported}.', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'PCGR_CLINVAR_CLNSIG', 'Description': f'ClinVar clinical significance, {reported}.', 'Type': 'String',  'Number': '1'})
+            vcf.add_info_to_header({'ID': 'COSMIC_CNT', 'Description': f'Hits in COSMIC, {reported}.', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'ICGC_PCAWG_HITS', 'Description': f'Hits in ICGC_PCAWG, {reported}', 'Type': 'Integer', 'Number': '1'})
+            vcf.add_info_to_header({'ID': 'CSQ', 'Description': f'Consequence annotations from Ensembl VEP as reported via PCGR. Format: {csq_description}', 'Type': 'String', 'Number': '.'})
+
+
+        # So up to here we have:
+        # csq_by_snp = {"chr7:g.140781611C>A": "A|missense_variant|MODERATE|BRAF|ENSGXXX|Transcript|...", ... }
+        # pcgr_fields_by_snp = {"chr7:g.140781611C>A": {"SYMBOL": "BRAF", "TIER": "TIER_3", "CONSEQUENCE": "missense_variant", ...}, ...}
+        # cosmic_by_snp: {"chr7:g.140781611C>A": 3, ...}
+        # icgc_by_snp: {"chr7:g.140781611C>A": 2, ...}
+
         def func(rec, vcf):
             change = f'{rec.CHROM}:g.{rec.POS}{rec.REF}>{rec.ALT[0]}'
             pcgr_d = pcgr_fields_by_snp.get(change, {})
+            # if the variant is in the tiers file
             if pcgr_d:
                 for k, v in pcgr_d.items():
+                    # SYMBOL -> PCGR_SYMBOL, TIER -> PCGR_TIER, ...
                     rec.INFO[f'PCGR_{k}'] = v
             rec.INFO['COSMIC_CNT'] = cosmic_by_snp.get(change, 0)
             rec.INFO['ICGC_PCAWG_HITS'] = icgc_by_snp.get(change, 0)
-            rec.INFO['CSQ'] = csq_by_snp.get(change, '.')
+            rec.INFO['CSQ'] = csq_by_snp.get(change, '.')  # if not annotated by VEP, gets a CSQ=.
             return rec
+
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
-rule annotate:
+# Filter out variants that haven't been VEP-annotated with CSQ.
+# This is to get rid of intergenic variants in hypermutated samples.
+rule filter_no_vep_csq:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
-        subset_highly_mutated_stats = f'somatic_anno/subset_highly_mutated_stats.yaml',
+    output:
+        vcf = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz',
+        tbi = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz.tbi',
+    shell:
+        'bcftools filter -e \'CSQ="."\' {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
+
+rule annotate:
+    input:
+        vcf = rules.filter_no_vep_csq.output.vcf,
+        tbi = rules.filter_no_vep_csq.output.tbi,
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',

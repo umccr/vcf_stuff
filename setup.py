@@ -7,16 +7,14 @@ import versionpy
 
 pkg = 'vcf_stuff'
 
-version = versionpy.get_version(pkg)
-
 setup(
     name=pkg,
-    version=version,
+    version='0.5.12', # versioned by bump2version
     author='Vlad Savelyev',
     author_email='vladislav.sav@gmail.com',
     description='Evaluating, filtering, comparing, and visualising variant calls',
     keywords='bioinformatics',
-    url='https://github.com/vladsaveliev/vcf_stuff',
+    url='https://github.com/umccr/vcf_stuff',
     license='GPLv3',
     packages=find_packages(),
     package_data={
