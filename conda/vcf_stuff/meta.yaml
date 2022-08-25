@@ -29,7 +29,6 @@ requirements:
     - cyvcf2 >=0.10.0
     - numpy >=1.15.0
     - pandas
-    - ngs_utils
     - nose
     - bed_annotation >=1.1.4
     - reference_data
