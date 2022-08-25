@@ -10,7 +10,7 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import warn
 from ngs_utils.vcf_utils import iter_vcf, count_vars, vcf_contains_field
-from ngs_utils.reference_data import get_key_genes_set
+from ngs_utils.reference_data import get_all_genes_bed
 from reference_data import api as refdata
 
 
@@ -143,6 +143,7 @@ rule maybe_subset_highly_mutated:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
+        all_genes_bed = get_all_genes_bed(),
     output:
         vcf = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz.tbi',
@@ -152,7 +153,7 @@ rule maybe_subset_highly_mutated:
     run:
         total_vars = count_vars(input.vcf)
         vars_no_gnomad = None
-        vars_cancer_genes = None
+        vars_all_genes = None
         if total_vars > MAX_VARIANTS:
             warn(f'Found {total_vars}>{MAX_VARIANTS} somatic variants, removing those where gnomAD_AF>0.01')
             def func(rec, vcf):
@@ -166,21 +167,17 @@ rule maybe_subset_highly_mutated:
             safe_mkdir(dirname(params.no_gnomad_vcf))
             iter_vcf(input.vcf, params.no_gnomad_vcf, func)
             vars_no_gnomad = count_vars(params.no_gnomad_vcf)
-            #if vars_no_gnomad > MAX_VARIANTS:
-            #    warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
-            #         f'So _instead_ subsetting to cancer genes.')
-            #    genes = get_key_genes_set()
-            #    def func(rec, vcf):
-            #        if rec.INFO.get('ANN') is not None and rec.INFO['ANN'].split('|')[3] in genes:
-            #            return rec
-            #    iter_vcf(input.vcf, output.vcf, func)
-            #    vars_no_gnomad = None
-            #    vars_cancer_genes = count_vars(output.vcf)
-            #    warn(f'After subsetting to cancer genes, left with {vars_cancer_genes} variants')
-            #else:
-            warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad} somatic variants, '
-                 f'hopefully this will not choke downstream tools!')
-            shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
+            if vars_no_gnomad > MAX_VARIANTS:
+                warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
+                     f'So _instead_ subsetting to only gene regions.')
+                shell("bcftools view -R {input.all_genes_bed} {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}")
+
+                vars_all_genes = count_vars(output.vcf)
+                warn(f'After subsetting to all genes, left with {vars_all_genes} variants')
+            else:
+                warn(f'Removing gnomAD>0.01 reduced down to {vars_no_gnomad} somatic variants, '
+                     f'hopefully this will not choke downstream tools!')
+                shell('cp {params.no_gnomad_vcf} {output.vcf} ; cp {params.no_gnomad_vcf}.tbi {output.tbi}')
         else:
             # not hypermutated so proceed as normal
             shell('cp {input.vcf} {output.vcf} ; cp {input.tbi} {output.tbi} ; ')
@@ -191,8 +188,8 @@ rule maybe_subset_highly_mutated:
             )
             if vars_no_gnomad is not None:
                 stats['vars_no_gnomad'] = vars_no_gnomad
-            if vars_cancer_genes is not None:
-                stats['vars_cancer_genes'] = vars_cancer_genes
+            if vars_all_genes is not None:
+                stats['vars_all_genes'] = vars_all_genes
             yaml.dump(stats, out, default_flow_style=False)
 
 
@@ -283,14 +280,6 @@ rule somatic_vcf_pon_anno:
 # - The tiers output is used to grab SYMBOL, TIER, CONSEQUENCE,
 # MUTATION_HOTSPOT etc. as annotated by PCGR.
 # - The raw VEP output is used to grab CSQ.
-#
-# For hypermutated samples (>500K variants) we need to use the
-# vep --no_intergenic (or --coding_only) option to reduce the load,
-# else it will take ages to finish and might even crash.
-# The older PCGR versions (pre v1) handled that via a TOML config
-# (with the vep_skip_intergenic option) so we handle that
-# via the umccrise/scripts/pcgr wrapper. The --coding_only option
-# is provided via a small hack in the pcgr wrapper.
 rule somatic_vcf_pcgr_round1:
     input:
         vcf = rules.somatic_vcf_pon_anno.output.vcf,
@@ -309,10 +298,6 @@ rule somatic_vcf_pcgr_round1:
         cmd = (conda_cmd + shutil.which("pcgr") +
             ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
             '{params.opt} --pcgr-data {input.pcgr_data}')
-        total_vars = count_vars(input.vcf)
-        if total_vars > MAX_VARIANTS:
-            warn(f'Found {total_vars} > {MAX_VARIANTS} somatic variants, run PCGR with --vep_coding_only to keep only coding variants.')
-            cmd += ' --vep_coding_only'
         shell(cmd)
 
 def parse_icgc_cnt(ct):
@@ -446,22 +431,10 @@ rule somatic_vcf_pcgr_anno:
 
         iter_vcf(input.vcf, output.vcf, func, func_hdr)
 
-# Filter out variants that haven't been VEP-annotated with CSQ.
-# This is to get rid of intergenic variants in hypermutated samples.
-rule filter_no_vep_csq:
+rule annotate:
     input:
         vcf = rules.somatic_vcf_pcgr_anno.output.vcf,
         tbi = rules.somatic_vcf_pcgr_anno.output.tbi,
-    output:
-        vcf = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz',
-        tbi = f'somatic_anno/filter_no_vep_csq/{SAMPLE}-somatic.vcf.gz.tbi',
-    shell:
-        'bcftools filter -e \'CSQ="."\' {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}'
-
-rule annotate:
-    input:
-        vcf = rules.filter_no_vep_csq.output.vcf,
-        tbi = rules.filter_no_vep_csq.output.tbi,
     output:
         vcf = OUTPUT_VCF,
         tbi = OUTPUT_VCF + '.tbi',
