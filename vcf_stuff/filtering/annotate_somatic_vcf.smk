@@ -10,7 +10,7 @@ from ngs_utils.file_utils import get_ungz_gz
 from ngs_utils.file_utils import splitext_plus
 from ngs_utils.logger import warn
 from ngs_utils.vcf_utils import iter_vcf, count_vars, vcf_contains_field
-from ngs_utils.reference_data import get_all_genes_bed
+from ngs_utils.reference_data import get_key_genes_bed_ensembl107
 from reference_data import api as refdata
 
 
@@ -143,7 +143,7 @@ rule maybe_subset_highly_mutated:
     input:
         vcf = rules.somatic_vcf_regions_anno.output.vcf,
         tbi = rules.somatic_vcf_regions_anno.output.tbi,
-        all_genes_bed = get_all_genes_bed(),
+        cancer_genes_bed = get_key_genes_bed_ensembl107(),
     output:
         vcf = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz',
         tbi = f'somatic_anno/subset/{SAMPLE}-somatic.vcf.gz.tbi',
@@ -169,9 +169,8 @@ rule maybe_subset_highly_mutated:
             vars_no_gnomad = count_vars(params.no_gnomad_vcf)
             if vars_no_gnomad > MAX_VARIANTS:
                 warn(f'After removing gnomAD_AF>0.01, still having {vars_no_gnomad}>500k somatic variants left. '
-                     f'So _instead_ subsetting to only gene regions.')
-                shell("bcftools view -R {input.all_genes_bed} {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}")
-
+                     f'So _instead_ subsetting to only _cancer_ gene regions.')
+                shell("bcftools view -R {input.cancer_genes_bed} {input.vcf} -Oz -o {output.vcf} && tabix -p vcf {output.vcf}")
                 vars_all_genes = count_vars(output.vcf)
                 warn(f'After subsetting to all genes, left with {vars_all_genes} variants')
             else:
