@@ -288,15 +288,13 @@ rule somatic_vcf_pcgr_round1:
         vcf = f'somatic_anno/pcgr_run/{SAMPLE}-somatic.pcgr_ready.vep.vcf.gz',
     params:
         output_dir = f'somatic_anno/pcgr_run',
-        genome = GENOME,
         sample_name = f'{SAMPLE}-somatic',
-        opt='--no-docker' if not which('docker') else '',
     resources:
         mem_mb = lambda wildcards, attempt: attempt * 20000
     run:
-        cmd = (conda_cmd + shutil.which("pcgr") +
-            ' {input.vcf} -g {params.genome} -o {params.output_dir} -s {params.sample_name} '
-            '{params.opt} --pcgr-data {input.pcgr_data}')
+        cmd = (conda_cmd + shutil.which("pcgr_wrap") +
+            ' {input.vcf} -o {params.output_dir} -s {params.sample_name} '
+            '--pcgr-data {input.pcgr_data} --pcgrr-conda umccrise_pcgrr')
         shell(cmd)
 
 def parse_icgc_cnt(ct):
