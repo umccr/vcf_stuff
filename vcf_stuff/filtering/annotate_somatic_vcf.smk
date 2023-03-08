@@ -35,7 +35,7 @@ MAX_VARIANTS = 500_000
 PCGR_ENV_PATH = config.get('pcgr_env_path')
 conda_cmd = ''
 if PCGR_ENV_PATH:
-    conda_cmd = 'export PATH=' + PCGR_ENV_PATH + '/bin:$PATH; '
+    conda_cmd = f'export PATH={PCGR_ENV_PATH}/bin:$PATH; export CONDA_PREFIX={PCGR_ENV_PATH}; '
 
 if config.get('input_genomes_url'):
     refdata.find_genomes_dir(config.get('input_genomes_url'))
