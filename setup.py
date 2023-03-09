@@ -9,7 +9,7 @@ pkg = 'vcf_stuff'
 
 setup(
     name=pkg,
-    version='0.6.3', # versioned by bump2version
+    version='0.6.4', # versioned by bump2version
     author='Vlad Savelyev',
     author_email='vladislav.sav@gmail.com',
     description='Evaluating, filtering, comparing, and visualising variant calls',
